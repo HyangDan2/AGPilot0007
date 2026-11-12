@@ -32,6 +32,17 @@ test('value button resets with one click or tap and keyboard without changing ot
   await exposure.fill('1.5');
   await contrast.fill('25');
   const reset = page.getByRole('button', { name: 'Reset Exposure to default', exact: true }).filter({ visible: true });
+  await expect(page.getByText('숫자를 누르면 해당 항목만 초기화됩니다.', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  const tooltip = page.locator(`[id="${await reset.getAttribute('aria-describedby')}"]`);
+  if (!isMobile) {
+    await reset.hover();
+    await expect(tooltip).toBeVisible();
+    await page.mouse.move(0, 0);
+  }
+  await reset.focus();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveText('누르면 이 항목만 기본값으로 초기화');
+  await page.screenshot({ path: testInfo.outputPath('reset-tooltip.png') });
   const bounds = await reset.boundingBox();
   expect(bounds!.width).toBeLessThan(64);
   expect(bounds!.height).toBeLessThanOrEqual(20);

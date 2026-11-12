@@ -9,7 +9,7 @@ import { RecipeModal } from './components/RecipeModal';
 import { ExportModal } from './components/ExportModal';
 import { useEditorStore } from './stores/editorStore';
 import { MargarineModal } from './components/MargarineModal';
-import { Sliders, X } from 'lucide-react';
+import { Sliders, ChevronUp, ChevronDown } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
@@ -91,8 +91,9 @@ export const App: React.FC = () => {
                       : 'bg-[#141822]/90 text-slate-200 border-[#2b3548] hover:bg-[#1a202c]'
                   }`}
                 >
-                  {isTabletAdjustmentsOpen ? <X className="w-3.5 h-3.5" /> : <Sliders className="w-3.5 h-3.5 text-amber-400" />}
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
                   <span>Adjustments</span>
+                  {isTabletAdjustmentsOpen ? <ChevronDown aria-hidden="true" className="w-3.5 h-3.5" /> : <ChevronUp aria-hidden="true" className="w-3.5 h-3.5" />}
                 </button>
               </div>
             )}

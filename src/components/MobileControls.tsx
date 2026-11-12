@@ -1,3 +1,4 @@
+import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { FILM_LIST, FILM_PROFILES } from '../films/registry';
@@ -115,13 +116,14 @@ export const MobileControls: React.FC = () => {
       {isOpen && (
         <section id="mobile-adjustment-sheet" aria-label="Photo adjustments" data-testid="adjustment-sheet"
           className="adjustment-sheet fixed inset-x-0 bottom-0 z-40 bg-[#11141c] border-t border-[#303641] rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)]">
-          <div className="flex items-center justify-between px-4 py-3 touch-none border-b border-[#232b3b]"
+          <div className="flex items-center justify-between px-4 py-3 touch-none cursor-pointer border-b border-[#232b3b]"
             data-testid="sheet-handle"
+            onClick={e => { if (!(e.target as HTMLElement).closest('button')) closeSheet(); }}
             onPointerDown={e => { const button = (e.target as HTMLElement).closest('button'); if (button && !button.hasAttribute('data-sheet-title')) return; swipeStart.current = e.clientY; }}
             onPointerMove={e => { if (swipeStart.current !== null && Math.abs(e.clientY - swipeStart.current) > 6) e.currentTarget.setPointerCapture(e.pointerId); }}
             onPointerUp={e => { if (swipeStart.current !== null && e.clientY - swipeStart.current > 60) closeSheet(); swipeStart.current = null; }}
             onPointerCancel={() => { swipeStart.current = null; }}>
-            <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer">Adjustments ({currentProfile.name})</button>
+            <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="flex flex-1 items-center gap-2 self-stretch text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer">Adjustments ({currentProfile.name})<ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button>
             <div className="flex items-center gap-3">
               <button onClick={resetAdjustments} title="Reset" aria-label="Reset adjustments" className="p-1 text-slate-400"><RotateCcw className="w-4 h-4" /></button>
               <button ref={closeRef} onClick={closeSheet} aria-label="Close adjustments" className="p-1 text-slate-300"><X className="w-5 h-5" /></button>
@@ -146,6 +148,7 @@ export const MobileControls: React.FC = () => {
             ))}
           </div>
 
+          <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
           {/* Sliders in active category */}
           <div className="space-y-3.5 pt-1">
             {activeItems.map((def) => {
@@ -154,16 +157,15 @@ export const MobileControls: React.FC = () => {
                 <div key={def.key} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-200 font-medium">{def.label}</span>
-                    <button
+                    <ResetValueButton
                       type="button"
                       onClick={() => setAdjustment(def.key, def.defaultValue)}
                       aria-label={`Reset ${def.label} to default`}
-                      title={`Reset ${def.label} to default (${def.defaultValue}${def.unit})`}
                       className="p-0 rounded-sm text-amber-400 font-mono font-semibold hover:bg-amber-500/10 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-amber-400 cursor-pointer touch-manipulation transition-colors"
                     >
                       {val > 0 && def.defaultValue === 0 ? `+${val}` : val}
                       {def.unit}
-                    </button>
+                    </ResetValueButton>
                   </div>
                   <input
                     type="range"

@@ -27,6 +27,13 @@ test('mobile sheet overlays the image without resizing or resetting zoom', async
   expect(await workspace.boundingBox()).toEqual(before);
   await page.getByRole('button', { name: /Adjustments \(/ }).click();
   await expect(page.getByTestId('slider-exposure').filter({ visible: true })).toHaveValue('0');
+  await page.getByRole('button', { name: 'Reset adjustments', exact: true }).tap();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.lucide-chevron-down')).toBeVisible();
+  await page.getByTestId('sheet-handle').tap({ position: { x: 3, y: 3 } });
+  await expect(sheet).not.toBeVisible();
+  await expect(page.getByRole('button', { name: /Adjustments \(/ }).locator('.lucide-chevron-up')).toBeVisible();
+  await page.getByRole('button', { name: /Adjustments \(/ }).click();
   await page.getByRole('button', { name: 'Close adjustments', exact: true }).click();
   await expect(sheet).not.toBeVisible();
   expect(await workspace.boundingBox()).toEqual(before);
@@ -80,13 +87,18 @@ test('Margarine reselect opens searchable 58-look dialog, selects, and restores 
 });
 
 
-test('tablet adjustment title collapses the closable panel', async ({ page }) => {
+test('tablet adjustment header collapses except action buttons', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto('/');
   await page.getByRole('button', { name: /Portrait/ }).filter({ visible: true }).first().click();
   const toggle = page.getByRole('button', { name: 'Adjustments', exact: true });
   await toggle.click();
   await expect(page.getByRole('heading', { name: 'Manual Adjustments' })).toBeVisible();
-  await page.getByRole('button', { name: 'Collapse adjustments', exact: true }).click();
+  await page.getByRole('button', { name: 'Reset All', exact: true }).filter({ visible: true }).click();
+  await expect(page.getByRole('heading', { name: 'Manual Adjustments' })).toBeVisible();
+  const header = page.getByTestId('adjustment-panel-header').filter({ visible: true });
+  await expect(header.locator('.lucide-chevron-down')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('tablet-header.png') });
+  await header.click({ position: { x: 3, y: 3 } });
   await expect(page.getByRole('heading', { name: 'Manual Adjustments' })).not.toBeVisible();
 });

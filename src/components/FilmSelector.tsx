@@ -1,3 +1,4 @@
+import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { MargarineCard } from './MargarineCard';
 import { FILM_LIST } from '../films/registry';
@@ -30,15 +31,14 @@ export const FilmSelector: React.FC = () => {
           <span className="text-slate-300 font-medium flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5 text-amber-400" /> Film Strength
           </span>
-          <button
+          <ResetValueButton
             type="button"
             onClick={() => setAdjustment('filmStrength', DEFAULT_ADJUSTMENTS.filmStrength)}
             aria-label="Reset Film Strength to default"
-            title="Reset Film Strength to default (100%)"
             className="p-0 rounded-sm text-amber-400 font-mono text-xs font-semibold hover:bg-amber-500/10 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-amber-400 cursor-pointer touch-manipulation transition-colors"
           >
             {adjustments.filmStrength}%
-          </button>
+          </ResetValueButton>
         </div>
         <input
           type="range"
@@ -52,6 +52,7 @@ export const FilmSelector: React.FC = () => {
         />
       </div>
 
+      <p className="px-3.5 py-2 text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
       {/* Film Profile Cards List */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-0">
         {FILM_LIST.map((profile) => {
