@@ -77,8 +77,8 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 
 - `beta`는 실험 기능 작업 브랜치다. `npm run dev:beta`, `npm run build:beta`, `npm run preview:beta`는 `/AGPilot0007/beta/`를 사용한다. 베타 산출물은 Git 제외 `dist-beta/`에 저장한다. CI의 `GITHUB_REF_NAME=beta`도 베타 경로를 선택한다.
 - 베타 PWA는 별도 이름·scope·start_url·캐시 ID를 사용한다. 운영 서비스 워커 설정에는 beta 경로의 navigation fallback 제외 규칙을 둔다. 운영에 해당 설정을 반영하기 전에는 기존 서비스 워커가 beta 탐색을 가로챌 수 있다.
-- `.github/workflows/beta.yml`은 beta push 시 LUT 생성·단위 검사·베타 빌드·일반 artifact 업로드만 한다. Pages 배포 권한과 배포 단계는 없다. 기존 배포 워크플로는 main에서만 실행한다.
-- 공개 beta 게시에는 운영 루트와 beta 하위 폴더를 함께 포함하는 Pages 산출물이 필요하다. beta만 단독으로 Pages 배포하지 않는다. main 병합·운영 배포는 최종 승인 후 진행한다. 빌드 경로 설정과 공개 URL 배포 완료를 구분해 보고한다.
+- `.github/workflows/beta.yml`은 beta push 시 LUT 생성·단위 검사·베타 빌드 후 마지막 성공 main 배포 산출물과 합쳐 Pages에 게시한다. 운영 소스 브랜치를 병합하지 않는다. `tools/deployment/fetch-production.mjs`는 main 배포 artifact 또는 같은 main SHA의 90일 보관 snapshot만 사용하며 없으면 배포를 중단한다.
+- `tools/deployment/assemble-pages.mjs`는 운영 루트와 beta 하위 폴더를 `.pages-site/`에 합친다. 운영 파일은 sw.js를 제외하고 바이트 일치를 검사한다. 운영 SW에는 beta navigation fallback 제외와 기존 캐시 방문자를 beta로 재탐색하는 activate handler를 추가하고, beta 캐시까지 매칭하는 구형 Workbox 전역 캐시 정리는 우회한다. 운영 precache의 revision 정리는 유지된다. beta를 단독 배포하지 않는다. 두 워크플로는 pages concurrency로 직렬화한다. main용 워크플로도 최신 성공 beta artifact를 포함하도록 준비되어 있으며 main 반영은 사용자 승인 후 수행한다.
 - 같은 origin의 IndexedDB는 경로로 격리되지 않는다. beta 레시피는 별도 `hd2lab_film_studio_beta_recipes_v1` 키를 사용하여 운영 레시피와 분리한다.
 
 ## RETRO 90 / Date Imprint (beta)
@@ -91,3 +91,7 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - 신규 레시피 스키마는 2이며 camera 설정을 저장한다. 스키마 1을 읽을 때 날짜 OFF·추가 효과 0을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
 - FS-010만 생성: `npm run generate-luts -- --only FS-010`. 기존 LUT 변경은 승인 없이 허용하지 않으며 생성 전후 해시를 비교한다.
 - 필수 검증: `npm test`, `npx playwright test`, `npm run build:beta`, 운영 base 빌드. 신규 `tests/e2e/retro90.spec.ts`는 로컬 EXIF fixture, 날짜 UI/레시피/실제 PNG 출력, JPEG/PNG 렌더 일치·원본/Split·Context Loss 복구를 확인한다. 색/성능 비교와 증거는 `.private/`에만 둔다.
+
+- 공개 beta 배포는 승인된 동작이다. GitHub Pages 환경의 main/beta 브랜치 허용 정책을 유지하며, 운영 기능 변경의 main 병합 승인은 별개다. 게시 후 새 방문자와 기존 운영 SW 캐시 방문자, 두 경로의 사진 편집·내보내기·오프라인 동작을 각각 확인한다.
+
+- 현재 main 브랜치의 과거 워크플로는 beta 폴더를 보존하지 않는다. 이 PR의 통합 배포 워크플로를 main에 승인 반영하기 전에는 과거 main 배포를 재실행하지 않는다. beta 배포는 승인된 운영 snapshot과 최신 beta를 함께 게시한다.
