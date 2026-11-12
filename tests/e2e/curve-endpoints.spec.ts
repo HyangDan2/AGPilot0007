@@ -30,7 +30,7 @@ test('both curve endpoints move horizontally and vertically, reset and round-tri
  const openRecipes=async()=>{if(isMobile){await page.locator('#main-nav-menu-button').click();await page.getByRole('button',{name:'Film Recipes',exact:true}).click();}else await page.getByRole('button',{name:'Recipes',exact:true}).click();};
  await openRecipes();const modal=page.getByRole('dialog',{name:'Film Recipe Manager'});await modal.locator('input[type=text]').fill('Moved endpoints');await modal.getByRole('button',{name:'Save',exact:true}).click();
  const downloading=page.waitForEvent('download');await modal.getByTitle('Export JSON',{exact:true}).click();const stream=await(await downloading).createReadStream();const chunks:Buffer[]=[];for await(const c of stream!)chunks.push(Buffer.from(c));const json=Buffer.concat(chunks).toString(),recipe=JSON.parse(json);
- expect(recipe.schemaVersion).toBe(5);expect(recipe.curves.white[0]).toEqual([40/255,20/255]);expect(recipe.curves.white[1]).toEqual([190/255,220/255]);
+ expect(recipe.schemaVersion).toBe(6);expect(recipe.curves.white[0]).toEqual([40/255,20/255]);expect(recipe.curves.white[1]).toEqual([190/255,220/255]);
  await modal.locator('input[type=file]').setInputFiles({name:'endpoints.json',mimeType:'application/json',buffer:Buffer.from(json)});await modal.getByRole('button',{name:'Apply',exact:true}).first().click();
  await page.getByTestId('tone-curve-toggle').filter({visible:true}).click();await expect(input).toHaveValue('40');await expect(output).toHaveValue('20');
  await page.getByRole('button',{name:'전체 커브 초기화'}).click();await expect(input).toHaveValue('0');await page.getByRole('button',{name:'Curve point 2',exact:true}).focus();await expect(input).toHaveValue('255');await expect(output).toHaveValue('255');

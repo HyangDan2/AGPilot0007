@@ -88,7 +88,7 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - 필름 변경은 날짜·광학 효과 설정값을 보존한다. 날짜는 모든 필터에 적용하며 광학 효과는 지원 필터에서만 적용한다. 필터 전환·Undo/Redo·레시피 적용 시 전용 설정창을 닫고, RETRO 90으로 돌아오면 보존한 설정을 사용한다. 보정 Reset은 날짜를 유지한다. Camera Effects Reset은 날짜와 광학 효과를 초기화한다. Undo/Redo는 색·필름·날짜·광학 효과를 함께 복원하며, 새 사진은 현재 설정으로 이력을 새로 시작한다.
 - 날짜는 자체 7세그먼트 Canvas 벡터를 작은 투명 텍스처로 생성해 공통 WebGL 렌더러에서 필름 처리 후 합성한다. 사진 좌표·짧은 변 비율로 크기·여백·발광을 계산하고 프리뷰/내보내기에 동일하게 적용한다. 원본 보기에는 숨기고 Split은 보정 영역에만 합성한다. 설정·출력 크기가 같으면 텍스처를 재사용한다.
 - Glow/Halation/Softness는 0이면 우회한다. Standard는 주변 4샘플, High는 8샘플을 사용하며 추가 전체 해상도 버퍼/다중 패스를 할당하지 않는다. 고해상도 및 실기기 성능을 브라우저 에뮬레이션 수치로 보장하지 않는다.
-- 신규 레시피 스키마는 5이며 camera와 curves 설정을 저장한다. 스키마 1·2·3·4도 읽으며 누락된 camera는 날짜 OFF·추가 효과 0, curves는 대각선을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
+- 신규 레시피 스키마는 5이며 camera와 curves 설정을 저장한다. 스키마 1·2·3·4·5도 읽으며 누락된 camera는 날짜 OFF·추가 효과 0, curves는 대각선을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
 - FS-010만 생성: `npm run generate-luts -- --only FS-010`. 기존 LUT 변경은 승인 없이 허용하지 않으며 생성 전후 해시를 비교한다.
 - 필수 검증: `npm test`, `npx playwright test`, `npm run build:beta`, 운영 base 빌드. 신규 `tests/e2e/retro90.spec.ts`는 로컬 EXIF fixture, 날짜 UI/레시피/실제 PNG 출력, JPEG/PNG 렌더 일치·원본/Split·Context Loss 복구를 확인한다. 색/성능 비교와 증거는 `.private/`에만 둔다.
 
@@ -112,17 +112,26 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 
 - Camera Effects 설정은 조정 슬라이더 패널 안에 렌더링하지 않는다. 사진 workspace 안의 별도 스크롤 오버레이로 표시하고 닫기·Escape를 지원한다. 모바일 조정 시트와 태블릿 조정 패널은 카메라 아이콘 실행 시에도 닫아 오버레이를 가리지 않는다. 톤 커브와 카메라 오버레이는 상호 배타적이며 어느 쪽도 사진 지오메트리를 변경하지 않는다.
 
-- 톤 커브 끝점은 0~255 입력/출력을 드래그·숫자·키보드로 조절한다. 인접 점과 최소 1/1024 입력 간격을 유지한다. 끝점 바깥 구간은 해당 끝점 출력으로 고정하며 그래프/텍스처에 모두 표시한다. 입력 양 끝이 0/255이고 모든 점이 대각선 위인 경우만 중립 커브로 우회한다. 초기화는 [0,0]→[255,255]를 복원한다. 신규 레시피는 스키마 5로 저장하고 1~4도 읽는다.
+- 톤 커브 끝점은 0~255 입력/출력을 드래그·숫자·키보드로 조절한다. 인접 점과 최소 1/1024 입력 간격을 유지한다. 끝점 바깥 구간은 해당 끝점 출력으로 고정하며 그래프/텍스처에 모두 표시한다. 입력 양 끝이 0/255이고 모든 점이 대각선 위인 경우만 중립 커브로 우회한다. 초기화는 [0,0]→[255,255]를 복원한다. 신규 레시피는 스키마 6로 저장하고 1~4도 읽는다.
 
 
-## Color Mixer (beta)
+## Color Lab (beta)
 
-- 공용 아이콘 순서는 Color Mixer → Tone Curve → Camera Effects다. 세 오버레이는 상호 배타적이며 활성화 시 모바일/태블릿 조정 패널을 닫는다. 색상 칩은 필터 영역 위, 설정은 사진 위 스크롤 패널로 표시한다. 사진 크기·zoom/pan은 유지한다.
+- 공용 아이콘 순서는 Color Lab → Tone Curve → Camera Effects다. 세 오버레이는 상호 배타적이며 활성화 시 모바일/태블릿 조정 패널을 닫는다. 색상 칩은 필터 영역 위, 설정은 사진 위 스크롤 패널로 표시한다. 사진 크기·zoom/pan은 유지한다.
 - 기존 전체 채도는 Global Saturation으로 표시한다. 신규 믹서는8색(Red/Orange/Yellow/Green/Aqua/Blue/Purple/Magenta)의 H/S/L을 색상별·항목별·전체 보기에서 같은 데이터로 조절한다. 숫자 버튼은 해당 값 초기화, 정밀 입력은 접이식 숫자 필드다. 믹서 전체 초기화는 전체 채도를 바꾸지 않으며 Reset All은 믹서도 초기화한다.
-- Point Color는 사진의 믹서 적용 전 색을 최대8개 저장한다. H/S/L Shift, 각 성분 Range, 공통 Feather, 활성/삭제/초기화, Visualize Range를 지원한다. 회색·투명/사진 밖 영역은 선택하지 않고 안내한다. 같은 색은 사진 전체에서 바뀌며 공간 마스크 기능이 아니다.
-- 처리 순서는 기존 기본보정/LUT/커브 → Mixer/Point Color → Global Saturation → 광학/질감 → 날짜다. 0값·비활성 믹서는 완전 우회한다. 색상 범위는 변환 전 기준색으로 고정하고 순환 Hue/부드러운 경계/저채도 보호를 사용한다. Luminance는 bounded HSL 밝기 이동이며 Adobe 수치와의 동일성을 주장하지 않는다.
+- Color Focus는 사진의 믹서 적용 전 색을 최대8개 저장한다. H/S/L Shift, 각 성분 Range, 공통 Feather, 활성/삭제/초기화, Visualize Range를 지원한다. 회색·투명/사진 밖 영역은 선택하지 않고 안내한다. 같은 색은 사진 전체에서 바뀌며 공간 마스크 기능이 아니다.
+- 처리 순서는 기존 기본보정/LUT/커브 → Spectrum/Color Focus → Global Saturation → 광학/질감 → 날짜다. 0값·비활성 믹서는 완전 우회한다. 색상 범위는 변환 전 기준색으로 고정하고 순환 Hue/부드러운 경계/저채도 보호를 사용한다. Luminance는 bounded HSL 밝기 이동이며 Adobe 수치와의 동일성을 주장하지 않는다.
 - 스포이트·직접 조정 시작 때만 reference 렌더를 수행하여3×3 RGBA 픽셀을 읽고 즉시 일반 프레임을 복구한다. reference는 커브 후/믹서 전이며 전체 채도·광학/그레인·날짜·마스크·UI를 제외한다. canvas의 실제 화면 사각형을 사용해 zoom/pan 좌표를 역변환한다. 드래그 중 기준색/가중치는 고정하고 재샘플링하지 않는다.
 - 직접 조정은 선택 H/S/L 축을 위로+ 아래로− 조절하며 이웃 색상에 가중 적용한다. 한 드래그는 Undo 한 단계다. 방향키/Shift 방향키도 지원한다. Escape는 도구 종료 후 패널 종료 순서이며 중간 종료도 현재 보정을 한 단계로 기록한다.
-- Visualize Range와 선택 탭/색/도구는 UI 상태이며 레시피·내보내기에 포함하지 않는다. export는 colorMixer 데이터만 공통 렌더러에 전달한다. 스키마5에 mixer 값을 저장하며1~4는 중립값을 채운다. 샘플8개 상한·범위·유한수·고유 ID를 검사한다.
+- Visualize Range와 선택 탭/색/도구는 UI 상태이며 레시피·내보내기에 포함하지 않는다. export는 colorMixer 데이터만 공통 렌더러에 전달한다. 스키마6에 Color Lab 값을 저장하며1~5의 누락값만 중립값으로 채우고 기존 믹서 설정은 보존한다. 샘플8개 상한·범위·유한수·고유 ID를 검사한다.
 - 사진 제스처의 touch-action:none은 이미지/사진 배경/직접 조정 표면에만 둔다. 오버레이 패널 조상에는 두지 않아 모바일 세로 스크롤이 가능하도록 한다.
 - 관련 검사: `npm test`, `npx playwright test tests/e2e/color-mixer.spec.ts`, 전체 E2E, beta/운영 base 빌드. CPU/GPU 색상 대응, 빨강 경계·중립값·범위 마스크, 확대 후 샘플링, 마스크 제외 PNG, JPEG/PNG·Original/Split·Context Loss, 레시피/Undo·반응형·성능을 확인한다. 기밀 평가·증거는 `.private/`에만 보관한다.
+
+## Color Lab / RGB Base (beta)
+
+- 화면 명칭은 Color Lab, 탭은 Spectrum / Color Focus / RGB Base다. 내부 colorMixer 키와 기존 ID는 유지한다.
+- RGB Base는 colorMixer.rgbBase에 enabled, shadowsTint 및 RGB 각각 hue/saturation을 저장한다. 모든 조절값은 -100~100, 기본 0이다. Color Lab 전체 OFF는 세 기능을 모두 우회하며 RGB Base 전용 OFF/초기화는 Spectrum과 Color Focus를 유지한다. Reset entire Color Lab과 Reset All은 세 기능을 초기화한다.
+- RGB Base는 노출·화이트밸런스 후, 기존 톤/LUT 처리 전에 선형 RGB 기본벡터 회전·채도 행렬을 적용한다. 중립 회색 응답과 휘도를 보존하며 음수 채널은 휘도를 중심으로 색역 압축한다. 암부 Tint는 선형 휘도 마스크로 초록↔마젠타를 조정하며 검정과 밝은 영역은 유지한다. 모든 값 0 또는 OFF면 shader 완전 우회다. 기존 LUT는 변경하지 않는다.
+- RAW 카메라 프로필, Adobe 프로세스 버전 또는 Lightroom 수치 재현으로 표기하지 않는다. 프로세스 버전 선택기도 제공하지 않는다. 신규 레시피 스키마6은 RGB Base를 보존하며 구버전1~5의 누락값은 중립값으로 채운다.
+- 공통 렌더러/내보내기, History, Reset, Color Focus의 reference sampling에 같은 RGB Base 설정을 사용한다. UI/샘플 마스크는 출력되지 않는다. 사진 크기·zoom/pan을 유지하는 기존 오버레이에 7개 슬라이더를 표시하고 숫자 클릭 단일값 초기화, 기본색별/전체 초기화를 제공한다.
+- 검증: tests/rgbBase.test.ts와 tests/e2e/color-mixer.spec.ts에서 중립·비활성, RGB/암부/회색 극단값, CPU/GPU 대응, PNG/JPEG, Original/Split, Context Loss, 구레시피/저장/Undo·모바일 레이아웃을 확인한다. 실제 실행 결과·평가 이미지·성능 기록은 .private/에만 보관한다.

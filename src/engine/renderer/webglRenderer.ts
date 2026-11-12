@@ -1,3 +1,4 @@
+import {buildRGBBaseMatrix,hasRGBBaseEdits} from '../color/rgbBase';
 import { ColorMixerSettings, MIXER_COLORS, normalizeColorMixer, hasColorMixerEdits } from '../../types/colorMixer';
 import { ToneCurves } from '../../types/curves';
 import { buildCurveTexture, CURVE_SAMPLES } from '../color/userCurves';
@@ -184,7 +185,7 @@ export class WebGL2FilmRenderer {
       'u_film_strength',
       'u_compare_mode',
       'u_split_pos',
-      'u_mixer_enabled','u_mixer_reference','u_mix_bands[0]','u_point_count','u_point_color[0]','u_point_range[0]','u_point_shift[0]','u_mixer_visualize',
+      'u_rgb_base_enabled','u_rgb_base_matrix','u_shadows_tint','u_mixer_enabled','u_mixer_reference','u_mix_bands[0]','u_point_count','u_point_color[0]','u_point_range[0]','u_point_shift[0]','u_mixer_visualize',
       'u_curves', 'u_curves_enabled', 'u_endpoints', 'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
     ];
     for (const name of uniformNames) {
@@ -382,6 +383,9 @@ export class WebGL2FilmRenderer {
     gl.uniform1i(this.uniforms.u_curves_enabled, this.curvesEnabled ? 1 : 0);
     gl.uniform2f(this.uniforms.u_endpoints, (options.adjustments.blacks || 0)/100, (options.adjustments.whites || 0)/100);
     const mixer=normalizeColorMixer(options.colorMixer);
+    gl.uniform1i(this.uniforms.u_rgb_base_enabled,mixer.enabled&&hasRGBBaseEdits(mixer.rgbBase)?1:0);
+    gl.uniformMatrix3fv(this.uniforms.u_rgb_base_matrix,false,buildRGBBaseMatrix(mixer.rgbBase));
+    gl.uniform1f(this.uniforms.u_shadows_tint,mixer.rgbBase.shadowsTint/100);
     gl.uniform1i(this.uniforms.u_mixer_enabled,hasColorMixerEdits(mixer)?1:0);
     gl.uniform1i(this.uniforms.u_mixer_reference,options.mixerReference?1:0);
     gl.uniform3fv(this.uniforms['u_mix_bands[0]'],MIXER_COLORS.flatMap(c=>[mixer.bands[c].hue/1200,mixer.bands[c].saturation/100,mixer.bands[c].luminance/100]));

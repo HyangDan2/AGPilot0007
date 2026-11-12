@@ -127,7 +127,7 @@ test('camera recipes round-trip through UI and the prepared PNG contains only th
  const openRecipes=async()=>{if(isMobile){await page.locator('#main-nav-menu-button').click();await page.getByRole('button',{name:'Film Recipes',exact:true}).click();}else await page.getByRole('button',{name:'Recipes',exact:true}).click();};
  await openRecipes();const dialog=page.getByRole('dialog',{name:'Film Recipe Manager'});await dialog.locator('input[type=text]').fill('Retro date');await dialog.getByRole('button',{name:'Save',exact:true}).click();
  const downloadPromise=page.waitForEvent('download');await dialog.getByTitle('Export JSON',{exact:true}).click();const download=await downloadPromise;const stream=await download.createReadStream();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const json=Buffer.concat(chunks).toString();const recipe=JSON.parse(json);
- expect(recipe.schemaVersion).toBe(5);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
+ expect(recipe.schemaVersion).toBe(6);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
  await dialog.locator('input[type=file]').setInputFiles({name:'retro.json',mimeType:'application/json',buffer:Buffer.from(json)});await expect(dialog.getByRole('button',{name:'Apply',exact:true})).toHaveCount(2);
  await page.getByRole('button',{name:'Close recipe manager',exact:true}).click();
  if(isMobile){camera=await openCamera(page,true);}await camera.getByRole('button',{name:'Reset Camera Effects',exact:true}).click();if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();

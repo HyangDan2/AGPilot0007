@@ -11,7 +11,7 @@ import { getMargarinePreset } from '../presets/margarine';
 const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
   ? 'hd2lab_film_studio_beta_recipes_v1'
   : 'hd2lab_film_studio_recipes_v1';
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {

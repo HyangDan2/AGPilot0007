@@ -1,3 +1,4 @@
+import { RGB_BASE_SHADER } from '../color/rgbBase';
 import { MIXER_SHADER } from '../color/colorMixer';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
 in vec2 a_position;
@@ -78,6 +79,7 @@ vec3 applyCurves(vec3 c) {
     return vec3(curveSample(w.r).g, curveSample(w.g).b, curveSample(w.b).a);
 }
 ${MIXER_SHADER}
+${RGB_BASE_SHADER}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
@@ -92,6 +94,8 @@ vec3 grade(vec3 srgb) {
     wb.g = 1.0 - u_tint * 0.20;
     wb.b = 1.0 - u_temperature * 0.25 + u_tint * 0.12;
     lin *= max(vec3(0.05), wb);
+
+    lin = applyRGBBase(lin);
 
     // 4. Highlights and Shadows (in linear space)
     float lumLin = dot(lin, vec3(0.2126, 0.7152, 0.0722));
