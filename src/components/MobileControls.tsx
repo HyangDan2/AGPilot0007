@@ -1,4 +1,5 @@
-import { ColorMixerButton, MixerToolbar } from './ColorMixer';
+import {SharpeningControls} from './Sharpening';
+import { ColorMixerButton } from './ColorMixer';
 import { ToneCurveButton, CurveToolbar } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
 import { FilterSetCard } from './FilterSet';
@@ -36,7 +37,7 @@ export const MobileControls: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdjustmentCategory>('light');
 
   const categories: AdjustmentCategory[] = ['film', 'light', 'color', 'texture'];
-  const activeItems = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === activeTab);
+  const activeItems = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === activeTab && d.key !== 'sharpness');
   const currentProfile = getMargarinePreset(activePresetId) || FILM_PROFILES[activeFilmId];
   const toggleRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -58,7 +59,7 @@ export const MobileControls: React.FC = () => {
     <div className="flex flex-col bg-[#0e1117] border-t border-[#1d232f] z-30 flex-shrink-0 select-none pb-[env(safe-area-inset-bottom)] shadow-2xl">
       {/* Horizontal Film Carousel */}
       <div data-testid="filter-area" className="relative">
-      <div className="absolute z-30 inset-x-3 top-1/2 -translate-y-1/2"><CurveToolbar /><MixerToolbar /></div>
+      <div className="absolute z-30 inset-x-3 top-1/2 -translate-y-1/2"><CurveToolbar /></div>
       <div className="py-2 px-2.5 overflow-x-auto flex space-x-2 border-b border-[#1a202c] scrollbar-none">
         {FILM_LIST.map((profile) => {
           const isSelected = activeFilmId === profile.id && !activePresetId;
@@ -164,6 +165,7 @@ export const MobileControls: React.FC = () => {
 
           {/* Sliders in active category */}
           <div className="space-y-3.5 pt-1">
+            {activeTab==='texture'&&<SharpeningControls />}
             {activeItems.map((def) => {
               const val = adjustments[def.key] ?? def.defaultValue;
               return (

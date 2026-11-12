@@ -1,3 +1,4 @@
+import { WorkspaceStrip } from './components/Workspace';
 import { FilterSetModal } from './components/FilterSet';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
@@ -113,6 +114,8 @@ export const App: React.FC = () => {
             />
           </div>
         </div>
+
+        <WorkspaceStrip />
 
         {/* Mobile Drawer Controls (Mobile Only < 768px) */}
         <div className="md:hidden flex-shrink-0">

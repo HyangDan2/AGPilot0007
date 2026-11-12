@@ -1,3 +1,4 @@
+import {SHARPENING_SHADER} from '../color/sharpening';
 import { RGB_BASE_SHADER } from '../color/rgbBase';
 import { MIXER_SHADER } from '../color/colorMixer';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
@@ -80,6 +81,7 @@ vec3 applyCurves(vec3 c) {
 }
 ${MIXER_SHADER}
 ${RGB_BASE_SHADER}
+${SHARPENING_SHADER}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
@@ -142,6 +144,7 @@ vec3 grade(vec3 srgb) {
 }
 
 void main() {
+    if(u_detail_stage==1){vec4 raw=texture(u_image,v_uv);fragColor=vec4(grade(raw.rgb),raw.a);return;}
     // Check if in split original section
     bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && v_uv.x < u_split_pos);
 
@@ -158,8 +161,9 @@ void main() {
     }
 
     vec3 srgb = rawColor.rgb;
-    vec3 color = grade(srgb);
+    vec3 color = u_detail_stage==2?gradedAt(v_uv):grade(srgb);
     if (u_mixer_reference || u_mixer_visualize >= 0) { fragColor = vec4(clamp(color,0.0,1.0),rawColor.a); return; }
+    if(u_detail_stage==2){color=sharpenColor(color);if(u_detail_mask){fragColor=vec4(color,rawColor.a);return;}}
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (max(u_optics.x, max(u_optics.y, u_optics.z)) > 0.0) {
         float shortSide = min(u_resolution.x, u_resolution.y);
@@ -185,7 +189,7 @@ void main() {
     }
 
     // 10. Sharpness (high-pass filter)
-    if (u_sharpness > 0.01) {
+    if (u_detail_stage==0 && u_sharpness > 0.01) {
         vec2 px = 1.0 / u_resolution;
         vec3 cN = texture(u_image, v_uv + vec2(0.0, -px.y)).rgb;
         vec3 cS = texture(u_image, v_uv + vec2(0.0,  px.y)).rgb;

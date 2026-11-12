@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  outputDir: '.private/e2e-artifacts',
   timeout: 35000,
   fullyParallel: false, // Run sequentially for stability on WebGL resources
   retries: 0,

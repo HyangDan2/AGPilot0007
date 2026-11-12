@@ -26,7 +26,7 @@ describe('RGB Base',()=>{
  });
  it('roundtrips v6 and groups gestures into one undo with independent reset',async()=>{
   const initial=store.getState().colorMixer,m=normalizeColorMixer(initial);m.bands.orange.hue=15;m.rgbBase.primaries.green.saturation=30;store.getState().setColorMixer(m,false);m.rgbBase.primaries.green.saturation=60;store.getState().setColorMixer(m);
-  const saved=await store.getState().saveCurrentAsRecipe('RGB Base');expect(saved.schemaVersion).toBe(6);expect(validateRecipeJSON(JSON.stringify(saved)).colorMixer).toEqual(store.getState().colorMixer);
+  const saved=await store.getState().saveCurrentAsRecipe('RGB Base');expect(saved.schemaVersion).toBe(7);expect(validateRecipeJSON(JSON.stringify(saved)).colorMixer).toEqual(store.getState().colorMixer);
   store.getState().undo();expect(store.getState().colorMixer).toEqual(initial);store.getState().redo();expect(store.getState().colorMixer.rgbBase.primaries.green.saturation).toBe(60);
   const reset=normalizeColorMixer(store.getState().colorMixer);reset.rgbBase=defaultRGBBase();store.getState().setColorMixer(reset);expect(store.getState().colorMixer.bands.orange.hue).toBe(15);store.getState().applyRecipe(saved);expect(store.getState().colorMixer.rgbBase.primaries.green.saturation).toBe(60);
  });

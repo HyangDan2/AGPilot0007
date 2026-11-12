@@ -1,3 +1,5 @@
+import {sharpeningPreviewSize} from '../types/sharpening';
+import {DetailLoupe} from './Sharpening';
 import { ColorMixerPanel } from './ColorMixer';
 import { ColorMixerSettings, HSL, MIXER_COLORS, normalizeColorMixer } from '../types/colorMixer';
 import { mixerBandWeights, rgbToHsl, pointFromColor } from '../engine/color/colorMixer';
@@ -51,6 +53,7 @@ export const Viewport: React.FC = () => {
     activePresetId,
     adjustments,
     camera,
+    sharpening,sharpeningMask,isSharpeningDragging,
     colorMixer,isColorMixerOpen,mixerTool,mixerVisualize,mixerPointId,
     isToneCurveOpen,
     curves,
@@ -97,6 +100,9 @@ export const Viewport: React.FC = () => {
   imageRef.current = image;
   const filmIdRef = useRef(activeFilmId);
   filmIdRef.current = activeFilmId;
+  const sharpRef=useRef(sharpening);sharpRef.current=sharpening;
+  const draftRef=useRef(isSharpeningDragging);draftRef.current=isSharpeningDragging;
+  const maskRef=useRef(sharpeningMask);maskRef.current=sharpeningMask;
   const mixerRef=useRef(colorMixer);mixerRef.current=colorMixer;
   const visualizeRef=useRef<string|null>(null);visualizeRef.current=isColorMixerOpen&&mixerVisualize?(mixerPointId||colorMixer.points[0]?.id||null):null;
   const lutFilmRef=useRef('');
@@ -188,17 +194,23 @@ export const Viewport: React.FC = () => {
 
       try {
         const effectiveMode = isPressHoldingRef.current ? 'original' : compareModeRef.current;
+        const current=imageRef.current,canvas=canvasRef.current;
+        const draft=draftRef.current&&sharpRef.current.mode==='advanced'&&(sharpRef.current.amount>0||maskRef.current)&&effectiveMode!=='original';
+        const target=sharpeningPreviewSize(current.previewWidth,current.previewHeight,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
+        if(canvas&&(canvas.width!==target.width||canvas.height!==target.height)){canvas.width=target.width;canvas.height=target.height;}
         renderer.render({
           adjustments: adjustmentsRef.current,
           camera: cameraRef.current,
           curves: curvesRef.current,
           colorMixer:mixerRef.current,
+          sharpening:sharpRef.current,sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
           mixerVisualize:visualizeRef.current,
           filmId: filmIdRef.current,
           compareMode: effectiveMode,
           splitPos: splitPosRef.current,
           seed: 42.0,
         });
+        window.dispatchEvent(new Event('film-preview-rendered'));
         if (isToneCurveOpenRef.current && !histogramTimer.current) histogramTimer.current = setTimeout(()=>{
           histogramTimer.current = null;
           const canvas = canvasRef.current;
@@ -314,7 +326,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -586,7 +598,7 @@ export const Viewport: React.FC = () => {
     const rect=canvas.getBoundingClientRect(),u=(clientX-rect.left)/rect.width,v=(clientY-rect.top)/rect.height;
     if(u<0||u>1||v<0||v>1)return null;
     const x=Math.min(canvas.width-1,Math.floor(u*canvas.width)),y=Math.min(canvas.height-1,Math.floor(v*canvas.height));
-    const options={adjustments:state.adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
+    const options={sharpening:state.sharpening,sharpeningMask:state.sharpeningMask,sourceWidth:state.image?.originalWidth,sourceHeight:state.image?.originalHeight,adjustments:state.adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
     try{
       renderer.render({...options,compareMode:'none',mixerReference:true,mixerVisualize:null});
       const sx=Math.max(0,x-1),sy=Math.max(0,canvas.height-1-y-1),w=Math.min(3,canvas.width-sx),h=Math.min(3,canvas.height-sy);
@@ -685,6 +697,8 @@ export const Viewport: React.FC = () => {
 
             {isColorMixerOpen&&mixerTool!=='none'&&<div data-testid="mixer-photo-tool" data-photo-overlay tabIndex={0} aria-label={mixerTool==='eyedropper'?'Pick a photo color':'Drag photo color to adjust'} className="absolute inset-0 z-10 cursor-crosshair touch-none outline-none" onPointerDown={mixerDown} onPointerMove={mixerMove} onPointerUp={mixerUp} onPointerCancel={e=>{e.stopPropagation();const g=mixerGesture.current;if(g?.pointerId===e.pointerId){commitMixerGesture();g.pointerId=null;}}} onKeyDown={e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();applyTarget((e.key==='ArrowUp'?1:-1)*(e.shiftKey?10:1),true,true);}}}/>}
             <ColorMixerPanel />
+            {sharpeningMask&&<button type="button" data-photo-overlay onClick={()=>useEditorStore.getState().setSharpeningMask(false)} className="absolute right-3 top-3 z-30 rounded border border-slate-500 bg-[#111722] px-2 py-1 text-xs text-amber-300">마스크 보기 종료 ×</button>}
+            <DetailLoupe />
             <>{isToneCurveOpen && <Histogram bins={histogram} />}</>
             <ToneCurveOverlay controlWidth={Math.max(32,Math.min(360,containerSize.width-24))} size={Math.max(32,Math.min(360,containerSize.width-24,containerSize.height-100,displaySize.width,displaySize.height))} />
             <CameraEffects />

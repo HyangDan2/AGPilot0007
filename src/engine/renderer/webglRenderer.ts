@@ -1,3 +1,4 @@
+import {SharpeningSettings,normalizeSharpening} from '../../types/sharpening';
 import {buildRGBBaseMatrix,hasRGBBaseEdits} from '../color/rgbBase';
 import { ColorMixerSettings, MIXER_COLORS, normalizeColorMixer, hasColorMixerEdits } from '../../types/colorMixer';
 import { ToneCurves } from '../../types/curves';
@@ -11,6 +12,11 @@ import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
 
 export interface RenderOptions {
+  sharpening?:SharpeningSettings;
+  sharpeningMask?:boolean;
+  sharpeningDraft?:boolean;
+  sourceWidth?:number;
+  sourceHeight?:number;
   colorMixer?: ColorMixerSettings;
   mixerReference?: boolean;
   mixerVisualize?: string | null;
@@ -24,6 +30,11 @@ export interface RenderOptions {
 }
 
 export class WebGL2FilmRenderer {
+  private detailTexture:WebGLTexture|null=null;
+  private detailFbo:WebGLFramebuffer|null=null;
+  private detailSize='';
+  private imageWidth=1;
+  private imageHeight=1;
   private canvas: HTMLCanvasElement;
   private gl: WebGL2RenderingContext | null = null;
   private program: WebGLProgram | null = null;
@@ -98,6 +109,7 @@ export class WebGL2FilmRenderer {
 
     this.canvas.addEventListener('webglcontextrestored', () => {
       console.log('WebGL2 context restored. Reinitializing pipeline...');
+      this.detailTexture=null;this.detailFbo=null;this.detailSize='';
       this.imageTexture = null;
       this.lutTexture = null;
       this.stampTexture = null;
@@ -168,6 +180,7 @@ export class WebGL2FilmRenderer {
 
     // Cache uniforms
     const uniformNames = [
+      'u_graded','u_detail_stage','u_detail','u_source_size','u_detail_mask','u_detail_fast',
       'u_image',
       'u_lut',
       'u_lut_size',
@@ -271,6 +284,9 @@ export class WebGL2FilmRenderer {
       );
     }
 
+    const dom=imageSource as any;
+    this.imageWidth=isDomSource?(dom.naturalWidth||dom.width):(width||this.canvas.width);
+    this.imageHeight=isDomSource?(dom.naturalHeight||dom.height):(height||this.canvas.height);
     const err = gl.getError();
     if (err !== gl.NO_ERROR) {
       console.error('WebGL error during setImage (texImage2D):', err);
@@ -418,12 +434,43 @@ export class WebGL2FilmRenderer {
     if (this.uniforms.u_split_pos) gl.uniform1f(this.uniforms.u_split_pos, options.splitPos);
     if (this.uniforms.u_seed) gl.uniform1f(this.uniforms.u_seed, options.seed ?? 42.0);
 
+    const sharpening=normalizeSharpening(options.sharpening,adj.sharpness);
+    if(this.uniforms.u_sharpness)gl.uniform1f(this.uniforms.u_sharpness,sharpening.mode==='legacy'?sharpening.amount/100:0);
+    const detail=(options.sharpeningMask||sharpening.mode==='advanced'&&sharpening.amount>0)&&!options.mixerReference&&!options.mixerVisualize&&options.compareMode!=='original';
+    gl.uniform1i(this.uniforms.u_detail_fast,options.sharpeningDraft?1:0);
+    gl.uniform1i(this.uniforms.u_detail_stage,0);
+    gl.uniform1i(this.uniforms.u_detail_mask,options.sharpeningMask?1:0);
+    gl.uniform4f(this.uniforms.u_detail,sharpening.amount/100,sharpening.radius,sharpening.detail/100,sharpening.masking/100);
+    gl.uniform2f(this.uniforms.u_source_size,options.sourceWidth||this.imageWidth,options.sourceHeight||this.imageHeight);
+    if(detail){
+      this.ensureDetailTarget();
+      gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,null);gl.uniform1i(this.uniforms.u_graded,4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,this.detailFbo);
+      gl.uniform1i(this.uniforms.u_detail_stage,1);
+      gl.bindVertexArray(this.vao);gl.drawArrays(gl.TRIANGLES,0,6);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+      gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTexture);gl.uniform1i(this.uniforms.u_graded,4);
+      gl.uniform1i(this.uniforms.u_detail_stage,2);
+    }else if(this.detailTexture&&!options.mixerReference&&!options.mixerVisualize&&sharpening.amount===0&&!options.sharpeningMask){gl.deleteTexture(this.detailTexture);gl.deleteFramebuffer(this.detailFbo);this.detailTexture=null;this.detailFbo=null;this.detailSize='';}
     // Draw
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
   }
 
+  private ensureDetailTarget(){
+    const gl=this.gl!;const key=`${this.canvas.width}x${this.canvas.height}`;
+    if(this.detailTexture&&this.detailSize===key)return;
+    if(this.detailTexture)gl.deleteTexture(this.detailTexture);if(this.detailFbo)gl.deleteFramebuffer(this.detailFbo);
+    this.detailTexture=gl.createTexture();this.detailFbo=gl.createFramebuffer();
+    gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTexture);
+    const floating=!!gl.getExtension('EXT_color_buffer_float');
+    gl.texImage2D(gl.TEXTURE_2D,0,floating?gl.RGBA16F:gl.RGBA8,this.canvas.width,this.canvas.height,0,gl.RGBA,floating?gl.HALF_FLOAT:gl.UNSIGNED_BYTE,null);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,this.detailFbo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.detailTexture,0);
+    if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw Error('Sharpening buffer could not be allocated');
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);this.detailSize=key;
+  }
   /**
    * Reads raw pixel data from canvas framebuffer for testing and verification.
    */
@@ -438,8 +485,10 @@ export class WebGL2FilmRenderer {
   public destroy() {
     const gl = this.gl;
     if (!gl) return;
+    if(this.detailTexture)gl.deleteTexture(this.detailTexture);if(this.detailFbo)gl.deleteFramebuffer(this.detailFbo);this.detailTexture=null;this.detailFbo=null;this.detailSize='';
     if (this.imageTexture) {
       gl.deleteTexture(this.imageTexture);
+      this.detailTexture=null;this.detailFbo=null;this.detailSize='';
       this.imageTexture = null;
     }
     if (this.lutTexture) {

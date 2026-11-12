@@ -1,3 +1,4 @@
+import {SharpeningControls} from './Sharpening';
 import { ColorMixerButton } from './ColorMixer';
 import { ToneCurveButton } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
@@ -58,7 +59,7 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
         {categories.map((cat) => {
-          const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat);
+          const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat && d.key !== 'sharpness');
           return (
             <section key={cat} className="space-y-3.5">
               <div className="flex items-center space-x-1.5 text-xs font-semibold text-amber-400/90 uppercase tracking-wider pb-1 border-b border-[#1b212c]">
@@ -67,6 +68,7 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
               </div>
 
               <div className="space-y-3">
+                {cat==='texture'&&<SharpeningControls />}
                 {items.map((def) => {
                   const val = adjustments[def.key] ?? def.defaultValue;
                   return (

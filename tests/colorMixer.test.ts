@@ -35,7 +35,7 @@ describe('Color Mixer math and persistence',()=>{
  });
  it('migrates recipes1–4 and round-trips bands/point colors in version5',async()=>{
   for(const schemaVersion of [1,2,3,4])expect(validateRecipeJSON(JSON.stringify({name:'Old',baseFilmId:'FS-001',schemaVersion})).colorMixer).toEqual(defaultColorMixer());
-  const mixer=defaultColorMixer();mixer.bands.green.hue=25;mixer.points=[pointFromColor([.2,.4,.8],0)];mixer.points[0].shift.luminance=40;store.getState().setColorMixer(mixer);const recipe=await store.getState().saveCurrentAsRecipe('Mixer');expect(recipe.schemaVersion).toBe(6);const parsed=validateRecipeJSON(JSON.stringify(recipe));expect(parsed.colorMixer).toEqual(mixer);store.getState().resetColorMixer();store.getState().applyRecipe(parsed);expect(store.getState().colorMixer).toEqual(mixer);
+  const mixer=defaultColorMixer();mixer.bands.green.hue=25;mixer.points=[pointFromColor([.2,.4,.8],0)];mixer.points[0].shift.luminance=40;store.getState().setColorMixer(mixer);const recipe=await store.getState().saveCurrentAsRecipe('Mixer');expect(recipe.schemaVersion).toBe(7);const parsed=validateRecipeJSON(JSON.stringify(recipe));expect(parsed.colorMixer).toEqual(mixer);store.getState().resetColorMixer();store.getState().applyRecipe(parsed);expect(store.getState().colorMixer).toEqual(mixer);
  });
  it('validates reordered objects and rejects corrupt or excessive samples',()=>{
   const mixer=defaultColorMixer();const p=pointFromColor([1,0,0],0);mixer.points=[{...p,shift:{luminance:0,saturation:0,hue:0}}];expect(()=>validateColorMixer(mixer)).not.toThrow();

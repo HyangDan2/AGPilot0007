@@ -1,3 +1,4 @@
+import {OpenModal} from './Workspace';
 import React, { useRef, useState, useEffect } from 'react';
 import {
   Upload,
@@ -23,6 +24,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) => {
+  const [isOpenDialog,setIsOpenDialog]=useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value='';
     try {
       const decoded = await decodeImageFile(file);
       setImage(decoded);
@@ -204,6 +207,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
           </button>
         </div>
 
+        {isOpenDialog&&<OpenModal onClose={()=>setIsOpenDialog(false)} onPhoto={()=>fileInputRef.current?.click()}/>}
         {/* Hidden File Input */}
         <input
           type="file"
@@ -215,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
 
         {/* Open Button (Visible on all viewports) */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {if(window.matchMedia('(min-width: 1280px)').matches)setIsOpenDialog(true);else fileInputRef.current?.click();}}
           aria-label="Open photo"
           title="Open photo"
           className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-200 bg-[#181e28] hover:bg-[#222b3a] border border-[#2d3748] transition-colors cursor-pointer"

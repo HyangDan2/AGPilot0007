@@ -1,4 +1,4 @@
-import { MixerToolbar } from './ColorMixer';
+import { ExplorerPreview } from './Workspace';
 import { CurveToolbar } from './ToneCurve';
 import { FilterSetCard } from './FilterSet';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
@@ -15,6 +15,7 @@ export const FilmSelector: React.FC = () => {
 
   return (
     <aside className="w-[270px] bg-[#0d0f14] border-r border-[#1e232d] flex flex-col h-full flex-shrink-0 select-none overflow-hidden">
+      <ExplorerPreview />
       {/* Header */}
       <div className="p-3.5 border-b border-[#1c222c] flex items-center justify-between flex-shrink-0">
         <div>
@@ -58,7 +59,7 @@ export const FilmSelector: React.FC = () => {
       <p className="px-3.5 py-2 text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
       {/* Film Profile Cards List */}
       <div data-testid="filter-area" className="relative flex-1 min-h-0">
-      <div className="absolute z-30 top-3 inset-x-3"><CurveToolbar /><MixerToolbar /></div>
+      <div className="absolute z-30 top-3 inset-x-3 xl:hidden"><CurveToolbar /></div>
       <div className="h-full overflow-y-auto p-2.5 space-y-2">
         {FILM_LIST.map((profile) => {
           const isSelected = activeFilmId === profile.id && !activePresetId;

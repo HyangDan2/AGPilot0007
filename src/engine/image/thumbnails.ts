@@ -1,0 +1,13 @@
+import {WorkspaceEntry} from './workspace';
+type Job={entry:WorkspaceEntry;signal:AbortSignal;resolve:(url:string|null)=>void};
+const queue:Job[]=[];const cache=new Map<string,{url:string;bytes:number}>();let bytes=0;let running=0;let epoch=0;
+const workers=new Set<Worker>();const idleWorkers:Worker[]=[];
+async function smallBlob(file:File):Promise<Blob>{
+ let worker:Worker|null=null;const token=epoch;
+ try{worker=idleWorkers.pop()||new Worker(new URL('./thumbnail.worker.ts',import.meta.url),{type:'module'});workers.add(worker);return await new Promise<Blob>((resolve,reject)=>{worker!.onmessage=e=>e.data.blob?resolve(e.data.blob):reject(Error('thumbnail'));worker!.onerror=reject;worker!.postMessage(file);});}
+ catch{if(worker){workers.delete(worker);worker.terminate();worker=null;}const url=URL.createObjectURL(file);try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=192;c.height=Math.max(1,Math.round(img.height*192/img.width));c.getContext('2d')!.drawImage(img,0,0,c.width,c.height);return await new Promise<Blob>((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(Error('thumbnail')),'image/jpeg',.7));}finally{URL.revokeObjectURL(url);}}
+ finally{if(worker){if(token!==epoch){workers.delete(worker);worker.terminate();}else{worker.onmessage=null;worker.onerror=null;idleWorkers.push(worker);}}}
+}
+async function pump(){while(running<2&&queue.length){const job=queue.shift()!;if(job.signal.aborted){job.resolve(null);continue;}running++;const token=epoch;(async()=>{try{const file=await job.entry.getFile();if(job.signal.aborted||token!==epoch){job.resolve(null);return;}const blob=await smallBlob(file);if(job.signal.aborted||token!==epoch){job.resolve(null);return;}const url=URL.createObjectURL(blob);cache.set(job.entry.id,{url,bytes:blob.size});bytes+=blob.size;while(cache.size>64||bytes>8*1024*1024){const key=cache.keys().next().value!;const old=cache.get(key)!;URL.revokeObjectURL(old.url);bytes-=old.bytes;cache.delete(key);}job.resolve(url);}catch{job.resolve(null);}finally{running--;pump();}})();}}
+export function requestThumbnail(entry:WorkspaceEntry,signal:AbortSignal):Promise<string|null>{const hit=cache.get(entry.id);if(hit){cache.delete(entry.id);cache.set(entry.id,hit);return Promise.resolve(hit.url);}return new Promise(resolve=>{queue.push({entry,signal,resolve});pump();});}
+export function clearThumbnails(){epoch++;for(const worker of idleWorkers.splice(0)){workers.delete(worker);worker.terminate();}for(const item of cache.values())URL.revokeObjectURL(item.url);cache.clear();bytes=0;for(const job of queue.splice(0))job.resolve(null);}

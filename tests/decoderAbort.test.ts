@@ -1,0 +1,4 @@
+import {it,expect,vi} from 'vitest';
+vi.mock('../src/engine/image/captureDate',()=>({readCaptureDate:async()=>({captureDateStatus:'missing'})}));
+import {decodeImageFile} from '../src/engine/image/decoder';
+it('cancels an in-flight image decode and releases its object URL',async()=>{const previous=globalThis.Image;const sources:string[]=[];class PendingImage{onload:any=null;onerror:any=null;crossOrigin='';set src(value:string){sources.push(value);}}globalThis.Image=PendingImage as any;URL.createObjectURL=vi.fn(()=>'blob:cancelled');URL.revokeObjectURL=vi.fn();try{const controller=new AbortController(),promise=decodeImageFile(new Blob(['image']),'test.jpg',controller.signal);await Promise.resolve();controller.abort();await expect(promise).rejects.toMatchObject({name:'AbortError'});expect(sources).toEqual(['blob:cancelled','']);expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:cancelled');}finally{globalThis.Image=previous;}});

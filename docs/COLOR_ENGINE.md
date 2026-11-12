@@ -134,3 +134,10 @@ Recipe schema 6 retains colorMixer, including RGB Base; legacy 1–5 recipes ret
 Before tone/LUT processing, after linear exposure and white balance, RGB Base rotates the RGB basis vectors around the neutral axis (maximum ±30°) and scales their chroma (0.5–1.5). Row-sum and weighted column correction preserve neutral RGB and luminance. Negative-channel gamut excursions are compressed toward luminance; positive HDR values remain available to subsequent tone processing. Shadows Tint uses a smooth linear-luminance mask from 0 to 0.25 and a near-luminance-neutral green/magenta offset proportional to luminance. Black stays black. Neutral/disabled settings bypass all math exactly. The matrix is built once per render call and uploaded as a mat3; no extra pass or image buffer is allocated.
 
 This is an independent creative transform of decoded RGB images, not a RAW calibration profile or a reproduction of Adobe processing. Recipe schema 6 stores settings under colorMixer.rgbBase; schemas 1–5 with absent settings migrate to neutral values. Spectrum/Color Focus processing order remains unchanged.
+
+
+### Detailed sharpening
+
+Recipe v7 stores amount/radius/detail/masking and advanced/legacy mode. Legacy values retain the previous Laplacian path. Advanced sharpening grades the source into one reusable intermediate FBO, then applies two-scale luminance sharpening with a smooth edge mask and bounded halo gain. Source-pixel radius is normalized against original dimensions for preview and export. Optical effects, grain and date are applied after sharpening. Zero amount bypasses the intermediate pass exactly. Reference color sampling skips sharpening; Original bypasses all edits, and Split composites the actual input against the final result.
+
+The intermediate uses RGBA16F when renderable or RGBA8 otherwise. Active flat regions may differ by one output byte due to intermediate quantization. Four directions are used during a live drag and eight at final quality; exports never use draft/mask UI flags. Mask and source-pixel detail views remain preview-only. No Adobe implementation or numeric equivalence is claimed.
