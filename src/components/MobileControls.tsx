@@ -148,7 +148,6 @@ export const MobileControls: React.FC = () => {
             ))}
           </div>
 
-          <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
           {/* Sliders in active category */}
           <div className="space-y-3.5 pt-1">
             {activeItems.map((def) => {
@@ -183,6 +182,7 @@ export const MobileControls: React.FC = () => {
             })}
           </div>
           </div>
+          <p className="px-3 pb-3 text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
         </section>
       )}
     </div>
