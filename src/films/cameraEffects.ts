@@ -3,12 +3,12 @@ import type { FilmId } from '../types/film';
 import { CameraSettings, DEFAULT_CAMERA, normalizeCamera } from '../types/camera';
 
 export function getCameraEffects(filmId?: FilmId) {
-  return filmId ? FILM_PROFILES[filmId]?.cameraEffects || [] : [];
+  return filmId && FILM_PROFILES[filmId] ? [...new Set(['dateStamp' as const, ...(FILM_PROFILES[filmId].cameraEffects || [])])] : [];
 }
 export function supportsCameraEffects(filmId?: FilmId) {
   return getCameraEffects(filmId).length > 0;
 }
-// Fail closed for unsupported/unspecified profiles, including restored recipes.
+// Date imprint is shared by known profiles; optical effects remain profile-scoped.
 export function getEffectiveCamera(filmId: FilmId | undefined, settings?: CameraSettings): CameraSettings {
   const effects = getCameraEffects(filmId);
   if (!effects.length) return DEFAULT_CAMERA;

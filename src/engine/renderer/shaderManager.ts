@@ -19,6 +19,9 @@ out vec4 fragColor;
 
 uniform sampler2D u_image;
 uniform sampler3D u_lut;
+uniform sampler2D u_curves;
+uniform bool u_curves_enabled;
+uniform vec2 u_endpoints;
 uniform float u_lut_size;
 uniform vec2 u_resolution;
 
@@ -63,6 +66,16 @@ float hash(vec2 p, float s) {
     return fract(p.x * p.y);
 }
 
+vec4 curveSample(float x) {
+    float index = clamp(x, 0.0, 1.0) * 1023.0;
+    int lo = int(floor(index));
+    return mix(texelFetch(u_curves, ivec2(lo, 0), 0), texelFetch(u_curves, ivec2(min(lo+1,1023), 0), 0), fract(index));
+}
+vec3 applyCurves(vec3 c) {
+    if (!u_curves_enabled) return c;
+    vec3 w = vec3(curveSample(c.r).r, curveSample(c.g).r, curveSample(c.b).r);
+    return vec3(curveSample(w.r).g, curveSample(w.g).b, curveSample(w.b).a);
+}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
@@ -99,12 +112,18 @@ vec3 grade(vec3 srgb) {
         srgbGraded = clamp(srgbGraded, 0.0, 1.0);
     }
 
+    if (any(notEqual(u_endpoints, vec2(0.0)))) {
+        vec3 t = clamp(srgbGraded, 0.0, 1.0);
+        srgbGraded = clamp(srgbGraded + u_endpoints.x * 0.15 * pow(vec3(1.0)-t,vec3(4.0)) + u_endpoints.y * 0.15 * pow(t,vec3(4.0)), 0.0, 1.0);
+    }
     // 7. Apply 3D LUT with half-texel offset for accurate lattice sampling
     vec3 lutCoord = (clamp(srgbGraded, 0.0, 1.0) * (u_lut_size - 1.0) + 0.5) / u_lut_size;
     vec3 lutSample = texture(u_lut, lutCoord).rgb;
 
     // 8. Film strength mix
     vec3 color = mix(srgbGraded, lutSample, u_film_strength);
+
+    color = applyCurves(color);
 
     // 9. Saturation
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));

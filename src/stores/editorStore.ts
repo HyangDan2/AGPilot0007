@@ -1,3 +1,4 @@
+import { ToneCurves, CurveChannel, CurvePoint, defaultCurves, normalizeCurves, identityPoints } from '../types/curves';
 import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects';
 import { CameraSettings, DateStampSettings, OpticalSettings, normalizeCamera } from '../types/camera';
 import { RETRO90 } from '../films/retro90';
@@ -9,11 +10,18 @@ import { loadSavedRecipes, persistRecipes, validateRecipeJSON } from './recipeSt
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
 
-interface EditorSnapshot { camera: CameraSettings; adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
+interface EditorSnapshot { curves: ToneCurves; camera: CameraSettings; adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
 
 export type AppView = 'home' | 'editor';
 
 interface EditorState {
+  curves: ToneCurves;
+  isToneCurveOpen: boolean;
+  curveChannel: CurveChannel;
+  toggleToneCurve: () => void;
+  setCurveChannel: (channel: CurveChannel) => void;
+  setCurve: (channel: CurveChannel, points: CurvePoint[], commit?: boolean) => void;
+  resetCurves: (all?: boolean) => void;
   camera: CameraSettings;
   hasOldSchoolSettings: boolean;
   isCameraEffectsOpen: boolean;
@@ -73,10 +81,28 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
+  curves: defaultCurves(),
+  isToneCurveOpen: false,
+  curveChannel: 'white',
+  toggleToneCurve: () => set({isToneCurveOpen: !get().isToneCurveOpen, isCameraEffectsOpen: false}),
+  setCurveChannel: curveChannel => set({curveChannel}),
+  setCurve: (channel, points, commit = true) => {
+    const state = get();
+    const curves = normalizeCurves({...state.curves, [channel]: points});
+    if (!commit) { set({curves}); return; }
+    const snapshot = {curves, camera: normalizeCamera(state.camera), adjustments: {...state.adjustments}, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId};
+    if (JSON.stringify(snapshot) === JSON.stringify(state.history[state.historyIndex])) return;
+    const history = [...state.history.slice(0,state.historyIndex+1), snapshot].slice(-50);
+    set({curves, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo:false});
+  },
+  resetCurves: (all = false) => {
+    if (all) set({curves: defaultCurves()});
+    get().setCurve(get().curveChannel, identityPoints());
+  },
   camera: normalizeCamera(),
   hasOldSchoolSettings: false,
   isCameraEffectsOpen: false,
-  toggleCameraEffects: () => { if (supportsCameraEffects(get().activeFilmId)) set({ isCameraEffectsOpen: !get().isCameraEffectsOpen }); },
+  toggleCameraEffects: () => { if (supportsCameraEffects(get().activeFilmId)) set({ isCameraEffectsOpen: !get().isCameraEffectsOpen, isToneCurveOpen: false }); },
   isFilterSetOpen: false,
   currentView: 'home',
   image: null,
@@ -92,7 +118,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activePresetId: null,
   lastPresetId: MARGARINE_PRESETS[0].id,
   isMargarineOpen: false,
-  history: [{ camera: normalizeCamera(), adjustments: { ...DEFAULT_ADJUSTMENTS }, activeFilmId: 'FS-001', activePresetId: null }],
+  history: [{ curves: defaultCurves(), camera: normalizeCamera(), adjustments: { ...DEFAULT_ADJUSTMENTS }, activeFilmId: 'FS-001', activePresetId: null }],
   historyIndex: 0,
   canUndo: false,
   canRedo: false,
@@ -105,7 +131,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   applyMargarine: (id) => {
     const preset = getMargarinePreset(id);
     if (!preset) return;
-    const snapshot = { camera: normalizeCamera(get().camera), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
+    const snapshot = { curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
     set({ isCameraEffectsOpen: false, ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
   },
@@ -113,6 +139,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   closeFilterSet: () => set({ isFilterSetOpen: false }),
   applyOldSchool: () => {
     const snapshot: EditorSnapshot = {
+      curves: normalizeCurves(get().curves),
       activeFilmId: 'FS-010', activePresetId: null,
       adjustments: { ...DEFAULT_ADJUSTMENTS, ...RETRO90.defaultAdjustments },
       camera: get().hasOldSchoolSettings ? normalizeCamera(get().camera) : normalizeCamera({ ...get().camera, optics: { glow: 12, halation: 8, softness: 8, quality: 'standard' } }),
@@ -125,23 +152,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!getCameraEffects(state.activeFilmId).includes('dateStamp')) return;
     const camera = normalizeCamera({ ...state.camera, dateStamp: { ...state.camera.dateStamp, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
-    const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     const history = [...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({ camera, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
   updateOptics: (patch) => {
     const state = get();
-    if (!supportsCameraEffects(state.activeFilmId)) return;
+    if (!getCameraEffects(state.activeFilmId).some(effect => effect !== 'dateStamp')) return;
     const camera = normalizeCamera({ ...state.camera, optics: { ...state.camera.optics, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
-    const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     const history = [...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({ camera, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
   resetCamera: () => {
     const state=get();
     if (!supportsCameraEffects(state.activeFilmId)) return;
-    const snapshot={ camera: normalizeCamera(), activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: {...state.adjustments} };
+    const snapshot={ curves: normalizeCurves(get().curves), camera: normalizeCamera(), activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: {...state.adjustments} };
     const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({...snapshot,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
   },
@@ -160,7 +187,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const camera = normalizeCamera(state.camera.dateStamp.source === 'exif' ? {
       ...state.camera, dateStamp: { ...state.camera.dateStamp, date: img.captureDate || '', enabled: state.camera.dateStamp.enabled && !!img.captureDate }
     } : state.camera);
-    const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     set({
       isCameraEffectsOpen: false,
       camera, history: [snapshot], historyIndex: 0, canUndo: false, canRedo: false,
@@ -184,7 +211,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     const newHistory = get().history.slice(0, get().historyIndex + 1);
     const camera = normalizeCamera(get().camera);
-    newHistory.push({ camera, adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
+    newHistory.push({ curves: normalizeCurves(get().curves), camera, adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
 
     set({
       camera,
@@ -205,7 +232,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     const updated = { ...current, [key]: val };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    newHistory.push({ camera: normalizeCamera(get().camera), adjustments: updated, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
+    newHistory.push({ curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: updated, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     // Limit history stack to 50
     if (newHistory.length > 50) newHistory.shift();
@@ -228,10 +255,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
     const camera = normalizeCamera({ ...get().camera, optics: get().activeFilmId === 'FS-010' ? { glow: 12, halation: 8, softness: 8, quality: 'standard' } : get().camera.optics });
-    newHistory.push({ camera, adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
+    newHistory.push({ curves: defaultCurves(), camera, adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     set({
       camera,
+      curves: defaultCurves(),
       adjustments: resetValues,
       history: newHistory,
       historyIndex: newHistory.length - 1,
@@ -295,7 +323,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      schemaVersion: 2,
+      schemaVersion: 3,
+      curves: normalizeCurves(state.curves),
       camera: normalizeCamera(state.camera),
     };
 
@@ -335,9 +364,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   applyRecipe: (recipe: CustomRecipe) => {
-    const snapshot = { camera: normalizeCamera(recipe.camera), activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
+    const snapshot = { curves: normalizeCurves(recipe.curves), camera: normalizeCamera(recipe.camera), activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
-    set({ camera: snapshot.camera, isCameraEffectsOpen: false, ...(recipe.baseFilmId === 'FS-010' ? { hasOldSchoolSettings: true } : {}), history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
+    set({ curves: snapshot.curves, camera: snapshot.camera, isCameraEffectsOpen: false, ...(recipe.baseFilmId === 'FS-010' ? { hasOldSchoolSettings: true } : {}), history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
       activeFilmId: recipe.baseFilmId,
       activePresetId: getMargarinePreset(recipe.presetId)?.id || null,
       ...(recipe.presetId && getMargarinePreset(recipe.presetId) ? { lastPresetId: recipe.presetId } : {}),

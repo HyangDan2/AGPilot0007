@@ -1,30 +1,32 @@
-import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects';
+import { getCameraEffects } from '../films/cameraEffects';
 import { FILM_PROFILES } from '../films/registry';
-import { Camera } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { isValidStampDate, localCalendarDate, DateStampSettings } from '../types/camera';
 import { ResetValueButton } from './ResetValueButton';
 
-export function CameraEffectsButton({ controls }: { controls: string }) {
-  const { activeFilmId, isCameraEffectsOpen, toggleCameraEffects } = useEditorStore();
-  if (!supportsCameraEffects(activeFilmId)) return null;
+export function CameraEffectsButton({onOpen}: {onOpen?:()=>void}) {
+  const { isCameraEffectsOpen, toggleCameraEffects } = useEditorStore();
   return <button type="button" data-testid="camera-effects-toggle" aria-label="Camera Effects" title="Camera Effects"
-    aria-expanded={isCameraEffectsOpen} aria-controls={controls} onClick={toggleCameraEffects}
+    aria-expanded={isCameraEffectsOpen} aria-controls="camera-effects-overlay" onClick={()=>{toggleCameraEffects();onOpen?.();}}
     className={`shrink-0 p-1.5 rounded-md border transition-colors ${isCameraEffectsOpen ? 'border-amber-500 bg-amber-500/15 text-amber-300' : 'border-[#303641] text-amber-400 hover:bg-amber-500/10'}`}>
     <Camera className="w-4 h-4" aria-hidden="true" />
   </button>;
 }
 
-export function CameraEffects({ id }: { id: string }) {
+export function CameraEffects() {
   const { camera, image, updateDateStamp, updateOptics, resetCamera, activeFilmId, isCameraEffectsOpen }=useEditorStore();
+  useEffect(()=>{if(!isCameraEffectsOpen)return;const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')useEditorStore.getState().toggleCameraEffects();};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);},[isCameraEffectsOpen]);
   const effects=getCameraEffects(activeFilmId);
   if (!effects.length || !isCameraEffectsOpen) return null;
   const stamp=camera.dateStamp;
   const inputClass='w-full min-w-0 rounded border border-[#303641] bg-[#0b0e14] px-2 py-1.5 text-xs text-slate-200';
-  return <section id={id} aria-label="Camera Effects settings" className="rounded-lg border border-[#293141] bg-[#121722] text-xs" data-testid="camera-effects">
-    <h3 className="p-3 text-amber-400 font-semibold">{FILM_PROFILES[activeFilmId].name} · Camera Effects</h3>
+  return <section id="camera-effects-overlay" data-photo-overlay aria-label="Camera Effects settings" className="absolute right-3 bottom-3 z-20 w-[min(300px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-y-auto overscroll-contain rounded-xl border border-[#526079] bg-[#121722]/95 shadow-2xl text-xs text-slate-200" onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onPointerUp={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()} data-testid="camera-effects">
+    <div className="sticky top-0 z-10 p-3 flex items-center justify-between bg-[#121722] border-b border-slate-700"><h3 className="text-amber-400 font-semibold">Camera Effects</h3><button type="button" aria-label="Close camera effects" onClick={()=>useEditorStore.getState().toggleCameraEffects()} className="p-1"><X className="w-4 h-4"/></button></div>
     <div className="px-3 pb-3 space-y-3">
 
+      <button type="button" onClick={()=>useEditorStore.getState().openFilterSet()} className="w-full rounded border border-[#303641] p-2 text-left text-amber-300">Film Style · {FILM_PROFILES[activeFilmId].name} →</button>
       {effects.includes('dateStamp') && <>
       <label className="flex items-center justify-between gap-2"><span>Date Imprint</span><input type="checkbox" aria-label="Date Imprint" checked={stamp.enabled} disabled={!isValidStampDate(stamp.date)} onChange={e=>updateDateStamp({enabled:e.target.checked})} className="accent-amber-500 w-4 h-4"/></label>
       <label className="block space-y-1"><span>Imprint Date</span><input type="date" aria-label="Imprint Date" min="0001-01-01" max="9999-12-31" value={stamp.date} onChange={e=>updateDateStamp({date:e.target.value,source:'manual'})} className={inputClass}/></label>

@@ -1,3 +1,4 @@
+import { ToneCurves } from '../../types/curves';
 import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
@@ -34,7 +35,8 @@ export async function prepareExportImage(
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
   camera?: CameraSettings,
-  filmId?: FilmId
+  filmId?: FilmId,
+  curves?: ToneCurves
 ): Promise<PreparedExport> {
   onProgress?.(10, 'Initializing export pipeline...');
 
@@ -91,6 +93,7 @@ export async function prepareExportImage(
     adjustments,
     camera,
     filmId,
+    curves,
     compareMode: 'none',
     splitPos: 1.0,
     seed: 42.0,
@@ -155,9 +158,10 @@ export async function exportFullResolutionImage(
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
   camera?: CameraSettings,
-  filmId?: FilmId
+  filmId?: FilmId,
+  curves?: ToneCurves
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId);
+  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId, curves);
   return {
     blob: prepared.blob,
     filename: prepared.filename,

@@ -1,4 +1,5 @@
-import { CameraEffects, CameraEffectsButton } from './CameraEffects';
+import { ToneCurveButton } from './ToneCurve';
+import { CameraEffectsButton } from './CameraEffects';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
@@ -28,9 +29,10 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
         <div className="flex items-center gap-2 min-w-0">
           <Contrast className="w-4 h-4 text-amber-400 shrink-0" />
           <h2 aria-label="Manual Adjustments" className="min-w-0 text-xs font-semibold uppercase tracking-wider text-slate-200">
-            {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="flex items-center gap-2 text-left uppercase tracking-wider hover:text-white cursor-pointer">Manual Adjustments<ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button> : 'Manual Adjustments'}
+            {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="flex items-center gap-2 text-left uppercase tracking-wider hover:text-white cursor-pointer"><span className="truncate">Adjustments</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button> : 'Adjustments'}
           </h2>
-          <CameraEffectsButton controls="desktop-camera-effects" />
+          <ToneCurveButton onOpen={onClose} />
+          <CameraEffectsButton onOpen={onClose} />
         </div>
         <div className="flex shrink-0 items-center space-x-2">
           <button
@@ -54,7 +56,6 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       {/* Adjustments Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
-        <CameraEffects id="desktop-camera-effects" />
         {categories.map((cat) => {
           const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat);
           return (
@@ -66,7 +67,7 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
 
               <div className="space-y-3">
                 {items.map((def) => {
-                  const val = adjustments[def.key];
+                  const val = adjustments[def.key] ?? def.defaultValue;
                   return (
                     <div key={def.key} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">

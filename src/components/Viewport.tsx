@@ -1,3 +1,6 @@
+import { CameraEffects } from './CameraEffects';
+import { ToneCurveOverlay, Histogram } from './ToneCurve';
+import { histogramFromPixels } from '../engine/color/userCurves';
 import { getMargarinePreset } from '../presets/margarine';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../stores/editorStore';
@@ -45,6 +48,8 @@ export const Viewport: React.FC = () => {
     activePresetId,
     adjustments,
     camera,
+    isToneCurveOpen,
+    curves,
     compareMode,
     setCompareMode,
     splitPos,
@@ -88,6 +93,12 @@ export const Viewport: React.FC = () => {
   imageRef.current = image;
   const filmIdRef = useRef(activeFilmId);
   filmIdRef.current = activeFilmId;
+  const isToneCurveOpenRef = useRef(isToneCurveOpen); isToneCurveOpenRef.current = isToneCurveOpen;
+  const curvesRef = useRef(curves); curvesRef.current = curves;
+  const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
+  const histogramTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [histogram, setHistogram] = useState<number[][] | null>(null);
+  useEffect(()=>()=>{if(histogramTimer.current)clearTimeout(histogramTimer.current);if(rafIdRef.current)cancelAnimationFrame(rafIdRef.current);histogramTimer.current=null;rafIdRef.current=null;},[]);
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
   const adjustmentsRef = useRef(adjustments);
@@ -168,11 +179,22 @@ export const Viewport: React.FC = () => {
         renderer.render({
           adjustments: adjustmentsRef.current,
           camera: cameraRef.current,
+          curves: curvesRef.current,
           filmId: filmIdRef.current,
           compareMode: effectiveMode,
           splitPos: splitPosRef.current,
           seed: 42.0,
         });
+        if (isToneCurveOpenRef.current && !histogramTimer.current) histogramTimer.current = setTimeout(()=>{
+          histogramTimer.current = null;
+          const canvas = canvasRef.current;
+          if (!canvas || !isToneCurveOpenRef.current) return;
+          const sample = histogramCanvas.current ||= document.createElement('canvas');
+          sample.width = 192; sample.height = Math.max(1,Math.round(192*canvas.height/canvas.width));
+          sample.height = Math.min(sample.height,192);
+          const ctx=sample.getContext('2d',{willReadFrequently:true});
+          if(ctx){ctx.drawImage(canvas,0,0,sample.width,sample.height);setHistogram(histogramFromPixels(ctx.getImageData(0,0,sample.width,sample.height).data));}
+        },120);
         setRendererError(null);
       } catch (err: any) {
         console.error('Render failure:', err);
@@ -277,7 +299,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -313,6 +335,7 @@ export const Viewport: React.FC = () => {
     if (!el || !image) return;
 
     const handleWheelNative = (e: WheelEvent) => {
+      if ((e.target as HTMLElement).closest('[data-photo-overlay]')) return;
       e.preventDefault();
       const currentZoom = zoomRef.current;
       const currentPan = panRef.current;
@@ -603,8 +626,11 @@ export const Viewport: React.FC = () => {
               )}
             </div>
 
+            <>{isToneCurveOpen && <Histogram bins={histogram} />}</>
+            <ToneCurveOverlay controlWidth={Math.max(32,Math.min(360,containerSize.width-24))} size={Math.max(32,Math.min(360,containerSize.width-24,containerSize.height-100,displaySize.width,displaySize.height))} />
+            <CameraEffects />
             {/* Floating Active Film Tag */}
-            <div className="absolute top-3 left-3 pointer-events-none flex items-center space-x-2 bg-[#12161f]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#242b3b] shadow-md z-10">
+            <div className="absolute top-3 right-3 pointer-events-none flex items-center space-x-2 bg-[#12161f]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#242b3b] shadow-md z-10">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span className="text-xs font-semibold text-slate-100">{currentFilm.name}</span>
               <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">({currentFilm.style})</span>

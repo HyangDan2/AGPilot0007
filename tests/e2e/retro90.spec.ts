@@ -2,25 +2,23 @@ import { test, expect, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { withExifDate } from '../helpers/exifFixture';
 
-async function openCamera(page:Page,isMobile:boolean) {
-  if(isMobile) {
-    const sheetToggle=page.getByRole('button',{name:/Adjustments \(/});
-    if(await sheetToggle.getAttribute('aria-expanded') !== 'true') await sheetToggle.click();
-  }
+async function openCamera(page:Page,_isMobile:boolean) {
   const toggle=page.getByRole('button',{name:'Camera Effects',exact:true}).filter({visible:true});
   if(await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
   return page.getByTestId('camera-effects').filter({visible:true});
 }
-test('only supported filters show the title button and restore camera settings on return',async({page,isMobile},testInfo)=>{
+test('shared camera button retains dates and profile-specific optics on return',async({page,isMobile},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await page.getByRole('button',{name:/Portrait/}).filter({visible:true}).first().click();
- await expect(page.getByTestId('camera-effects-toggle')).toHaveCount(0);
+ await expect(page.getByTestId('camera-effects-toggle').filter({visible:true})).toHaveCount(1);
  await expect(page.getByTestId('camera-effects')).toHaveCount(0);
  const card=page.getByTestId('filter-set-card').filter({visible:true});await card.click();
  const modal=page.getByRole('dialog',{name:'Filter Set',exact:true});await expect(modal).toBeVisible();
  await modal.getByRole('button',{name:/01 Old School Film/}).click();await expect(modal).not.toBeVisible();await expect(card).toHaveAttribute('aria-pressed','true');
- let camera=await openCamera(page,isMobile);
+ if(isMobile)await page.getByRole('button',{name:/Adjustments \(/}).click();
  await expect(page.getByTestId('slider-exposure').filter({visible:true})).toHaveValue('-0.35');
+ if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ let camera=await openCamera(page,isMobile);
  await expect(camera.getByRole('checkbox',{name:'Date Imprint'})).toBeDisabled();
  await expect(camera.getByRole('button',{name:'Use EXIF Date'})).toBeDisabled();
  await camera.getByLabel('Imprint Date',{exact:true}).fill('2016-03-08');await camera.getByRole('checkbox',{name:'Date Imprint'}).check();
@@ -28,12 +26,12 @@ test('only supported filters show the title button and restore camera settings o
  await camera.getByLabel('Date Glow',{exact:true}).fill('65');await camera.getByLabel('Date Size',{exact:true}).fill('4');
  await camera.getByLabel('Optical Quality',{exact:true}).selectOption('high');
  await page.screenshot({path:testInfo.outputPath('camera-effects.png')});
- if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  await page.locator('button').filter({hasText:'RIMVA'}).filter({visible:true}).first().click();
- await expect(page.getByTestId('camera-effects-toggle')).toHaveCount(0);
+ await expect(page.getByTestId('camera-effects-toggle').filter({visible:true})).toHaveCount(1);
  await expect(page.getByTestId('camera-effects')).toHaveCount(0);
  await page.getByTestId('margarine-card').filter({visible:true}).click();
- await expect(page.getByTestId('camera-effects-toggle')).toHaveCount(0);
+ await expect(page.getByTestId('camera-effects-toggle').filter({visible:true})).toHaveCount(1);
  await expect(page.getByTestId('camera-effects')).toHaveCount(0);
  await card.click();await modal.getByRole('button',{name:/Old School Film/}).click();
  camera=await openCamera(page,isMobile);
@@ -52,7 +50,7 @@ test('EXIF capture date is read locally and never silently replaced when absent'
  let camera=await openCamera(page,isMobile);
  await expect(camera.getByText(/^EXIF: 2016-03-08/)).toBeVisible();await camera.getByRole('button',{name:'Use EXIF Date'}).click();await camera.getByRole('checkbox',{name:'Date Imprint'}).check();
  await expect(camera.getByLabel('Imprint Date',{exact:true})).toHaveValue('2016-03-08');
- if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  await page.locator('input[type=file]').first().setInputFiles('public/samples/landscape_test.png');
  await expect(page.getByText('landscape_test.png',{exact:true}).filter({visible:true}).first()).toBeVisible();
  camera=await openCamera(page,isMobile);
@@ -98,12 +96,12 @@ test('shared renderer exports PNG and JPEG with date, proportional geometry, and
   for(const profile of FILM_LIST){
     const profileLut=await loadCubeLut(profile.lutFile);renderer.setLut(profileLut);
     renderer.render({...opts,filmId:profile.id});const baseline=renderer.readPixels(0,0,640,480)!;
-    renderer.render({...opts,filmId:profile.id,camera:{...camera,optics:{glow:100,halation:100,softness:100,quality:'high'}}});const masked=renderer.readPixels(0,0,640,480)!;
+    renderer.render({...opts,filmId:profile.id,camera:{...camera,dateStamp:{...camera.dateStamp,enabled:false},optics:{glow:100,halation:100,softness:100,quality:'high'}}});const masked=renderer.readPixels(0,0,640,480)!;
     unsupportedEqual.push(baseline.every((v,i)=>v===masked[i]));
   }
   const unsupportedLut=await loadCubeLut('luts/FS-009_RIMVA.cube');
   const unsupportedExports:number[][]=[];
-  for(const settings of [undefined,camera]){
+  for(const settings of [undefined,{...camera,dateStamp:{...camera.dateStamp,enabled:false}}]){
     const prepared=await prepareExportImage(image,unsupportedLut,DEFAULT_ADJUSTMENTS,{format:'image/png',quality:1,scale:1},undefined,settings,'FS-009');
     const data=Array.from(new Uint8Array(await prepared.blob.arrayBuffer()));unsupportedExports.push(data);URL.revokeObjectURL(prepared.objectUrl);
   }
@@ -125,14 +123,14 @@ test('camera recipes round-trip through UI and the prepared PNG contains only th
  await page.goto('/');await page.getByRole('button',{name:/Portrait/}).filter({visible:true}).first().click();
  await page.getByTestId('filter-set-card').filter({visible:true}).click();await page.getByRole('dialog',{name:'Filter Set',exact:true}).getByRole('button',{name:/Old School Film/}).click();
  let camera=await openCamera(page,isMobile);await camera.getByLabel('Imprint Date',{exact:true}).fill('2016-03-08');await camera.getByRole('checkbox',{name:'Date Imprint'}).check();
- if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  const openRecipes=async()=>{if(isMobile){await page.locator('#main-nav-menu-button').click();await page.getByRole('button',{name:'Film Recipes',exact:true}).click();}else await page.getByRole('button',{name:'Recipes',exact:true}).click();};
  await openRecipes();const dialog=page.getByRole('dialog',{name:'Film Recipe Manager'});await dialog.locator('input[type=text]').fill('Retro date');await dialog.getByRole('button',{name:'Save',exact:true}).click();
  const downloadPromise=page.waitForEvent('download');await dialog.getByTitle('Export JSON',{exact:true}).click();const download=await downloadPromise;const stream=await download.createReadStream();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const json=Buffer.concat(chunks).toString();const recipe=JSON.parse(json);
- expect(recipe.schemaVersion).toBe(2);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
+ expect(recipe.schemaVersion).toBe(3);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
  await dialog.locator('input[type=file]').setInputFiles({name:'retro.json',mimeType:'application/json',buffer:Buffer.from(json)});await expect(dialog.getByRole('button',{name:'Apply',exact:true})).toHaveCount(2);
  await page.getByRole('button',{name:'Close recipe manager',exact:true}).click();
- if(isMobile){camera=await openCamera(page,true);}await camera.getByRole('button',{name:'Reset Camera Effects',exact:true}).click();if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ if(isMobile){camera=await openCamera(page,true);}await camera.getByRole('button',{name:'Reset Camera Effects',exact:true}).click();if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  await openRecipes();await dialog.getByRole('button',{name:'Apply',exact:true}).first().click();
  const exportPixels=async()=>{
   await page.getByRole('button',{name:'Export photo',exact:true}).filter({visible:true}).click();await page.getByRole('button',{name:'PNG (Lossless)',exact:true}).click();await page.getByRole('button',{name:'Prepare Photo',exact:true}).click();await expect(page.getByText('Stage B: Save & Share')).toBeVisible();
@@ -140,6 +138,6 @@ test('camera recipes round-trip through UI and the prepared PNG contains only th
   await page.getByRole('button',{name:'Done',exact:true}).click();return hashes;
  };
  const on=await exportPixels();camera=await openCamera(page,isMobile);
- await camera.getByRole('checkbox',{name:'Date Imprint'}).uncheck();if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ await camera.getByRole('checkbox',{name:'Date Imprint'}).uncheck();if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  const off=await exportPixels();expect(on.outside).toBe(off.outside);expect(on.stamp).not.toBe(off.stamp);
 });
