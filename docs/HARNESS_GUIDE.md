@@ -148,3 +148,12 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - 마스크 보기와 100% 원본 픽셀 상세 창은 미리보기 전용이다. 모바일 조정 시트를 닫아도 마스크는 유지하며 사진 위 종료 버튼으로 끈다. 100% 창은 현재 화면 중심의 원본 영역을 최대384×260으로 잘라 표시하고, 닫으면 이전 zoom/pan을 복원한다. 상세 창에는 그레인·날짜를 넣지 않는다. 출력에는 마스크/상세 UI가 포함되지 않는다.
 - 레시피 스키마7은 sharpening을 저장하고1~6을 읽는다. 이전 nonzero sharpness는 legacy 처리로 보존하며 새 조절값을 편집하면 advanced로 바꾼다. 기존 LUT를 변경하지 않는다. original 비교는 보정 baseline이 아닌 실제 입력 픽셀로 검증한다. RGBA16F 중간 버퍼 양자화로 활성 상태의 평탄 영역은 GPU별 최대1byte 차이를 허용하며 Amount0은 정확 일치해야 한다.
 - 검증: tests/sharpening-workspace.test.ts, tests/workspaceSession.test.ts, tests/decoderAbort.test.ts, tests/e2e/workspace-detail.spec.ts 및 전체 회귀. 1만 항목 API 대체 테스트는 실제1만 원본 파일의 디코딩 성능 인증이 아니다. 실제 OS 폴더 권한창/실기기 모바일은 별도 수동 확인 범위다. Playwright trace/스크린샷 기본 출력은 .private/e2e-artifacts이며 기밀 평가 자료는 Git/빌드에 포함하지 않는다.
+
+## 공용 Open / 사이드바 / 테마
+
+- PC(1280px 이상)의 홈 Select Photo와 상단 Open은 uiStore의 동일한 Photo / Workspace 모달을 연다. 작은 화면은 기존 단일 사진 선택 동작을 유지한다. 사진/폴더 연결과 보정 상태는 editor/workspace store가 소유하며 uiStore는 화면 상태만 관리한다.
+- PC 하단 Workspace Explorer에는 연결을 버리는 X를 두지 않는다. 접어도 폴더명·사진 수·복구 화살표가 남고 높이/스크롤/선택을 유지한다. Photo로 새 사진을 열거나 Workspace로 폴더를 교체하는 흐름은 유지한다.
+- PC 좌우 사이드바는 독립적으로 접으며 얇은 복구 레일을 항상 남긴다. 패널 DOM을 유지해 스크롤·열린 그룹·선택·보정을 보존하고 홈 왕복에도 접힘 상태를 유지한다. 오른쪽 레일에서 Color Lab/Tone Curve/Camera Effects를 직접 열 수 있다. Open 모달의 backdrop은 사이드바 접기 버튼보다 위에 배치하여 배경 클릭을 차단한다. 작은 화면에서는 PC 접힘 상태와 무관하게 기존 태블릿/모바일 배치를 사용한다.
+- Light/Dark 테마는 PC·태블릿 상단 Sun/Moon 버튼, 작은 화면 More 메뉴에서 전환한다. 기본은 Dark이며 hd2lab_film_studio_theme 키로 선택을 기억한다. 같은 origin의 운영/베타는 테마 선호를 공유하고 레시피 DB는 기존처럼 분리한다. 저장소 사용이 불가능하면 현재 세션에서 동작한다.
+- UI 표면/글자/테두리는 CSS 변수로 테마를 바꾸며 사진·RGB 색상 칩·셰이더·LUT·출력에는 filter나 색상 변환을 적용하지 않는다. 히스토그램은 W/R/G/B 대비를 위해 중립 암부 배경을 유지한다. 초기 HTML과 앱 진입점에서 저장 테마를 적용해 재진입 시 깜박임을 줄인다. 테마는 레시피/Undo 이력에 포함하지 않는다.
+- 관련 검사: tests/uiStore.test.ts, tests/e2e/theme-sidebars.spec.ts와 전체 회귀. PC 홈/편집 Open 일치, 레일 복구·스크롤 보존, 하단 X 부재·복구, 라이트 홈/조정/Color Lab/커브, 사진 픽셀 불변·재로드 테마 보존, 모바일 넘침을 확인한다. 베타·main 배포와 각 공개 URL 및 이전 캐시 업데이트를 별개로 확인한다. 이번 사용자 지시는 beta 검증 후 main 병합·운영 배포까지 승인한 범위다.

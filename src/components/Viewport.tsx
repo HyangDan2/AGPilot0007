@@ -638,7 +638,7 @@ export const Viewport: React.FC = () => {
   const currentFilm = preset ? { ...baseFilm, name: preset.name, style: 'MARGARINE', id: 'MARGARINE' } : baseFilm;
 
   return (
-    <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#08090d] relative overflow-hidden select-none">
+    <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[var(--ui-bg-08090d)] relative overflow-hidden select-none">
       {/* Canvas Viewport Area — PERSISTENT CONTAINER OBSERVED BY RESIZEOBSERVER */}
       <div
         ref={containerRef}
@@ -677,7 +677,7 @@ export const Viewport: React.FC = () => {
                   width: `${displaySize.width}px`,
                   height: `${displaySize.height}px`,
                 }}
-                className="rounded border border-[#1e2430] bg-[#11141a] block shadow-lg"
+                className="rounded border border-[color:var(--ui-border-1e2430)] bg-[var(--ui-bg-11141a)] block shadow-lg"
               />
 
               {/* Interactive Split Divider Handle (placed over actual image display rect) */}
@@ -688,7 +688,7 @@ export const Viewport: React.FC = () => {
                   className="absolute top-0 bottom-0 w-8 -ml-4 flex items-center justify-center cursor-ew-resize z-20 group"
                 >
                   <div className="w-[2px] h-full bg-white/95 shadow-[0_0_8px_rgba(0,0,0,0.8)] group-hover:bg-amber-400 transition-colors" />
-                  <div className="w-6 h-6 rounded-full bg-[#12161f] text-amber-400 shadow-xl flex items-center justify-center text-[10px] font-bold border border-amber-500/70 absolute group-hover:scale-115 transition-transform">
+                  <div className="w-6 h-6 rounded-full bg-[var(--ui-bg-12161f)] text-[color:var(--ui-text-amber-400)] shadow-xl flex items-center justify-center text-[10px] font-bold border border-amber-500/70 absolute group-hover:scale-115 transition-transform">
                     ↔
                   </div>
                 </div>
@@ -697,24 +697,24 @@ export const Viewport: React.FC = () => {
 
             {isColorMixerOpen&&mixerTool!=='none'&&<div data-testid="mixer-photo-tool" data-photo-overlay tabIndex={0} aria-label={mixerTool==='eyedropper'?'Pick a photo color':'Drag photo color to adjust'} className="absolute inset-0 z-10 cursor-crosshair touch-none outline-none" onPointerDown={mixerDown} onPointerMove={mixerMove} onPointerUp={mixerUp} onPointerCancel={e=>{e.stopPropagation();const g=mixerGesture.current;if(g?.pointerId===e.pointerId){commitMixerGesture();g.pointerId=null;}}} onKeyDown={e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();applyTarget((e.key==='ArrowUp'?1:-1)*(e.shiftKey?10:1),true,true);}}}/>}
             <ColorMixerPanel />
-            {sharpeningMask&&<button type="button" data-photo-overlay onClick={()=>useEditorStore.getState().setSharpeningMask(false)} className="absolute right-3 top-3 z-30 rounded border border-slate-500 bg-[#111722] px-2 py-1 text-xs text-amber-300">마스크 보기 종료 ×</button>}
+            {sharpeningMask&&<button type="button" data-photo-overlay onClick={()=>useEditorStore.getState().setSharpeningMask(false)} className="absolute right-3 top-3 z-30 rounded border border-[color:var(--ui-border-slate500)] bg-[var(--ui-bg-111722)] px-2 py-1 text-xs text-[color:var(--ui-text-amber-300)]">마스크 보기 종료 ×</button>}
             <DetailLoupe />
             <>{isToneCurveOpen && <Histogram bins={histogram} />}</>
             <ToneCurveOverlay controlWidth={Math.max(32,Math.min(360,containerSize.width-24))} size={Math.max(32,Math.min(360,containerSize.width-24,containerSize.height-100,displaySize.width,displaySize.height))} />
             <CameraEffects />
             {/* Floating Active Film Tag */}
-            <div className="absolute top-3 right-3 pointer-events-none flex items-center space-x-2 bg-[#12161f]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#242b3b] shadow-md z-10">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-xs font-semibold text-slate-100">{currentFilm.name}</span>
-              <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">({currentFilm.style})</span>
-              <span className="text-[10px] text-amber-400 font-mono font-bold">
+            <div className="absolute top-3 right-3 pointer-events-none flex items-center space-x-2 bg-[var(--ui-bg-12161f)]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-[color:var(--ui-border-242b3b)] shadow-md z-10">
+              <Sparkles className="w-3.5 h-3.5 text-[color:var(--ui-text-amber-400)]" />
+              <span className="text-xs font-semibold text-[color:var(--ui-text-slate100)]">{currentFilm.name}</span>
+              <span className="text-[10px] text-[color:var(--ui-text-slate400)] font-mono hidden sm:inline">({currentFilm.style})</span>
+              <span className="text-[10px] text-[color:var(--ui-text-amber-400)] font-mono font-bold">
                 {adjustments.filmStrength}%
               </span>
             </div>
 
             {/* Error overlay if any */}
             {rendererError && (
-              <div className="absolute bottom-14 left-4 right-4 max-w-md mx-auto p-3 rounded-lg bg-red-950/90 border border-red-700 text-red-200 text-xs flex items-center gap-2 shadow-xl z-20">
+              <div className="absolute bottom-14 left-4 right-4 max-w-md mx-auto p-3 rounded-lg bg-red-950/90 border border-red-700 text-[color:var(--ui-text-red-200)] text-xs flex items-center gap-2 shadow-xl z-20">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{rendererError}</span>
               </div>
@@ -725,27 +725,27 @@ export const Viewport: React.FC = () => {
 
       {/* Responsive Status Bar */}
       {image && (
-        <footer className="h-10 bg-[#0f1217] border-t border-[#1d222d] px-3 sm:px-4 flex items-center justify-between z-10 flex-shrink-0 text-xs text-slate-400 font-mono">
+        <footer className="h-10 bg-[var(--ui-bg-0f1217)] border-t border-[color:var(--ui-border-1d222d)] px-3 sm:px-4 flex items-center justify-between z-10 flex-shrink-0 text-xs text-[color:var(--ui-text-slate400)] font-mono">
           {/* Left: Image Info */}
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <span className="truncate max-w-[110px] sm:max-w-[200px] text-slate-300 font-sans text-xs">
+            <span className="truncate max-w-[110px] sm:max-w-[200px] text-[color:var(--ui-text-slate300)] font-sans text-xs">
               {image.name}
             </span>
-            <span className="text-[#3b4455] hidden sm:inline">|</span>
+            <span className="text-[color:var(--ui-text-3b4455)] hidden sm:inline">|</span>
             <span className="hidden sm:inline">
               {image.originalWidth} × {image.originalHeight} px
             </span>
-            <span className="text-amber-500/90 text-[10px] hidden md:inline">sRGB</span>
+            <span className="text-[color:var(--ui-text-amber-500)]/90 text-[10px] hidden md:inline">sRGB</span>
           </div>
 
           {/* Center: Comparison Controls */}
-          <div className="flex items-center space-x-1 bg-[#161a22] p-0.5 rounded-lg border border-[#222938]">
+          <div className="flex items-center space-x-1 bg-[var(--ui-bg-161a22)] p-0.5 rounded-lg border border-[color:var(--ui-border-222938)]">
             <button
               onClick={() => setCompareMode('none')}
               className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
                 compareMode === 'none' && !isPressHolding
                   ? 'bg-amber-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
               }`}
             >
               Film
@@ -755,7 +755,7 @@ export const Viewport: React.FC = () => {
               className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
                 compareMode === 'split'
                   ? 'bg-amber-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
               }`}
             >
               <Columns className="w-3 h-3" /> Split
@@ -768,7 +768,7 @@ export const Viewport: React.FC = () => {
               className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
                 isPressHolding || compareMode === 'original'
                   ? 'bg-amber-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
               }`}
               title="Press and hold to view original"
             >
@@ -780,14 +780,14 @@ export const Viewport: React.FC = () => {
           <div className="flex items-center space-x-1">
             <button
               onClick={() => zoomByStep(0.8)}
-              className="p-1.5 hover:text-slate-200 transition-colors"
+              className="p-1.5 hover:text-[color:var(--ui-text-slate200)] transition-colors"
               title="Zoom Out (-)"
               aria-label="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <span
-              className="w-12 text-center text-[11px] font-mono cursor-pointer hover:text-amber-400"
+              className="w-12 text-center text-[11px] font-mono cursor-pointer hover:text-[color:var(--ui-text-amber-400)]"
               onClick={resetZoomPan}
               title="Click to reset Fit (100%)"
             >
@@ -795,7 +795,7 @@ export const Viewport: React.FC = () => {
             </span>
             <button
               onClick={() => zoomByStep(1.25)}
-              className="p-1.5 hover:text-slate-200 transition-colors"
+              className="p-1.5 hover:text-[color:var(--ui-text-slate200)] transition-colors"
               title="Zoom In (+)"
               aria-label="Zoom In"
             >
@@ -803,7 +803,7 @@ export const Viewport: React.FC = () => {
             </button>
             <button
               onClick={resetZoomPan}
-              className="p-1.5 hover:text-slate-200 transition-colors hidden sm:inline-flex"
+              className="p-1.5 hover:text-[color:var(--ui-text-slate200)] transition-colors hidden sm:inline-flex"
               title="Fit to Screen (F or 0)"
               aria-label="Fit to Screen"
             >

@@ -180,15 +180,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-        <div className="bg-[#12161f] border border-[#232b3b] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="bg-[var(--ui-bg-12161f)] border border-[color:var(--ui-border-232b3b)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-[#202737] flex items-center justify-between shrink-0">
+          <div className="px-5 py-4 border-b border-[color:var(--ui-border-202737)] flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-2.5">
-              <Download className="w-5 h-5 text-amber-400" />
+              <Download className="w-5 h-5 text-[color:var(--ui-text-amber-400)]" />
               <div>
-                <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <h2 className="text-base font-bold text-[color:var(--ui-text-slate100)] flex items-center gap-2">
                   <span>Export Final Image</span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[var(--ui-bg-slate800)] text-[color:var(--ui-text-slate300)] border border-[color:var(--ui-border-slate700)]">
                     {stage === 'ready' ? 'Stage B: Save & Share' : 'Stage A: Prepare'}
                   </span>
                 </h2>
@@ -198,7 +198,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 onClick={handleClose}
                 aria-label="Close export dialog"
-                className="p-1.5 rounded-lg hover:bg-[#1a202c] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-[var(--ui-bg-1a202c)] text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate100)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -206,31 +206,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Modal Body */}
-          <div className="p-5 space-y-4 overflow-y-auto text-xs text-slate-300">
+          <div className="p-5 space-y-4 overflow-y-auto text-xs text-[color:var(--ui-text-slate300)]">
             {/* STAGE A: Configuration */}
             {stage === 'config' && (
               <>
                 {/* Active Film & Source Specs */}
-                <div className="bg-[#171c26] p-3 rounded-xl border border-[#232a39] space-y-1.5 font-mono">
+                <div className="bg-[var(--ui-bg-171c26)] p-3 rounded-xl border border-[color:var(--ui-border-232a39)] space-y-1.5 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Selected Film:</span>
-                    <span className="text-amber-400 font-semibold">{currentFilm.name} ({currentFilm.id})</span>
+                    <span className="text-[color:var(--ui-text-slate400)]">Selected Film:</span>
+                    <span className="text-[color:var(--ui-text-amber-400)] font-semibold">{currentFilm.name} ({currentFilm.id})</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Target Resolution:</span>
-                    <span className="text-slate-200">
+                    <span className="text-[color:var(--ui-text-slate400)]">Target Resolution:</span>
+                    <span className="text-[color:var(--ui-text-slate200)]">
                       {targetW} × {targetH} px ({megapixels} MP)
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Color Contract:</span>
-                    <span className="text-slate-200">sRGB (IEC 61966-2-1)</span>
+                    <span className="text-[color:var(--ui-text-slate400)]">Color Contract:</span>
+                    <span className="text-[color:var(--ui-text-slate200)]">sRGB (IEC 61966-2-1)</span>
                   </div>
                 </div>
 
                 {/* Resolution Preset */}
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-slate-200">Output Resolution</label>
+                  <label className="font-semibold text-[color:var(--ui-text-slate200)]">Output Resolution</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: 'Full (100%)', scale: 1.0, sub: `${origW}×${origH}` },
@@ -243,12 +243,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                         onClick={() => setScalePreset(preset.scale)}
                         className={`py-2 px-2 rounded-lg border text-center transition-all ${
                           scalePreset === preset.scale
-                            ? 'bg-amber-600/20 border-amber-500 text-amber-300 font-bold'
-                            : 'bg-[#181d26] border-[#262f3f] text-slate-400 hover:text-slate-200'
+                            ? 'bg-amber-600/20 border-amber-500 text-[color:var(--ui-text-amber-300)] font-bold'
+                            : 'bg-[var(--ui-bg-181d26)] border-[color:var(--ui-border-262f3f)] text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
                         }`}
                       >
                         <div className="text-xs">{preset.label}</div>
-                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">{preset.sub}</div>
+                        <div className="text-[10px] text-[color:var(--ui-text-slate500)] font-mono mt-0.5">{preset.sub}</div>
                       </button>
                     ))}
                   </div>
@@ -256,15 +256,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
 
                 {/* Format selection */}
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-slate-200">Output Format</label>
+                  <label className="font-semibold text-[color:var(--ui-text-slate200)]">Output Format</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFormat('image/jpeg')}
                       className={`py-2 px-3 rounded-lg border text-center font-medium transition-all ${
                         format === 'image/jpeg'
-                          ? 'bg-amber-600/20 border-amber-500 text-amber-300 font-bold'
-                          : 'bg-[#181d26] border-[#262f3f] text-slate-400 hover:text-slate-200'
+                          ? 'bg-amber-600/20 border-amber-500 text-[color:var(--ui-text-amber-300)] font-bold'
+                          : 'bg-[var(--ui-bg-181d26)] border-[color:var(--ui-border-262f3f)] text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
                       }`}
                     >
                       JPEG (Compact)
@@ -274,8 +274,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       onClick={() => setFormat('image/png')}
                       className={`py-2 px-3 rounded-lg border text-center font-medium transition-all ${
                         format === 'image/png'
-                          ? 'bg-amber-600/20 border-amber-500 text-amber-300 font-bold'
-                          : 'bg-[#181d26] border-[#262f3f] text-slate-400 hover:text-slate-200'
+                          ? 'bg-amber-600/20 border-amber-500 text-[color:var(--ui-text-amber-300)] font-bold'
+                          : 'bg-[var(--ui-bg-181d26)] border-[color:var(--ui-border-262f3f)] text-[color:var(--ui-text-slate400)] hover:text-[color:var(--ui-text-slate200)]'
                       }`}
                     >
                       PNG (Lossless)
@@ -287,8 +287,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 {format === 'image/jpeg' && (
                   <div className="space-y-1.5">
                     <div className="flex justify-between font-semibold">
-                      <span className="text-slate-200">JPEG Quality</span>
-                      <span className="text-amber-400 font-mono">{Math.round(quality * 100)}%</span>
+                      <span className="text-[color:var(--ui-text-slate200)]">JPEG Quality</span>
+                      <span className="text-[color:var(--ui-text-amber-400)] font-mono">{Math.round(quality * 100)}%</span>
                     </div>
                     <input
                       type="range"
@@ -299,7 +299,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       onChange={(e) => setQuality(parseFloat(e.target.value))}
                       className="w-full accent-amber-500 cursor-pointer"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-400">
+                    <div className="flex justify-between text-[10px] text-[color:var(--ui-text-slate400)]">
                       <span>Standard (80%)</span>
                       <span>High (92%)</span>
                       <span>Maximum (100%)</span>
@@ -313,18 +313,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             {stage === 'preparing' && (
               <div className="py-8 space-y-4">
                 <div className="flex flex-col items-center justify-center space-y-3 text-center">
-                  <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-[color:var(--ui-text-amber-500)] animate-spin" />
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-100">Developing Photograph...</h3>
-                    <p className="text-xs text-slate-400 mt-1">{progress.stage}</p>
+                    <h3 className="text-sm font-semibold text-[color:var(--ui-text-slate100)]">Developing Photograph...</h3>
+                    <p className="text-xs text-[color:var(--ui-text-slate400)] mt-1">{progress.stage}</p>
                   </div>
                 </div>
                 <div className="space-y-1.5 max-w-sm mx-auto">
-                  <div className="flex justify-between text-[11px] text-slate-400">
+                  <div className="flex justify-between text-[11px] text-[color:var(--ui-text-slate400)]">
                     <span>Rendering pipeline</span>
                     <span className="font-mono">{progress.value}%</span>
                   </div>
-                  <div className="w-full h-2.5 bg-[#191e28] rounded-full overflow-hidden border border-[#232a39]">
+                  <div className="w-full h-2.5 bg-[var(--ui-bg-191e28)] rounded-full overflow-hidden border border-[color:var(--ui-border-232a39)]">
                     <div
                       className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-200 rounded-full"
                       style={{ width: `${progress.value}%` }}
@@ -338,10 +338,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             {stage === 'ready' && prepared && (
               <div className="space-y-4">
                 {/* Prepared Preview Card */}
-                <div className="relative bg-[#171c26] rounded-xl border border-[#232a39] p-3 flex gap-3.5 items-center">
+                <div className="relative bg-[var(--ui-bg-171c26)] rounded-xl border border-[color:var(--ui-border-232a39)] p-3 flex gap-3.5 items-center">
                   <div
                     onClick={() => setShowFullPreview(true)}
-                    className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border border-[#2a3447] bg-black/50 shrink-0 cursor-pointer group"
+                    className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border border-[color:var(--ui-border-2a3447)] bg-black/50 shrink-0 cursor-pointer group"
                     title="Click to preview full image"
                   >
                     <img
@@ -359,21 +359,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       <CheckCircle className="w-4 h-4 shrink-0" />
                       <span>Photo Prepared in Memory</span>
                     </div>
-                    <div className="text-xs font-mono text-slate-200 truncate" title={prepared.filename}>
+                    <div className="text-xs font-mono text-[color:var(--ui-text-slate200)] truncate" title={prepared.filename}>
                       {prepared.filename}
                     </div>
-                    <div className="flex flex-wrap gap-1.5 text-[10px] text-slate-400 font-mono">
-                      <span className="bg-[#202737] px-2 py-0.5 rounded border border-[#2b354a]">
+                    <div className="flex flex-wrap gap-1.5 text-[10px] text-[color:var(--ui-text-slate400)] font-mono">
+                      <span className="bg-[var(--ui-bg-202737)] px-2 py-0.5 rounded border border-[color:var(--ui-border-2b354a)]">
                         {prepared.width} × {prepared.height} px
                       </span>
-                      <span className="bg-[#202737] px-2 py-0.5 rounded border border-[#2b354a]">
+                      <span className="bg-[var(--ui-bg-202737)] px-2 py-0.5 rounded border border-[color:var(--ui-border-2b354a)]">
                         {prepared.format === 'image/jpeg' ? 'JPEG' : 'PNG'}
                       </span>
-                      <span className="bg-[#202737] px-2 py-0.5 rounded border border-[#2b354a] text-amber-300 font-semibold">
+                      <span className="bg-[var(--ui-bg-202737)] px-2 py-0.5 rounded border border-[color:var(--ui-border-2b354a)] text-[color:var(--ui-text-amber-300)] font-semibold">
                         {prepared.formattedSize}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 pt-0.5">
+                    <p className="text-[11px] text-[color:var(--ui-text-slate400)] pt-0.5">
                       Choose an action below. The prepared image will not need to re-render.
                     </p>
                   </div>
@@ -392,12 +392,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       <span>Save to Photos / Share</span>
                     </button>
                   ) : (
-                    <div className="p-2.5 rounded-xl bg-[#171c26] border border-[#232b3b] flex items-center justify-between text-slate-400">
+                    <div className="p-2.5 rounded-xl bg-[var(--ui-bg-171c26)] border border-[color:var(--ui-border-232b3b)] flex items-center justify-between text-[color:var(--ui-text-slate400)]">
                       <div className="flex items-center gap-2">
-                        <Share2 className="w-4 h-4 text-slate-500" />
+                        <Share2 className="w-4 h-4 text-[color:var(--ui-text-slate500)]" />
                         <span className="text-xs">Native Share unavailable in this browser</span>
                       </div>
-                      <span className="text-[10px] text-slate-500">Use Download below</span>
+                      <span className="text-[10px] text-[color:var(--ui-text-slate500)]">Use Download below</span>
                     </div>
                   )}
 
@@ -406,9 +406,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                     <button
                       type="button"
                       onClick={handleDownload}
-                      className="py-2.5 px-3 rounded-xl bg-[#1d2433] hover:bg-[#252e40] border border-[#2f3b52] hover:border-slate-500 text-slate-100 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
+                      className="py-2.5 px-3 rounded-xl bg-[var(--ui-bg-1d2433)] hover:bg-[var(--ui-bg-252e40)] border border-[color:var(--ui-border-2f3b52)] hover:border-[color:var(--ui-border-slate500)] text-[color:var(--ui-text-slate100)] font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
                     >
-                      <Download className="w-4 h-4 text-amber-400" />
+                      <Download className="w-4 h-4 text-[color:var(--ui-text-amber-400)]" />
                       <span>Download File</span>
                     </button>
 
@@ -416,7 +416,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                     <button
                       type="button"
                       onClick={() => setShowFullPreview(true)}
-                      className="py-2.5 px-3 rounded-xl bg-[#1d2433] hover:bg-[#252e40] border border-[#2f3b52] hover:border-slate-500 text-slate-100 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
+                      className="py-2.5 px-3 rounded-xl bg-[var(--ui-bg-1d2433)] hover:bg-[var(--ui-bg-252e40)] border border-[color:var(--ui-border-2f3b52)] hover:border-[color:var(--ui-border-slate500)] text-[color:var(--ui-text-slate100)] font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
                     >
                       <Eye className="w-4 h-4 text-sky-400" />
                       <span>Preview Image</span>
@@ -425,22 +425,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 </div>
 
                 {/* Mobile / Device Hints */}
-                <div className="bg-[#151a24] rounded-xl border border-[#202737] p-3 text-[11px] text-slate-400 space-y-1">
-                  <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                    <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+                <div className="bg-[var(--ui-bg-151a24)] rounded-xl border border-[color:var(--ui-border-202737)] p-3 text-[11px] text-[color:var(--ui-text-slate400)] space-y-1">
+                  <div className="flex items-center gap-1.5 text-[color:var(--ui-text-slate300)] font-semibold">
+                    <Smartphone className="w-3.5 h-3.5 text-[color:var(--ui-text-amber-400)]" />
                     <span>Device Saving Instructions</span>
                   </div>
                   {iosPlatform ? (
-                    <p className="text-slate-400 leading-relaxed">
-                      <strong className="text-slate-200">iOS Safari:</strong> Tap <span className="text-amber-300">Save to Photos / Share</span> and select <span className="text-slate-200 font-medium">"Save Image"</span> in the iOS share sheet to store directly in Apple Photos. Alternatively, open <span className="text-sky-300">Preview Image</span> and long-press the photo.
+                    <p className="text-[color:var(--ui-text-slate400)] leading-relaxed">
+                      <strong className="text-[color:var(--ui-text-slate200)]">iOS Safari:</strong> Tap <span className="text-[color:var(--ui-text-amber-300)]">Save to Photos / Share</span> and select <span className="text-[color:var(--ui-text-slate200)] font-medium">"Save Image"</span> in the iOS share sheet to store directly in Apple Photos. Alternatively, open <span className="text-sky-300">Preview Image</span> and long-press the photo.
                     </p>
                   ) : androidPlatform ? (
-                    <p className="text-slate-400 leading-relaxed">
-                      <strong className="text-slate-200">Android Chrome:</strong> Tap <span className="text-amber-300">Save to Photos / Share</span> to send the photo directly to Google Photos, Gallery, or messaging apps.
+                    <p className="text-[color:var(--ui-text-slate400)] leading-relaxed">
+                      <strong className="text-[color:var(--ui-text-slate200)]">Android Chrome:</strong> Tap <span className="text-[color:var(--ui-text-amber-300)]">Save to Photos / Share</span> to send the photo directly to Google Photos, Gallery, or messaging apps.
                     </p>
                   ) : (
-                    <p className="text-slate-400 leading-relaxed">
-                      <strong className="text-slate-200">Desktop / Browser:</strong> Click <span className="text-amber-300">Download File</span> to save the full-resolution file to your downloads directory.
+                    <p className="text-[color:var(--ui-text-slate400)] leading-relaxed">
+                      <strong className="text-[color:var(--ui-text-slate200)]">Desktop / Browser:</strong> Click <span className="text-[color:var(--ui-text-amber-300)]">Download File</span> to save the full-resolution file to your downloads directory.
                     </p>
                   )}
                 </div>
@@ -457,7 +457,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 rounded-lg bg-red-950/70 border border-red-800 text-red-300 flex items-start gap-2">
+              <div className="p-3 rounded-lg bg-red-950/70 border border-red-800 text-[color:var(--ui-text-red-300)] flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="text-xs">{errorMessage}</span>
               </div>
@@ -465,14 +465,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-3.5 bg-[#0e1117] border-t border-[#1f2635] flex items-center justify-between shrink-0">
+          <div className="px-5 py-3.5 bg-[var(--ui-bg-0e1117)] border-t border-[color:var(--ui-border-1f2635)] flex items-center justify-between shrink-0">
             {stage === 'ready' ? (
               <button
                 type="button"
                 onClick={handlePrepareAgain}
-                className="px-3.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#1a202c] transition-colors text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] transition-colors text-xs font-medium flex items-center gap-1.5 cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-[color:var(--ui-text-slate400)]" />
                 <span>Prepare Again</span>
               </button>
             ) : (
@@ -480,7 +480,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 type="button"
                 onClick={handleClose}
                 disabled={stage === 'preparing'}
-                className="px-3.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#1a202c] transition-colors text-xs font-medium disabled:opacity-40 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] transition-colors text-xs font-medium disabled:opacity-40 cursor-pointer"
               >
                 Cancel
               </button>
@@ -501,7 +501,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-1.5 rounded-lg bg-[#1a202c] hover:bg-[#232b3b] text-slate-200 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-lg bg-[var(--ui-bg-1a202c)] hover:bg-[var(--ui-bg-232b3b)] text-[color:var(--ui-text-slate200)] hover:text-[color:var(--ui-text-slate100)] text-xs font-medium transition-colors cursor-pointer"
               >
                 Done
               </button>
@@ -514,11 +514,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       {showFullPreview && prepared && (
         <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col">
           {/* Preview Header */}
-          <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0e1117]/95 border-b border-[#202737] flex items-center justify-between z-10 shrink-0 gap-2">
-            <div className="flex items-center space-x-2 text-slate-200 min-w-0 flex-1">
-              <Eye className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--ui-bg-0e1117)]/95 border-b border-[color:var(--ui-border-202737)] flex items-center justify-between z-10 shrink-0 gap-2">
+            <div className="flex items-center space-x-2 text-[color:var(--ui-text-slate200)] min-w-0 flex-1">
+              <Eye className="w-4 h-4 text-[color:var(--ui-text-amber-400)] shrink-0" />
               <span className="font-semibold text-xs truncate">{prepared.filename}</span>
-              <span className="text-[10px] text-slate-400 font-mono hidden sm:inline shrink-0">
+              <span className="text-[10px] text-[color:var(--ui-text-slate400)] font-mono hidden sm:inline shrink-0">
                 ({prepared.width}×{prepared.height} px, {prepared.formattedSize})
               </span>
             </div>
@@ -536,16 +536,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={handleDownload}
-                className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#1f2635] hover:bg-[#2a3447] text-slate-100 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[var(--ui-bg-1f2635)] hover:bg-[var(--ui-bg-2a3447)] text-[color:var(--ui-text-slate100)] font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5 text-amber-400" />
+                <Download className="w-3.5 h-3.5 text-[color:var(--ui-text-amber-400)]" />
                 <span className="hidden sm:inline">Download</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowFullPreview(false)}
                 aria-label="Close preview"
-                className="p-1.5 rounded-lg bg-[#1f2635] hover:bg-[#2a3447] text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg bg-[var(--ui-bg-1f2635)] hover:bg-[var(--ui-bg-2a3447)] text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -557,17 +557,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             <img
               src={prepared.objectUrl}
               alt="Full Resolution Export Preview"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl border border-[#232b3b]"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl border border-[color:var(--ui-border-232b3b)]"
             />
           </div>
 
           {/* Manual Save / Long-press Guidance Banner */}
-          <div className="px-4 py-2.5 bg-[#0e1117]/95 border-t border-[#202737] text-center text-xs text-slate-300">
-            <span className="inline-flex items-center gap-1.5 text-amber-400 font-semibold">
+          <div className="px-4 py-2.5 bg-[var(--ui-bg-0e1117)]/95 border-t border-[color:var(--ui-border-202737)] text-center text-xs text-[color:var(--ui-text-slate300)]">
+            <span className="inline-flex items-center gap-1.5 text-[color:var(--ui-text-amber-400)] font-semibold">
               <Smartphone className="w-3.5 h-3.5" />
               <span>Mobile Save Tip:</span>
             </span>{' '}
-            <span>Long-press (tap and hold) the image above and choose <strong className="text-white">"Save to Photos"</strong> or <strong className="text-white">"Save Image"</strong>.</span>
+            <span>Long-press (tap and hold) the image above and choose <strong className="text-[color:var(--ui-text-slate100)]">"Save to Photos"</strong> or <strong className="text-[color:var(--ui-text-slate100)]">"Save Image"</strong>.</span>
           </div>
         </div>
       )}
