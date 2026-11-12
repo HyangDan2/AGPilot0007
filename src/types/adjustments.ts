@@ -72,6 +72,7 @@ export const ADJUSTMENT_DEFINITIONS: AdjustmentDef[] = [
     unit: '',
     description: 'Shadow toe lift or compression.',
   },
+  ...(['whites', 'blacks'] as const).map(key => ({ key, label: key === 'whites' ? 'Whites' : 'Blacks', category: 'light' as const, min: -100, max: 100, step: 1, defaultValue: 0, unit: '', description: key === 'whites' ? 'Adjust the brightest tonal endpoint.' : 'Adjust the darkest tonal endpoint.' })),
   // Color & White Balance
   {
     key: 'temperature',

@@ -1,4 +1,4 @@
-import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects';
+import { getCameraEffects } from '../films/cameraEffects';
 import { FILM_PROFILES } from '../films/registry';
 import { Camera } from 'lucide-react';
 import { useEditorStore } from '../stores/editorStore';
@@ -6,8 +6,7 @@ import { isValidStampDate, localCalendarDate, DateStampSettings } from '../types
 import { ResetValueButton } from './ResetValueButton';
 
 export function CameraEffectsButton({ controls }: { controls: string }) {
-  const { activeFilmId, isCameraEffectsOpen, toggleCameraEffects } = useEditorStore();
-  if (!supportsCameraEffects(activeFilmId)) return null;
+  const { isCameraEffectsOpen, toggleCameraEffects } = useEditorStore();
   return <button type="button" data-testid="camera-effects-toggle" aria-label="Camera Effects" title="Camera Effects"
     aria-expanded={isCameraEffectsOpen} aria-controls={controls} onClick={toggleCameraEffects}
     className={`shrink-0 p-1.5 rounded-md border transition-colors ${isCameraEffectsOpen ? 'border-amber-500 bg-amber-500/15 text-amber-300' : 'border-[#303641] text-amber-400 hover:bg-amber-500/10'}`}>
@@ -22,9 +21,10 @@ export function CameraEffects({ id }: { id: string }) {
   const stamp=camera.dateStamp;
   const inputClass='w-full min-w-0 rounded border border-[#303641] bg-[#0b0e14] px-2 py-1.5 text-xs text-slate-200';
   return <section id={id} aria-label="Camera Effects settings" className="rounded-lg border border-[#293141] bg-[#121722] text-xs" data-testid="camera-effects">
-    <h3 className="p-3 text-amber-400 font-semibold">{FILM_PROFILES[activeFilmId].name} · Camera Effects</h3>
+    <h3 className="p-3 text-amber-400 font-semibold">Camera Effects</h3>
     <div className="px-3 pb-3 space-y-3">
 
+      <button type="button" onClick={()=>useEditorStore.getState().openFilterSet()} className="w-full rounded border border-[#303641] p-2 text-left text-amber-300">Film Style · {FILM_PROFILES[activeFilmId].name} →</button>
       {effects.includes('dateStamp') && <>
       <label className="flex items-center justify-between gap-2"><span>Date Imprint</span><input type="checkbox" aria-label="Date Imprint" checked={stamp.enabled} disabled={!isValidStampDate(stamp.date)} onChange={e=>updateDateStamp({enabled:e.target.checked})} className="accent-amber-500 w-4 h-4"/></label>
       <label className="block space-y-1"><span>Imprint Date</span><input type="date" aria-label="Imprint Date" min="0001-01-01" max="9999-12-31" value={stamp.date} onChange={e=>updateDateStamp({date:e.target.value,source:'manual'})} className={inputClass}/></label>

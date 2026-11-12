@@ -106,4 +106,15 @@ RETRO 90 adds an original 33-cube transform without changing the nine individual
 
 Date imprint geometry is authored in `src/engine/overlay/dateStamp.ts` without external fonts. An image-relative patch is uploaded only when date settings or output dimensions change and composited after film effects in the common WebGL renderer. Preview and export share this implementation. Original comparison bypasses the date; Split composites only on the developed side. A full-resolution export regenerates the patch at the requested dimensions, rather than upscaling a preview stamp.
 
-Camera effects are profile capabilities declared on `FilmProfile.cameraEffects`. The shared `getEffectiveCamera` boundary masks all effects for unsupported or unspecified film IDs, including imported recipe settings. Viewport and exporter pass the active film ID into the common renderer. The current sole capable profile is FS-010; switching to the nine original profiles or Margarine retains stored settings without compositing them.
+Camera effects are profile capabilities declared on `FilmProfile.cameraEffects`. The shared `getEffectiveCamera` boundary permits date imprint for known profiles and masks optical effects absent from each profile capability list. Unspecified film IDs mask all camera effects. Viewport and exporter pass the active film ID into the common renderer. FS-010 alone enables glow/halation/softness; switching profiles retains settings while dates remain shared.
+
+
+## User tone curves (beta)
+
+The shared renderer accepts optional W/R/G/B `ToneCurves`. Each channel has 2–16 normalized control points with fixed x endpoints and strictly increasing inputs. The MIT-noticed monotone cubic interpolation implementation generates a 1024×1 RGBA32F texture (W/R/G/B in RGBA); texelFetch with explicit interpolation avoids requiring float texture filtering extensions. White maps each RGB component first, followed by its individual color curve. Identity curves bypass sampling entirely. The texture is cached by points and recreated after context restoration.
+
+Black/white endpoint adjustments precede the film LUT and are zero by default. User curves follow the LUT/film-strength mix, preceding saturation and spatial effects. Preview and export pass identical curves through the same shader; Original bypasses all edits and Split applies them only to the developed side. Date imprint remains the final image composite.
+
+The histogram is a UI-only 64-bin luminance/R/G/B distribution sampled from the current preview at up to 192×192 and about 8 updates per second. It includes the currently displayed comparison mode and date imprint, excludes editor overlays, and uses a shared vertical scale with square-root display compression. It is neither a RAW histogram nor an export layer.
+
+Recipe schema 3 adds curves and retains older camera settings. Older recipes default to identity curves and zero endpoints. One pointer drag produces one undo entry, while channel/global resets remain independently undoable. THIRD_PARTY_NOTICES.txt is emitted from the canonical notices document in every build.

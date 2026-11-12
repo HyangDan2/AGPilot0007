@@ -1,3 +1,5 @@
+import { ToneCurves } from '../../types/curves';
+import { buildCurveTexture, CURVE_SAMPLES } from '../color/userCurves';
 import { getEffectiveCamera } from '../../films/cameraEffects';
 import type { FilmId } from '../../types/film';
 import { CameraSettings } from '../../types/camera';
@@ -7,6 +9,7 @@ import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
 
 export interface RenderOptions {
+  curves?: ToneCurves;
   filmId?: FilmId;
   camera?: CameraSettings;
   adjustments: AdjustmentSettings;
@@ -24,6 +27,9 @@ export class WebGL2FilmRenderer {
   private lutTexture: WebGLTexture | null = null;
   private stampTexture: WebGLTexture | null = null;
   private stampKey = '';
+  private curveTexture: WebGLTexture | null = null;
+  private curveKey = '';
+  private curvesEnabled = false;
   private stampRect = [0,0,1,1];
   private quadBuffer: WebGLBuffer | null = null;
   private currentLutSize: number = 33;
@@ -91,6 +97,7 @@ export class WebGL2FilmRenderer {
       this.lutTexture = null;
       this.stampTexture = null;
       this.stampKey = '';
+      this.curveTexture = null; this.curveKey = '';
       this.initContext();
       this.onContextRestoredCallback?.();
     });
@@ -173,7 +180,7 @@ export class WebGL2FilmRenderer {
       'u_film_strength',
       'u_compare_mode',
       'u_split_pos',
-      'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
+      'u_curves', 'u_curves_enabled', 'u_endpoints', 'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
     ];
     for (const name of uniformNames) {
       this.uniforms[name] = gl.getUniformLocation(prog, name);
@@ -350,6 +357,25 @@ export class WebGL2FilmRenderer {
     gl.uniform3f(this.uniforms.u_optics,camera.optics.glow/100,camera.optics.halation/100,camera.optics.softness/100);
     gl.uniform1i(this.uniforms.u_optical_samples,camera.optics.quality === 'high' ? 8 : 4);
 
+    gl.activeTexture(gl.TEXTURE3);
+    if (!this.curveTexture) {
+      this.curveTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this.curveTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, this.curveTexture);
+    const curveKey = JSON.stringify(options.curves || null);
+    if (curveKey !== this.curveKey) {
+      const texture = buildCurveTexture(options.curves);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, CURVE_SAMPLES, 1, 0, gl.RGBA, gl.FLOAT, texture.data);
+      this.curvesEnabled = texture.enabled; this.curveKey = curveKey;
+    }
+    gl.uniform1i(this.uniforms.u_curves, 3);
+    gl.uniform1i(this.uniforms.u_curves_enabled, this.curvesEnabled ? 1 : 0);
+    gl.uniform2f(this.uniforms.u_endpoints, (options.adjustments.blacks || 0)/100, (options.adjustments.whites || 0)/100);
     // Pass uniforms
     if (this.uniforms.u_lut_size) gl.uniform1f(this.uniforms.u_lut_size, this.currentLutSize);
     if (this.uniforms.u_resolution) {
@@ -403,6 +429,7 @@ export class WebGL2FilmRenderer {
       this.lutTexture = null;
     }
     if (this.stampTexture) { gl.deleteTexture(this.stampTexture); this.stampTexture = null; }
+    if (this.curveTexture) { gl.deleteTexture(this.curveTexture); this.curveTexture = null; }
     if (this.quadBuffer) { gl.deleteBuffer(this.quadBuffer); this.quadBuffer = null; }
     if (this.vao) { gl.deleteVertexArray(this.vao); this.vao = null; }
     if (this.program) {

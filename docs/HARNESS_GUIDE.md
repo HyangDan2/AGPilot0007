@@ -84,16 +84,28 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 ## RETRO 90 / Date Imprint (beta)
 
 - 기존 개별 Film 목록은 9종을 유지한다. MARGARINE 뒤 Filter Set 카드는 즉시 모달을 열고 `01 Old School Film` 선택 시 FS-010 RETRO 90의 전체 보정값과 기본 광학 효과를 적용한다. `src/films/retro90.ts`와 `public/luts/FS-010_RETRO90.cube`가 신규 프로필이다.
-- `FilmProfile.cameraEffects`에 지원 항목을 선언한 필터에서만 조정 패널 타이틀 옆 카메라 버튼을 표시한다. 현재는 RETRO 90만 지원한다. 버튼으로 전용 설정을 열고 닫으며, 기존 9종과 마가린에서는 버튼과 설정 DOM을 렌더링하지 않는다. 날짜는 기본 OFF, 날짜 입력·Today·EXIF 선택 후 ON으로 켠다. EXIF는 파일의 DateTimeOriginal만 로컬 파싱하며 임의의 날짜로 대체하지 않는다. 기록된 달력 날짜를 보존한다. 사진 교체 시 EXIF 소스 날짜는 새 사진에 맞추고 날짜가 없으면 OFF로 전환한다.
-- 필름 변경은 날짜·광학 효과 설정값을 보존하지만 미지원 필터에서는 실제 효과를 적용하지 않는다. 필터 전환·Undo/Redo·레시피 적용 시 전용 설정창을 닫고, RETRO 90으로 돌아오면 보존한 설정을 사용한다. 보정 Reset은 날짜를 유지한다. Camera Effects Reset은 날짜와 광학 효과를 초기화한다. Undo/Redo는 색·필름·날짜·광학 효과를 함께 복원하며, 새 사진은 현재 설정으로 이력을 새로 시작한다.
+- 카메라 버튼은 공용으로 배치한다. 모든 필터에서 날짜 인화와 Filter Set 스타일 선택을 제공한다. `FilmProfile.cameraEffects`는 추가 광학 효과의 지원 범위를 선언하며 현재 RETRO 90만 Glow/Halation/Softness를 지원한다. 날짜는 기본 OFF, 날짜 입력·Today·EXIF 선택 후 ON으로 켠다. EXIF는 파일의 DateTimeOriginal만 로컬 파싱하며 임의의 날짜로 대체하지 않는다. 기록된 달력 날짜를 보존한다. 사진 교체 시 EXIF 소스 날짜는 새 사진에 맞추고 날짜가 없으면 OFF로 전환한다.
+- 필름 변경은 날짜·광학 효과 설정값을 보존한다. 날짜는 모든 필터에 적용하며 광학 효과는 지원 필터에서만 적용한다. 필터 전환·Undo/Redo·레시피 적용 시 전용 설정창을 닫고, RETRO 90으로 돌아오면 보존한 설정을 사용한다. 보정 Reset은 날짜를 유지한다. Camera Effects Reset은 날짜와 광학 효과를 초기화한다. Undo/Redo는 색·필름·날짜·광학 효과를 함께 복원하며, 새 사진은 현재 설정으로 이력을 새로 시작한다.
 - 날짜는 자체 7세그먼트 Canvas 벡터를 작은 투명 텍스처로 생성해 공통 WebGL 렌더러에서 필름 처리 후 합성한다. 사진 좌표·짧은 변 비율로 크기·여백·발광을 계산하고 프리뷰/내보내기에 동일하게 적용한다. 원본 보기에는 숨기고 Split은 보정 영역에만 합성한다. 설정·출력 크기가 같으면 텍스처를 재사용한다.
 - Glow/Halation/Softness는 0이면 우회한다. Standard는 주변 4샘플, High는 8샘플을 사용하며 추가 전체 해상도 버퍼/다중 패스를 할당하지 않는다. 고해상도 및 실기기 성능을 브라우저 에뮬레이션 수치로 보장하지 않는다.
-- 신규 레시피 스키마는 2이며 camera 설정을 저장한다. 스키마 1을 읽을 때 날짜 OFF·추가 효과 0을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
+- 신규 레시피 스키마는 3이며 camera와 curves 설정을 저장한다. 스키마 1·2도 읽으며 누락된 camera는 날짜 OFF·추가 효과 0, curves는 대각선을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
 - FS-010만 생성: `npm run generate-luts -- --only FS-010`. 기존 LUT 변경은 승인 없이 허용하지 않으며 생성 전후 해시를 비교한다.
 - 필수 검증: `npm test`, `npx playwright test`, `npm run build:beta`, 운영 base 빌드. 신규 `tests/e2e/retro90.spec.ts`는 로컬 EXIF fixture, 날짜 UI/레시피/실제 PNG 출력, JPEG/PNG 렌더 일치·원본/Split·Context Loss 복구를 확인한다. 색/성능 비교와 증거는 `.private/`에만 둔다.
 
 - 공개 beta 배포는 승인된 동작이다. GitHub Pages 환경의 main/beta 브랜치 허용 정책을 유지하며, 운영 기능 변경의 main 병합 승인은 별개다. 게시 후 새 방문자와 기존 운영 SW 캐시 방문자, 두 경로의 사진 편집·내보내기·오프라인 동작을 각각 확인한다.
 
-- 현재 main 브랜치의 과거 워크플로는 beta 폴더를 보존하지 않는다. 이 PR의 통합 배포 워크플로를 main에 승인 반영하기 전에는 과거 main 배포를 재실행하지 않는다. beta 배포는 승인된 운영 snapshot과 최신 beta를 함께 게시한다.
+- main에는 통합 배포 워크플로가 병합되어 운영 배포 시 최신 성공 beta 산출물을 보존한다. beta 배포는 승인된 운영 snapshot과 최신 beta를 함께 게시한다.
 
-- 카메라 효과 허용 조건은 `src/films/cameraEffects.ts`에서 공유한다. 미리보기와 내보내기 모두 실제 필터 ID를 공통 WebGL 렌더러에 전달한다. 렌더러/내보내기 API에서 필터 ID가 없거나 미지원이면 날짜·광학 효과를 모두 OFF로 취급한다. 저장된 레시피의 camera 값이 활성화되어 있어도 이 제한을 우회하지 못한다.
+- 카메라 효과 허용 조건은 `src/films/cameraEffects.ts`에서 공유한다. 미리보기와 내보내기 모두 실제 필터 ID를 공통 WebGL 렌더러에 전달한다. 렌더러/내보내기 API에서 필터 ID가 없으면 날짜·광학 효과를 모두 OFF로 취급한다. 알려진 필터에서는 날짜를 공통 지원하며 광학 효과는 프로필 지원 범위로 제한한다. 저장된 레시피의 camera 값이 활성화되어 있어도 이 제한을 우회하지 못한다.
+
+
+## 사용자 톤 커브와 히스토그램 (beta)
+
+- 조정 타이틀 옆 아이콘 순서는 Tone Curve → Camera Effects다. 모바일은 접힌 조정 바에서도 접근하며 커브를 열면 조정 시트를 내린다. 태블릿의 떠 있는 조정 패널도 커브를 열 때 닫아 그래프를 가리지 않는다.
+- 커브 그래프는 사진 workspace 내부의 오버레이다. 열기/닫기로 사진 크기와 zoom/pan이 바뀌면 안 된다. W/R/G/B 도구줄은 데스크톱 아이콘 아래, 모바일·태블릿 커브 오버레이 상단에 표시한다. W는 전체 RGB이며 개별 채널과 독립적으로 저장된다.
+- 점 추가·포인터 드래그·입출력 0~255·선택점 삭제·키보드 방향키(Shift 10단위)를 지원한다. 끝점 x는 고정, 중간점은 교차하지 않으며 채널당 최대 16점이다. Reset 아이콘은 선택 채널만, 전체 커브 초기화는 4채널을 초기화한다. Reset All도 커브를 초기화한다. 한 드래그는 Undo 한 단계다.
+- 기본 대각선은 shader에서 우회해 기존 색 처리 결과를 보존한다. 기존 MIT 고지된 보간 함수를 사용해 1024×1 RGBA32F 텍스처(16KiB)를 생성하며 float 선형 필터 확장 없이 texelFetch 보간을 사용한다. 커브는 필름 LUT 혼합 후, Saturation/공간 효과/날짜 합성 전에 적용한다. Preview와 Export는 동일 curves 값을 전달한다.
+- Whites/Blacks는 -100~100 기본 0이며 LUT 전 sRGB 끝부분에 부드러운 보정을 적용한다. Adobe 수치 대응이나 RAW 손실 정보 복원을 주장하지 않는다.
+- 좌상단 W/R/G/B 히스토그램은 현재 프리뷰 canvas를 최대 192×192로 샘플링해 64 bins로 집계한다. 최대 약 8Hz로 갱신하며 원본/Split 모드에서는 해당 프리뷰 분포다. UI와 히스토그램은 출력 사진에 포함하지 않는다.
+- 신규 검사: `tests/userCurves.test.ts`, `tests/e2e/user-curves.spec.ts`. 기본값 출력, 채널 독립성, reset/undo, v1/v2 레시피 마이그레이션, PNG 일치/JPEG/원본/Split/Context Loss, 모바일 터치와 사진 지오메트리를 검증한다. 증거·평가 보고는 `.private/`에만 보관한다.
+- `vite.config.ts`는 `THIRD_PARTY_NOTICES.md`를 배포 산출물 `THIRD_PARTY_NOTICES.txt`에 포함하며 PWA에도 캐시한다. 커브 수학과 자체 UI만 사용하며 Adobe 구현/프로필을 복제하지 않는다.

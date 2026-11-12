@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -11,6 +12,7 @@ export default defineConfig(({ mode }) => {
     base,
     build: { outDir: isBeta ? 'dist-beta' : 'dist' },
     plugins: [
+      { name: 'third-party-notices', generateBundle() { this.emitFile({type:'asset', fileName:'THIRD_PARTY_NOTICES.txt', source:readFileSync('THIRD_PARTY_NOTICES.md','utf8')}); } },
       react(),
       tailwindcss(),
       VitePWA({
@@ -50,7 +52,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,cube,json}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,cube,json,txt}'],
           navigateFallback: 'index.html',
           ...(isBeta
             ? { cacheId: 'film-studio-beta', navigateFallbackAllowlist: [/^\/AGPilot0007\/beta(?:\/|$)/] }

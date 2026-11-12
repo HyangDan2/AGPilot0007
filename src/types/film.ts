@@ -1,3 +1,4 @@
+import type { ToneCurves } from './curves';
 import type { CameraSettings, CameraEffect } from './camera';
 export type FilmId =
   | 'identity'
@@ -37,6 +38,8 @@ export interface FilmProfile {
 }
 
 export interface AdjustmentSettings {
+  whites?: number;
+  blacks?: number;
   exposure: number;       // -3.0 to +3.0 EV
   temperature: number;    // -100 to +100
   tint: number;           // -100 to +100
@@ -51,6 +54,8 @@ export interface AdjustmentSettings {
 }
 
 export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
+  whites: 0,
+  blacks: 0,
   exposure: 0,
   temperature: 0,
   tint: 0,
@@ -65,6 +70,7 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 };
 
 export interface CustomRecipe {
+  curves?: ToneCurves;
   camera?: CameraSettings;
   presetId?: string;
   presetVersion?: string;

@@ -1,3 +1,4 @@
+import { normalizeCurves, CURVE_CHANNELS } from '../types/curves';
 import { normalizeCamera, isValidStampDate } from '../types/camera';
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
@@ -9,7 +10,7 @@ import { getMargarinePreset } from '../presets/margarine';
 const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
   ? 'hd2lab_film_studio_beta_recipes_v1'
   : 'hd2lab_film_studio_recipes_v1';
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
@@ -49,6 +50,7 @@ function migrateRecipe(recipe: any): CustomRecipe {
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
     schemaVersion: CURRENT_SCHEMA_VERSION,
     camera: normalizeCamera(recipe.camera),
+    curves: normalizeCurves(recipe.curves),
   };
 }
 
@@ -77,6 +79,11 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
   if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
   if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
     throw new Error('Unknown or incompatible preset');
+  }
+  if (parsed.curves !== undefined) {
+    if (!parsed.curves || typeof parsed.curves !== 'object') throw new Error('Invalid tone curves');
+    const normalized = normalizeCurves(parsed.curves);
+    for (const channel of CURVE_CHANNELS) if (parsed.curves[channel] !== undefined && JSON.stringify(parsed.curves[channel]) !== JSON.stringify(normalized[channel])) throw new Error('Invalid tone curve points');
   }
   return migrateRecipe(parsed);
 }
