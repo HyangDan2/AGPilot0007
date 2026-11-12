@@ -44,6 +44,7 @@ export const Viewport: React.FC = () => {
     activeFilmId,
     activePresetId,
     adjustments,
+    camera,
     compareMode,
     setCompareMode,
     splitPos,
@@ -85,6 +86,8 @@ export const Viewport: React.FC = () => {
   // Latest state references for WebGL callbacks
   const imageRef = useRef(image);
   imageRef.current = image;
+  const cameraRef = useRef(camera);
+  cameraRef.current = camera;
   const adjustmentsRef = useRef(adjustments);
   adjustmentsRef.current = adjustments;
   const compareModeRef = useRef(compareMode);
@@ -162,6 +165,7 @@ export const Viewport: React.FC = () => {
         const effectiveMode = isPressHoldingRef.current ? 'original' : compareModeRef.current;
         renderer.render({
           adjustments: adjustmentsRef.current,
+          camera: cameraRef.current,
           compareMode: effectiveMode,
           splitPos: splitPosRef.current,
           seed: 42.0,
@@ -270,7 +274,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [camera, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {

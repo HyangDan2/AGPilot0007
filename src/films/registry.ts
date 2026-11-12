@@ -1,6 +1,8 @@
+import { RETRO90 } from './retro90';
 import { FilmProfile, FilmId } from '../types/film';
 
 export const FILM_PROFILES: Record<FilmId, FilmProfile> = {
+  'FS-010': RETRO90,
   'identity': {
     id: 'identity',
     code: 'IDENTITY',

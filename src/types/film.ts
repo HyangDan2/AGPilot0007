@@ -1,3 +1,4 @@
+import type { CameraSettings } from './camera';
 export type FilmId =
   | 'identity'
   | 'FS-001'
@@ -8,7 +9,8 @@ export type FilmId =
   | 'FS-006'
   | 'FS-007'
   | 'FS-008'
-  | 'FS-009';
+  | 'FS-009'
+  | 'FS-010';
 
 export interface FilmProfile {
   id: FilmId;
@@ -62,6 +64,7 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 };
 
 export interface CustomRecipe {
+  camera?: CameraSettings;
   presetId?: string;
   presetVersion?: string;
   id: string;

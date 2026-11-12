@@ -1,3 +1,4 @@
+import { FilterSetCard } from './FilterSet';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { MargarineCard } from './MargarineCard';
@@ -113,6 +114,7 @@ export const FilmSelector: React.FC = () => {
           );
         })}
         <MargarineCard />
+        <FilterSetCard />
       </div>
     </aside>
   );

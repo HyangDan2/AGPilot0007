@@ -29,7 +29,7 @@ test('mobile sheet overlays the image without resizing or resetting zoom', async
   await expect(page.getByTestId('slider-exposure').filter({ visible: true })).toHaveValue('0');
   await page.getByRole('button', { name: 'Reset adjustments', exact: true }).tap();
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator('.lucide-chevron-down')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Collapse adjustments', exact: true }).locator('.lucide-chevron-down')).toBeVisible();
   await page.getByTestId('sheet-handle').tap({ position: { x: 3, y: 3 } });
   await expect(sheet).not.toBeVisible();
   await expect(page.getByRole('button', { name: /Adjustments \(/ }).locator('.lucide-chevron-up')).toBeVisible();

@@ -1,3 +1,4 @@
+import { CameraEffects } from './CameraEffects';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
@@ -52,6 +53,7 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       {/* Adjustments Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
+        <CameraEffects />
         {categories.map((cat) => {
           const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat);
           return (

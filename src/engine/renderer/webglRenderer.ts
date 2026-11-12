@@ -1,8 +1,11 @@
+import { CameraSettings, DEFAULT_CAMERA } from '../../types/camera';
+import { createDateStamp } from '../overlay/dateStamp';
 import { VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE } from './shaderManager';
 import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
 
 export interface RenderOptions {
+  camera?: CameraSettings;
   adjustments: AdjustmentSettings;
   compareMode: 'none' | 'original' | 'split';
   splitPos: number; // 0.0 to 1.0
@@ -16,6 +19,10 @@ export class WebGL2FilmRenderer {
   private vao: WebGLVertexArrayObject | null = null;
   private imageTexture: WebGLTexture | null = null;
   private lutTexture: WebGLTexture | null = null;
+  private stampTexture: WebGLTexture | null = null;
+  private stampKey = '';
+  private stampRect = [0,0,1,1];
+  private quadBuffer: WebGLBuffer | null = null;
   private currentLutSize: number = 33;
   private isContextLost = false;
   private isInitialized = false;
@@ -77,6 +84,10 @@ export class WebGL2FilmRenderer {
 
     this.canvas.addEventListener('webglcontextrestored', () => {
       console.log('WebGL2 context restored. Reinitializing pipeline...');
+      this.imageTexture = null;
+      this.lutTexture = null;
+      this.stampTexture = null;
+      this.stampKey = '';
       this.initContext();
       this.onContextRestoredCallback?.();
     });
@@ -159,7 +170,7 @@ export class WebGL2FilmRenderer {
       'u_film_strength',
       'u_compare_mode',
       'u_split_pos',
-      'u_seed',
+      'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
     ];
     for (const name of uniformNames) {
       this.uniforms[name] = gl.getUniformLocation(prog, name);
@@ -170,6 +181,7 @@ export class WebGL2FilmRenderer {
     gl.bindVertexArray(this.vao);
 
     const quadBuffer = gl.createBuffer();
+    this.quadBuffer = quadBuffer;
     gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
     // x, y, u, v
     const vertices = new Float32Array([
@@ -305,6 +317,36 @@ export class WebGL2FilmRenderer {
     gl.bindTexture(gl.TEXTURE_3D, this.lutTexture);
     if (this.uniforms.u_lut) gl.uniform1i(this.uniforms.u_lut, 1);
 
+    const camera = options.camera || DEFAULT_CAMERA;
+    const stamp = camera.dateStamp;
+    const stampKey = JSON.stringify([this.canvas.width,this.canvas.height,stamp]);
+    gl.activeTexture(gl.TEXTURE2);
+    if (!this.stampTexture) {
+      this.stampTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D,this.stampTexture);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(4));
+    }
+    gl.bindTexture(gl.TEXTURE_2D,this.stampTexture);
+    if (this.stampKey !== stampKey) {
+      const patch = createDateStamp(this.canvas.width,this.canvas.height,stamp);
+      if (patch) {
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,patch.canvas);
+        this.stampRect = [patch.layout.x,patch.layout.y,patch.layout.width,patch.layout.height];
+      }
+      this.stampKey = stampKey;
+    }
+    gl.uniform1i(this.uniforms.u_stamp,2);
+    gl.uniform1i(this.uniforms.u_stamp_enabled,stamp.enabled && !!stamp.date ? 1 : 0);
+    gl.uniform4fv(this.uniforms.u_stamp_rect,this.stampRect);
+    gl.uniform3f(this.uniforms.u_optics,camera.optics.glow/100,camera.optics.halation/100,camera.optics.softness/100);
+    gl.uniform1i(this.uniforms.u_optical_samples,camera.optics.quality === 'high' ? 8 : 4);
+
     // Pass uniforms
     if (this.uniforms.u_lut_size) gl.uniform1f(this.uniforms.u_lut_size, this.currentLutSize);
     if (this.uniforms.u_resolution) {
@@ -357,6 +399,9 @@ export class WebGL2FilmRenderer {
       gl.deleteTexture(this.lutTexture);
       this.lutTexture = null;
     }
+    if (this.stampTexture) { gl.deleteTexture(this.stampTexture); this.stampTexture = null; }
+    if (this.quadBuffer) { gl.deleteBuffer(this.quadBuffer); this.quadBuffer = null; }
+    if (this.vao) { gl.deleteVertexArray(this.vao); this.vao = null; }
     if (this.program) {
       gl.deleteProgram(this.program);
       this.program = null;

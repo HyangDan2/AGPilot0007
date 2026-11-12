@@ -1,3 +1,4 @@
+import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
@@ -31,7 +32,8 @@ export async function prepareExportImage(
   lut: ParsedLut3D,
   adjustments: AdjustmentSettings,
   options: ExportOptions,
-  onProgress?: (progress: number, stage: string) => void
+  onProgress?: (progress: number, stage: string) => void,
+  camera?: CameraSettings
 ): Promise<PreparedExport> {
   onProgress?.(10, 'Initializing export pipeline...');
 
@@ -53,6 +55,7 @@ export async function prepareExportImage(
   const maxTexSize = glProbe ? glProbe.getParameter(glProbe.MAX_TEXTURE_SIZE) || 4096 : 4096;
   const maxRenderSize = glProbe ? glProbe.getParameter(glProbe.MAX_RENDERBUFFER_SIZE) || 4096 : 4096;
   const maxSafeDim = Math.min(maxTexSize, maxRenderSize);
+  glProbe?.getExtension('WEBGL_lose_context')?.loseContext();
 
   // If requested dimensions exceed GPU limits, safely constrain while strictly preserving aspect ratio
   if (exportWidth > maxSafeDim || exportHeight > maxSafeDim) {
@@ -85,6 +88,7 @@ export async function prepareExportImage(
   onProgress?.(75, 'Applying film color science and tone curves...');
   renderer.render({
     adjustments,
+    camera,
     compareMode: 'none',
     splitPos: 1.0,
     seed: 42.0,
@@ -147,9 +151,10 @@ export async function exportFullResolutionImage(
   lut: ParsedLut3D,
   adjustments: AdjustmentSettings,
   options: ExportOptions,
-  onProgress?: (progress: number, stage: string) => void
+  onProgress?: (progress: number, stage: string) => void,
+  camera?: CameraSettings
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress);
+  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera);
   return {
     blob: prepared.blob,
     filename: prepared.filename,

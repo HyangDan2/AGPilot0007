@@ -80,3 +80,14 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - `.github/workflows/beta.yml`은 beta push 시 LUT 생성·단위 검사·베타 빌드·일반 artifact 업로드만 한다. Pages 배포 권한과 배포 단계는 없다. 기존 배포 워크플로는 main에서만 실행한다.
 - 공개 beta 게시에는 운영 루트와 beta 하위 폴더를 함께 포함하는 Pages 산출물이 필요하다. beta만 단독으로 Pages 배포하지 않는다. main 병합·운영 배포는 최종 승인 후 진행한다. 빌드 경로 설정과 공개 URL 배포 완료를 구분해 보고한다.
 - 같은 origin의 IndexedDB는 경로로 격리되지 않는다. beta 레시피는 별도 `hd2lab_film_studio_beta_recipes_v1` 키를 사용하여 운영 레시피와 분리한다.
+
+## RETRO 90 / Date Imprint (beta)
+
+- 기존 개별 Film 목록은 9종을 유지한다. MARGARINE 뒤 Filter Set 카드는 즉시 모달을 열고 `01 Old School Film` 선택 시 FS-010 RETRO 90의 전체 보정값과 기본 광학 효과를 적용한다. `src/films/retro90.ts`와 `public/luts/FS-010_RETRO90.cube`가 신규 프로필이다.
+- `Camera Effects`는 데스크톱·모바일 조정 패널에서 펼친다. 날짜는 기본 OFF, 날짜 입력·Today·EXIF 선택 후 ON으로 켠다. EXIF는 파일의 DateTimeOriginal만 로컬 파싱하며 임의의 날짜로 대체하지 않는다. 기록된 달력 날짜를 보존한다. 사진 교체 시 EXIF 소스 날짜는 새 사진에 맞추고 날짜가 없으면 OFF로 전환한다.
+- 필름 변경은 날짜를 유지하고 광학 효과를 0으로 되돌린다. 보정 Reset은 날짜를 유지한다. Camera Effects Reset은 날짜와 광학 효과를 초기화한다. Undo/Redo는 색·필름·날짜·광학 효과를 함께 복원하며, 새 사진은 현재 설정으로 이력을 새로 시작한다.
+- 날짜는 자체 7세그먼트 Canvas 벡터를 작은 투명 텍스처로 생성해 공통 WebGL 렌더러에서 필름 처리 후 합성한다. 사진 좌표·짧은 변 비율로 크기·여백·발광을 계산하고 프리뷰/내보내기에 동일하게 적용한다. 원본 보기에는 숨기고 Split은 보정 영역에만 합성한다. 설정·출력 크기가 같으면 텍스처를 재사용한다.
+- Glow/Halation/Softness는 0이면 우회한다. Standard는 주변 4샘플, High는 8샘플을 사용하며 추가 전체 해상도 버퍼/다중 패스를 할당하지 않는다. 고해상도 및 실기기 성능을 브라우저 에뮬레이션 수치로 보장하지 않는다.
+- 신규 레시피 스키마는 2이며 camera 설정을 저장한다. 스키마 1을 읽을 때 날짜 OFF·추가 효과 0을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
+- FS-010만 생성: `npm run generate-luts -- --only FS-010`. 기존 LUT 변경은 승인 없이 허용하지 않으며 생성 전후 해시를 비교한다.
+- 필수 검증: `npm test`, `npx playwright test`, `npm run build:beta`, 운영 base 빌드. 신규 `tests/e2e/retro90.spec.ts`는 로컬 EXIF fixture, 날짜 UI/레시피/실제 PNG 출력, JPEG/PNG 렌더 일치·원본/Split·Context Loss 복구를 확인한다. 색/성능 비교와 증거는 `.private/`에만 둔다.

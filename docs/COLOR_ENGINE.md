@@ -99,3 +99,9 @@ The high-frequency edge delta is scaled and added back to the base signal.
 
 ### Vignette
 Optical lens falloff is computed using aspect-ratio corrected Euclidean distance from center, shaped with a smooth Hermite interpolation (`smoothstep`).
+
+## Beta camera effects and date compositing
+
+RETRO 90 adds an original 33-cube transform without changing the nine individual film profiles. Optional optical effects run after film color grading and before grain/vignette; four or eight neighboring samples are accumulated and graded as a bounded single-pass approximation. All optical intensities at zero preserve the existing shader path.
+
+Date imprint geometry is authored in `src/engine/overlay/dateStamp.ts` without external fonts. An image-relative patch is uploaded only when date settings or output dimensions change and composited after film effects in the common WebGL renderer. Preview and export share this implementation. Original comparison bypasses the date; Split composites only on the developed side. A full-resolution export regenerates the patch at the requested dimensions, rather than upscaling a preview stamp.

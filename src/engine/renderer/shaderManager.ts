@@ -38,6 +38,11 @@ uniform float u_film_strength;   // 0.0 to 1.0
 // Comparison
 uniform int u_compare_mode;      // 0 = Normal, 1 = Original, 2 = Split
 uniform float u_split_pos;       // 0.0 to 1.0
+uniform sampler2D u_stamp;
+uniform bool u_stamp_enabled;
+uniform vec4 u_stamp_rect;
+uniform vec3 u_optics;
+uniform int u_optical_samples;
 uniform float u_seed;
 
 // sRGB <-> Linear Conversions (IEC 61966-2-1)
@@ -58,23 +63,7 @@ float hash(vec2 p, float s) {
     return fract(p.x * p.y);
 }
 
-void main() {
-    // Check if in split original section
-    bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && v_uv.x < u_split_pos);
-    
-    // Draw split line if in split mode
-    if (u_compare_mode == 2 && abs(v_uv.x - u_split_pos) * u_resolution.x < 1.5) {
-        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        return;
-    }
-
-    vec4 rawColor = texture(u_image, v_uv);
-    if (showOriginal) {
-        fragColor = rawColor;
-        return;
-    }
-
-    vec3 srgb = rawColor.rgb;
+vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
     vec3 lin = srgbToLinear(srgb);
@@ -91,7 +80,7 @@ void main() {
 
     // 4. Highlights and Shadows (in linear space)
     float lumLin = dot(lin, vec3(0.2126, 0.7152, 0.0722));
-    
+
     // Shadows lift/compress (peaks around mid-shadows 0.05 - 0.2 linear)
     float shadowMask = clamp(1.0 - lumLin / 0.35, 0.0, 1.0);
     lin *= (1.0 + u_shadows * 0.6 * shadowMask);
@@ -121,6 +110,51 @@ void main() {
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     color = mix(vec3(lum), color, max(0.0, 1.0 + u_saturation));
 
+    return color;
+}
+
+void main() {
+    // Check if in split original section
+    bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && v_uv.x < u_split_pos);
+
+    // Draw split line if in split mode
+    if (u_compare_mode == 2 && abs(v_uv.x - u_split_pos) * u_resolution.x < 1.5) {
+        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        return;
+    }
+
+    vec4 rawColor = texture(u_image, v_uv);
+    if (showOriginal) {
+        fragColor = rawColor;
+        return;
+    }
+
+    vec3 srgb = rawColor.rgb;
+    vec3 color = grade(srgb);
+    float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if (max(u_optics.x, max(u_optics.y, u_optics.z)) > 0.0) {
+        float shortSide = min(u_resolution.x, u_resolution.y);
+        vec2 radius = vec2(shortSide) / u_resolution * 0.004;
+        vec3 soft = vec3(0.0);
+        vec3 bright = vec3(0.0);
+        float brightWeight = 0.0;
+        for (int i = 0; i < 8; i++) {
+            if (i >= u_optical_samples) break;
+            float angle = float(i) * 6.2831853 / float(u_optical_samples);
+            vec3 sampleColor = texture(u_image, clamp(v_uv + vec2(cos(angle), sin(angle)) * radius, vec2(0.0), vec2(1.0))).rgb;
+            soft += sampleColor;
+            float mask = smoothstep(0.60, 0.98, dot(sampleColor, vec3(0.2126,0.7152,0.0722)));
+            bright += sampleColor * mask;
+            brightWeight += mask;
+        }
+        // Grade accumulated neighborhoods once, avoiding a full tone/LUT pipeline per tap.
+        soft = grade(soft / float(u_optical_samples));
+        bright = brightWeight > 0.0 ? grade(bright / brightWeight) * (brightWeight / float(u_optical_samples)) : vec3(0.0);
+        color = mix(color, soft, u_optics.z * 0.45);
+        color += bright * u_optics.x * 0.28;
+        color += dot(bright, vec3(0.2126,0.7152,0.0722)) * vec3(1.0,0.22,0.04) * u_optics.y * 0.18;
+    }
+
     // 10. Sharpness (high-pass filter)
     if (u_sharpness > 0.01) {
         vec2 px = 1.0 / u_resolution;
@@ -147,6 +181,15 @@ void main() {
         color = mix(color * (vigFactor + (1.0 - vigFactor) * (1.0 - u_vignette * 0.8)), color, 1.0 - u_vignette);
     }
 
-    fragColor = vec4(clamp(color, 0.0, 1.0), rawColor.a);
+    float alpha = rawColor.a;
+    if (u_stamp_enabled) {
+        vec2 stampUV = (v_uv * u_resolution - u_stamp_rect.xy) / u_stamp_rect.zw;
+        if (all(greaterThanEqual(stampUV,vec2(0.0))) && all(lessThanEqual(stampUV,vec2(1.0)))) {
+            vec4 stamp = texture(u_stamp, stampUV);
+            color = mix(clamp(color,0.0,1.0),stamp.rgb,stamp.a);
+            alpha = stamp.a + alpha * (1.0 - stamp.a);
+        }
+    }
+    fragColor = vec4(clamp(color, 0.0, 1.0), alpha);
 }
 `;
