@@ -18,6 +18,8 @@ interface EditorState {
   curves: ToneCurves;
   isToneCurveOpen: boolean;
   curveChannel: CurveChannel;
+  curvePointIndex: number;
+  setCurvePointIndex: (index: number) => void;
   toggleToneCurve: () => void;
   setCurveChannel: (channel: CurveChannel) => void;
   setCurve: (channel: CurveChannel, points: CurvePoint[], commit?: boolean) => void;
@@ -84,8 +86,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   curves: defaultCurves(),
   isToneCurveOpen: false,
   curveChannel: 'white',
+  curvePointIndex: 0,
+  setCurvePointIndex: index => set({curvePointIndex: Math.max(0,Math.min(15,Math.floor(index)))}),
   toggleToneCurve: () => set({isToneCurveOpen: !get().isToneCurveOpen, isCameraEffectsOpen: false}),
-  setCurveChannel: curveChannel => set({curveChannel}),
+  setCurveChannel: curveChannel => set({curveChannel,curvePointIndex:0}),
   setCurve: (channel, points, commit = true) => {
     const state = get();
     const curves = normalizeCurves({...state.curves, [channel]: points});

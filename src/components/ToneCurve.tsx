@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Spline, RotateCcw, X, Trash2 } from 'lucide-react';
 import { useEditorStore } from '../stores/editorStore';
 import { CURVE_CHANNELS, CurvePoint, moveCurvePoint } from '../types/curves';
@@ -19,12 +19,10 @@ export function CurveToolbar() {
   </div>;
 }
 export function ToneCurveOverlay({size=280,controlWidth=280}: {size?:number;controlWidth?:number}) {
-  const {isToneCurveOpen,curveChannel,curves,setCurve,resetCurves,toggleToneCurve}=useEditorStore();
-  const [selected,setSelected]=useState(0);
+  const {isToneCurveOpen,curveChannel,curves,setCurve,resetCurves,toggleToneCurve,curvePointIndex:selected,setCurvePointIndex:setSelected}=useEditorStore();
   const drag=useRef<number|null>(null);
   const points=curves[curveChannel];
   const index=Math.min(selected,points.length-1), point=points[index];
-  useEffect(()=>{setSelected(0);},[curveChannel]);
   useEffect(()=>{if(!isToneCurveOpen)return;const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){useEditorStore.getState().toggleToneCurve();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[isToneCurveOpen]);
   if(!isToneCurveOpen)return null;
   const color=colors[CURVE_CHANNELS.indexOf(curveChannel)];

@@ -66,3 +66,14 @@ describe('Movable curve endpoints',()=>{
   const parsed=validateRecipeJSON(JSON.stringify(saved));expect(parsed.schemaVersion).toBe(4);expect(parsed.curves!.red).toEqual([[.2,.05],[.8,.95]]);
  });
 });
+
+ it('changes channel and selected endpoint together before the next numeric edit',()=>{
+  store.setState(store.getInitialState(),true);
+  store.getState().setCurvePointIndex(1);
+  const transitions:{channel:string;index:number}[]=[];
+  const unsub=store.subscribe(s=>transitions.push({channel:s.curveChannel,index:s.curvePointIndex}));
+  store.getState().setCurveChannel('blue');unsub();
+  expect(transitions).toEqual([{channel:'blue',index:0}]);
+  const state=store.getState();state.setCurve(state.curveChannel,moveCurvePoint(state.curves.blue,state.curvePointIndex,0,30/255));
+  expect(store.getState().curves.blue).toEqual([[0,30/255],[1,1]]);
+ });
