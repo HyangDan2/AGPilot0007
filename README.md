@@ -32,6 +32,7 @@ It provides nine original film profiles technically grounded in photographic sen
 - **Pure Static Web Architecture**: Fully functional static web app deployable to GitHub Pages, Cloudflare Pages, or Netlify with zero backend infrastructure.
 - **Privacy & Security by Design**: Photos are decoded and processed exclusively in device memory. Zero analytics, zero tracking, zero external network requests.
 - **Real-Time Interactive Viewport**: Buttery 60fps slider adjustments with split-screen before/after comparison and press-and-hold original preview.
+- **Margarine Collection**: 58 original tonal looks, available after FS-009. Select MARGARINE once to apply the last look, then select it again to browse the collection. Mobile adjustments open above the photo as a bottom sheet.
 - **Custom Recipe Management**: Save, duplicate, rename, apply, and export/import custom film looks via offline **IndexedDB**.
 - **Two-Stage Native Photo Export & Mobile Share**: Stage A in-memory development followed by Stage B instant delivery via **Web Share API** (save to iOS Apple Photos & Android Google Photos), zero-re-render direct file download, and full-resolution image preview with long-press saving.
 - **Offline PWA Support**: Installable Progressive Web Application with service worker asset caching.

@@ -1,4 +1,5 @@
 import React from 'react';
+import { MargarineCard } from './MargarineCard';
 import { FILM_LIST } from '../films/registry';
 import { useEditorStore } from '../stores/editorStore';
 import { Sliders, Sparkles } from 'lucide-react';
@@ -6,7 +7,7 @@ import { getAssetUrl } from '../utils/assets';
 import { DEFAULT_ADJUSTMENTS } from '../types/film';
 
 export const FilmSelector: React.FC = () => {
-  const { activeFilmId, setFilm, adjustments, setAdjustment } = useEditorStore();
+  const { activeFilmId, activePresetId, setFilm, adjustments, setAdjustment } = useEditorStore();
 
   return (
     <aside className="w-[270px] bg-[#0d0f14] border-r border-[#1e232d] flex flex-col h-full flex-shrink-0 select-none overflow-hidden">
@@ -54,7 +55,7 @@ export const FilmSelector: React.FC = () => {
       {/* Film Profile Cards List */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-0">
         {FILM_LIST.map((profile) => {
-          const isSelected = activeFilmId === profile.id;
+          const isSelected = activeFilmId === profile.id && !activePresetId;
           const thumbUrl = getAssetUrl(`thumbnails/${profile.id}.jpg`);
 
           return (
@@ -110,6 +111,7 @@ export const FilmSelector: React.FC = () => {
             </button>
           );
         })}
+        <MargarineCard />
       </div>
     </aside>
   );

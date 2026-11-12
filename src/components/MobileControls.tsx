@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { FILM_LIST, FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS, AdjustmentCategory } from '../types/adjustments';
 import { Sliders, Sun, Droplets, Sparkles, ChevronUp, ChevronDown, RotateCcw } from 'lucide-react';
+import { MargarineCard } from './MargarineCard';
+import { getMargarinePreset } from '../presets/margarine';
+import { X } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 
 const CATEGORY_ICONS: Record<AdjustmentCategory, React.ReactNode> = {
@@ -15,6 +18,8 @@ const CATEGORY_ICONS: Record<AdjustmentCategory, React.ReactNode> = {
 export const MobileControls: React.FC = () => {
   const {
     activeFilmId,
+    activePresetId,
+    isMargarineOpen,
     setFilm,
     adjustments,
     setAdjustment,
@@ -26,14 +31,29 @@ export const MobileControls: React.FC = () => {
 
   const categories: AdjustmentCategory[] = ['film', 'light', 'color', 'texture'];
   const activeItems = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === activeTab);
-  const currentProfile = FILM_PROFILES[activeFilmId];
+  const currentProfile = getMargarinePreset(activePresetId) || FILM_PROFILES[activeFilmId];
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const swipeStart = useRef<number | null>(null);
+  const closeSheet = () => { setIsOpen(false); toggleRef.current?.focus(); };
+  useEffect(() => {
+    if (!isOpen) return;
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { setIsOpen(false); toggleRef.current?.focus(); } };
+    const media = window.matchMedia('(min-width: 768px)');
+    const onResize = () => { if (media.matches) setIsOpen(false); };
+    window.addEventListener('keydown', onKey);
+    media.addEventListener('change', onResize);
+    return () => { window.removeEventListener('keydown', onKey); media.removeEventListener('change', onResize); };
+  }, [isOpen]);
+  useEffect(() => { if (isMargarineOpen) setIsOpen(false); }, [isMargarineOpen]);
 
   return (
     <div className="flex flex-col bg-[#0e1117] border-t border-[#1d232f] z-30 flex-shrink-0 select-none pb-[env(safe-area-inset-bottom)] shadow-2xl">
       {/* Horizontal Film Carousel */}
       <div className="py-2 px-2.5 overflow-x-auto flex space-x-2 border-b border-[#1a202c] scrollbar-none">
         {FILM_LIST.map((profile) => {
-          const isSelected = activeFilmId === profile.id;
+          const isSelected = activeFilmId === profile.id && !activePresetId;
           const thumbUrl = getAssetUrl(`thumbnails/${profile.id}.jpg`);
 
           return (
@@ -72,11 +92,15 @@ export const MobileControls: React.FC = () => {
             </button>
           );
         })}
+        <MargarineCard compact />
       </div>
 
       {/* Expand/Collapse Toggle Handle */}
       <div className="flex items-center justify-between px-3 py-2 bg-[#121620] border-b border-[#1b212d]">
         <button
+          ref={toggleRef}
+          aria-expanded={isOpen}
+          aria-controls="mobile-adjustment-sheet"
           onClick={() => setIsOpen(!isOpen)}
           className="flex-1 flex items-center justify-center space-x-1.5 text-xs font-semibold text-slate-300 hover:text-white"
         >
@@ -85,20 +109,24 @@ export const MobileControls: React.FC = () => {
           {isOpen ? <ChevronDown className="w-4 h-4 text-amber-400" /> : <ChevronUp className="w-4 h-4 text-amber-400" />}
         </button>
 
-        {isOpen && (
-          <button
-            onClick={resetAdjustments}
-            className="p-1 text-slate-400 hover:text-white"
-            title="Reset"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-        )}
       </div>
 
       {/* Expandable Adjustment Drawer (Max 45% viewport height) */}
       {isOpen && (
-        <div className="p-3 bg-[#11141c] space-y-3 max-h-[42dvh] overflow-y-auto">
+        <section id="mobile-adjustment-sheet" aria-label="Photo adjustments" data-testid="adjustment-sheet"
+          className="adjustment-sheet fixed inset-x-0 bottom-0 z-40 bg-[#11141c] border-t border-[#303641] rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)]">
+          <div className="flex items-center justify-between px-4 py-3 touch-none border-b border-[#232b3b]"
+            data-testid="sheet-handle"
+            onPointerDown={e => { if ((e.target as HTMLElement).closest('button')) return; swipeStart.current = e.clientY; e.currentTarget.setPointerCapture(e.pointerId); }}
+            onPointerUp={e => { if (swipeStart.current !== null && e.clientY - swipeStart.current > 60) closeSheet(); swipeStart.current = null; }}
+            onPointerCancel={() => { swipeStart.current = null; }}>
+            <span className="text-xs font-semibold text-slate-200">Adjustments ({currentProfile.name})</span>
+            <div className="flex items-center gap-3">
+              <button onClick={resetAdjustments} title="Reset" aria-label="Reset adjustments" className="p-1 text-slate-400"><RotateCcw className="w-4 h-4" /></button>
+              <button ref={closeRef} onClick={closeSheet} aria-label="Close adjustments" className="p-1 text-slate-300"><X className="w-5 h-5" /></button>
+            </div>
+          </div>
+          <div className="p-3 space-y-3 max-h-[42dvh] overflow-y-auto overscroll-contain">
           {/* Subtabs for all categories */}
           <div className="grid grid-cols-4 gap-1 bg-[#171c26] p-1 rounded-lg border border-[#232b3b] text-xs">
             {categories.map((cat) => (
@@ -151,7 +179,8 @@ export const MobileControls: React.FC = () => {
               );
             })}
           </div>
-        </div>
+          </div>
+        </section>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { getMargarinePreset } from '../presets/margarine';
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { prepareExportImage, triggerSafeDownload } from '../engine/export/imageExporter';
@@ -23,7 +24,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { image, activeFilmId, adjustments } = useEditorStore();
+  const { image, activeFilmId, activePresetId, adjustments } = useEditorStore();
 
   const [stage, setStage] = useState<'config' | 'preparing' | 'ready'>('config');
   const [format, setFormat] = useState<ExportFormat>('image/jpeg');
@@ -141,7 +142,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
     // Direct invocation without preceding awaits to preserve transient user activation
     const res = await sharePreparedFile(prepared.file, {
       title: prepared.filename,
-      text: `Photo developed with HD2Lab Film Studio (${FILM_PROFILES[activeFilmId].name})`,
+      text: `Photo developed with HD2Lab Film Studio (${getMargarinePreset(activePresetId)?.name || FILM_PROFILES[activeFilmId].name})`,
     });
 
     if (res.success) {
@@ -162,7 +163,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
 
   if (!isOpen || !image) return null;
 
-  const currentFilm = FILM_PROFILES[activeFilmId];
+  const baseFilm = FILM_PROFILES[activeFilmId];
+  const preset = getMargarinePreset(activePresetId);
+  const currentFilm = preset ? { ...baseFilm, name: preset.name, style: 'MARGARINE', id: 'MARGARINE' } : baseFilm;
   const origW = image.originalWidth;
   const origH = image.originalHeight;
   const targetW = Math.round(origW * scalePreset);

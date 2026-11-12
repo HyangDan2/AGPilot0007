@@ -65,3 +65,8 @@ input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.25);
   background: #ffffff;
 }
+
+.margarine-dialog::backdrop { background: rgb(0 0 0 / 0.65); backdrop-filter: blur(4px); }
+@keyframes sheet-enter { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.adjustment-sheet { animation: sheet-enter 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .adjustment-sheet { animation: none; } }

@@ -4,6 +4,10 @@ import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '.
 import { FILM_PROFILES } from '../films/registry';
 import { loadSavedRecipes, persistRecipes, validateRecipeJSON } from './recipeStore';
 
+import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
+
+interface EditorSnapshot { adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
+
 export type AppView = 'home' | 'editor';
 
 interface EditorState {
@@ -18,7 +22,13 @@ interface EditorState {
   isExporting: boolean;
   exportProgress: { progress: number; stage: string };
   recipes: CustomRecipe[];
-  history: AdjustmentSettings[];
+  activePresetId: string | null;
+  lastPresetId: string;
+  isMargarineOpen: boolean;
+  selectMargarine: () => void;
+  applyMargarine: (id: string) => void;
+  closeMargarine: () => void;
+  history: EditorSnapshot[];
   historyIndex: number;
 
   // Actions
@@ -60,11 +70,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isExporting: false,
   exportProgress: { progress: 0, stage: '' },
   recipes: [],
-  history: [{ ...DEFAULT_ADJUSTMENTS }],
+  activePresetId: null,
+  lastPresetId: MARGARINE_PRESETS[0].id,
+  isMargarineOpen: false,
+  history: [{ adjustments: { ...DEFAULT_ADJUSTMENTS }, activeFilmId: 'FS-001', activePresetId: null }],
   historyIndex: 0,
   canUndo: false,
   canRedo: false,
 
+  selectMargarine: () => {
+    if (get().activePresetId) set({ isMargarineOpen: true });
+    else get().applyMargarine(get().lastPresetId);
+  },
+  closeMargarine: () => set({ isMargarineOpen: false }),
+  applyMargarine: (id) => {
+    const preset = getMargarinePreset(id);
+    if (!preset) return;
+    const snapshot = { adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
+    const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
+    set({ ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
+  },
   setView: (view) => set({ currentView: view }),
 
   setImage: (img) => {
@@ -96,10 +121,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
 
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    newHistory.push(newAdjustments);
+    newHistory.push({ adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
 
     set({
       activeFilmId: filmId,
+      activePresetId: null,
       adjustments: newAdjustments,
       history: newHistory,
       historyIndex: newHistory.length - 1,
@@ -114,7 +140,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     const updated = { ...current, [key]: val };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    newHistory.push(updated);
+    newHistory.push({ adjustments: updated, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     // Limit history stack to 50
     if (newHistory.length > 50) newHistory.shift();
@@ -130,12 +156,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   resetAdjustments: () => {
     const film = FILM_PROFILES[get().activeFilmId];
-    const resetValues: AdjustmentSettings = {
+    const resetValues: AdjustmentSettings = getMargarinePreset(get().activePresetId)?.adjustments || {
       ...DEFAULT_ADJUSTMENTS,
       grain: film ? film.grain.amount : 0,
     };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    newHistory.push(resetValues);
+    newHistory.push({ adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     set({
       adjustments: resetValues,
@@ -152,7 +178,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex - 1;
       set({
         historyIndex: newIndex,
-        adjustments: { ...history[newIndex] },
+        ...history[newIndex],
+        ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
+        adjustments: { ...history[newIndex].adjustments },
         canUndo: newIndex > 0,
         canRedo: true,
       });
@@ -165,7 +193,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex + 1;
       set({
         historyIndex: newIndex,
-        adjustments: { ...history[newIndex] },
+        ...history[newIndex],
+        ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
+        adjustments: { ...history[newIndex].adjustments },
         canUndo: true,
         canRedo: newIndex < history.length - 1,
       });
@@ -190,6 +220,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: `rcp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: name.trim() || 'Untitled Recipe',
       baseFilmId: state.activeFilmId,
+      ...(state.activePresetId ? { presetId: state.activePresetId, presetVersion: getMargarinePreset(state.activePresetId)?.version } : {}),
       profileVersion: FILM_PROFILES[state.activeFilmId]?.version || '1.0.0',
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
@@ -233,8 +264,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   applyRecipe: (recipe: CustomRecipe) => {
-    set({
+    const snapshot = { activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
+    const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
+    set({ history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
       activeFilmId: recipe.baseFilmId,
+      activePresetId: getMargarinePreset(recipe.presetId)?.id || null,
+      ...(recipe.presetId && getMargarinePreset(recipe.presetId) ? { lastPresetId: recipe.presetId } : {}),
       adjustments: { ...recipe.adjustments },
     });
   },

@@ -8,6 +8,7 @@ import { MobileControls } from './components/MobileControls';
 import { RecipeModal } from './components/RecipeModal';
 import { ExportModal } from './components/ExportModal';
 import { useEditorStore } from './stores/editorStore';
+import { MargarineModal } from './components/MargarineModal';
 import { Sliders, X } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -118,6 +119,7 @@ export const App: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <MargarineModal />
       <RecipeModal
         isOpen={isRecipeModalOpen}
         onClose={() => setIsRecipeModalOpen(false)}

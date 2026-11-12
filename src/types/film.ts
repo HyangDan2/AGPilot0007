@@ -62,6 +62,8 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 };
 
 export interface CustomRecipe {
+  presetId?: string;
+  presetVersion?: string;
   id: string;
   name: string;
   baseFilmId: FilmId;

@@ -1,3 +1,4 @@
+import { getMargarinePreset } from '../presets/margarine';
 import React, { useRef, useState } from 'react';
 import {
   Upload,
@@ -23,6 +24,7 @@ export const HomeScreen: React.FC = () => {
   const {
     image,
     activeFilmId,
+    activePresetId,
     adjustments,
     setFilm,
     setImage,
@@ -63,7 +65,9 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const currentFilm = FILM_PROFILES[activeFilmId];
+  const baseFilm = FILM_PROFILES[activeFilmId];
+  const preset = getMargarinePreset(activePresetId);
+  const currentFilm = preset ? { ...baseFilm, name: preset.name, style: 'MARGARINE', id: 'MARGARINE' } : baseFilm;
 
   return (
     <div
@@ -260,7 +264,7 @@ export const HomeScreen: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {FILM_LIST.map((profile) => {
               const thumbUrl = getAssetUrl(`thumbnails/${profile.id}.jpg`);
-              const isCurrent = image && activeFilmId === profile.id;
+              const isCurrent = image && activeFilmId === profile.id && !activePresetId;
 
               return (
                 <div

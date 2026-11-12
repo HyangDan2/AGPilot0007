@@ -67,9 +67,11 @@ test.describe('Responsive Layout & Viewport Verification', () => {
         await expandBtn.click();
 
         // Check tabs exist
-        await expect(page.getByRole('button', { name: /light/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /color/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /texture/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'light', exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'color', exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'texture', exact: true })).toBeVisible();
+        await expect(page.getByTestId('adjustment-sheet')).toBeVisible();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
       }
 
       // Capture representative layout screenshots

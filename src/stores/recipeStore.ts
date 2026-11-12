@@ -1,6 +1,10 @@
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
 
+import { FILM_PROFILES } from '../films/registry';
+import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
+import { getMargarinePreset } from '../presets/margarine';
+
 const RECIPES_IDB_KEY = 'hd2lab_film_studio_recipes_v1';
 const CURRENT_SCHEMA_VERSION = 1;
 
@@ -25,15 +29,19 @@ export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
 }
 
 function migrateRecipe(recipe: any): CustomRecipe {
+  const baseFilmId: FilmId = Object.hasOwn(FILM_PROFILES, recipe.baseFilmId) ? recipe.baseFilmId : 'FS-001';
+  const adjustments = { ...DEFAULT_ADJUSTMENTS };
+  for (const def of ADJUSTMENT_DEFINITIONS) {
+    const value = recipe.adjustments?.[def.key];
+    if (typeof value === 'number' && Number.isFinite(value)) adjustments[def.key] = Math.min(def.max, Math.max(def.min, value));
+  }
   return {
+    ...(getMargarinePreset(recipe.presetId)?.baseFilmId === recipe.baseFilmId ? { presetId: recipe.presetId, presetVersion: typeof recipe.presetVersion === 'string' ? recipe.presetVersion : getMargarinePreset(recipe.presetId)?.version } : {}),
     id: String(recipe.id || `recipe-${Date.now()}`),
     name: String(recipe.name || 'Untitled Recipe'),
-    baseFilmId: (recipe.baseFilmId || 'FS-001') as FilmId,
+    baseFilmId,
     profileVersion: String(recipe.profileVersion || '1.0.0'),
-    adjustments: {
-      ...DEFAULT_ADJUSTMENTS,
-      ...(recipe.adjustments || {}),
-    },
+    adjustments,
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -60,5 +68,9 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
     throw new Error('Recipe missing valid "baseFilmId" property');
   }
 
+  if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
+  if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
+    throw new Error('Unknown or incompatible preset');
+  }
   return migrateRecipe(parsed);
 }

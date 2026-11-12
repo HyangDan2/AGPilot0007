@@ -1,3 +1,4 @@
+import { getMargarinePreset } from '../presets/margarine';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
@@ -41,6 +42,7 @@ export const Viewport: React.FC = () => {
   const {
     image,
     activeFilmId,
+    activePresetId,
     adjustments,
     compareMode,
     setCompareMode,
@@ -223,6 +225,7 @@ export const Viewport: React.FC = () => {
     if (!profile) return;
 
     let isCancelled = false;
+    setRendererError(null);
     loadCubeLut(profile.lutFile)
       .then((lut) => {
         if (isCancelled) return;
@@ -233,6 +236,7 @@ export const Viewport: React.FC = () => {
         }
       })
       .catch((err) => {
+        if (isCancelled) return;
         console.error('Failed to load LUT:', err);
         setRendererError(`Failed to load ${profile.name} LUT`);
       });
@@ -531,13 +535,16 @@ export const Viewport: React.FC = () => {
     }
   };
 
-  const currentFilm = FILM_PROFILES[activeFilmId];
+  const baseFilm = FILM_PROFILES[activeFilmId];
+  const preset = getMargarinePreset(activePresetId);
+  const currentFilm = preset ? { ...baseFilm, name: preset.name, style: 'MARGARINE', id: 'MARGARINE' } : baseFilm;
 
   return (
     <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#08090d] relative overflow-hidden select-none">
       {/* Canvas Viewport Area — PERSISTENT CONTAINER OBSERVED BY RESIZEOBSERVER */}
       <div
         ref={containerRef}
+        data-testid="image-workspace"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
