@@ -1,4 +1,4 @@
-import type { CameraSettings } from './camera';
+import type { CameraSettings, CameraEffect } from './camera';
 export type FilmId =
   | 'identity'
   | 'FS-001'
@@ -13,6 +13,7 @@ export type FilmId =
   | 'FS-010';
 
 export interface FilmProfile {
+  cameraEffects?: readonly CameraEffect[];
   id: FilmId;
   code: string;
   name: string;

@@ -1,3 +1,4 @@
+import { getEffectiveCamera, supportsCameraEffects } from '../src/films/cameraEffects';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 vi.mock('idb-keyval',()=>({get:vi.fn(async()=>[]),set:vi.fn(async()=>undefined)}));
@@ -34,9 +35,9 @@ describe('Retro film and independent date imprint',()=>{
  });
  it('applies the whole look, keeps dates across film changes, and restores all state on undo',()=>{
   const store=useEditorStore;
-  store.getState().updateDateStamp({date:'2016-03-08',enabled:true});store.getState().applyOldSchool();
+  store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true});
   expect(store.getState().adjustments.exposure).toBe(-.35);expect(store.getState().camera.optics.glow).toBe(12);
-  store.getState().setFilm('FS-009');expect(store.getState().camera.dateStamp.enabled).toBe(true);expect(store.getState().camera.optics.glow).toBe(0);
+  store.getState().setFilm('FS-009');expect(store.getState().camera.dateStamp.enabled).toBe(true);expect(getEffectiveCamera(store.getState().activeFilmId,store.getState().camera).optics.glow).toBe(0);
   store.getState().undo();expect(store.getState().activeFilmId).toBe('FS-010');expect(store.getState().camera.optics.glow).toBe(12);
   store.getState().updateDateStamp({position:'bottom-left'});store.getState().undo();expect(store.getState().camera.dateStamp.position).toBe('bottom-right');store.getState().redo();expect(store.getState().camera.dateStamp.position).toBe('bottom-left');
   store.getState().resetAdjustments();expect(store.getState().camera.dateStamp.enabled).toBe(true);
@@ -53,7 +54,7 @@ describe('Retro film and independent date imprint',()=>{
   expect(()=>validateRecipeJSON(JSON.stringify({...saved,schemaVersion:3}))).toThrow(/version/);
  });
  it('does not carry the previous photo EXIF date into a photo with no EXIF',()=>{
-  const store=useEditorStore;store.getState().updateDateStamp({date:'2016-03-08',enabled:true,source:'exif'});
+  const store=useEditorStore;store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true,source:'exif'});
   store.getState().setImage({captureDateStatus:'missing',sourceUrl:'test'} as DecodedImage);
   expect(store.getState().camera.dateStamp.enabled).toBe(false);expect(store.getState().camera.dateStamp.date).toBe('');expect(store.getState().canUndo).toBe(false);
  });
@@ -62,3 +63,24 @@ describe('Retro film and independent date imprint',()=>{
   expect(value.dateStamp.size).toBe(6);expect(value.dateStamp.color).toBe(DEFAULT_CAMERA.dateStamp.color);expect(value.optics).toEqual({glow:0,halation:100,softness:0,quality:'high'});expect(DEFAULT_CAMERA.dateStamp.size).toBe(3);
  });
 });
+
+ describe('Camera effect capability boundaries',()=>{
+  it('disables every custom effect for the nine films and all Margarine bases',()=>{
+   const camera=normalizeCamera();camera.dateStamp={...camera.dateStamp,enabled:true,date:'2016-03-08'};camera.optics={glow:100,halation:100,softness:100,quality:'high'};
+   for(const profile of FILM_LIST){expect(supportsCameraEffects(profile.id)).toBe(false);expect(getEffectiveCamera(profile.id,camera)).toEqual(DEFAULT_CAMERA);}
+   expect(getEffectiveCamera(undefined,camera)).toEqual(DEFAULT_CAMERA);
+   expect(getEffectiveCamera('FS-010',camera)).toEqual(camera);
+  });
+  it('preserves customized optics and dates while closing the UI across filter switches',()=>{
+   const store=useEditorStore;store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true});store.getState().updateOptics({glow:47});store.getState().toggleCameraEffects();
+   expect(store.getState().isCameraEffectsOpen).toBe(true);store.getState().setFilm('FS-009');expect(store.getState().isCameraEffectsOpen).toBe(false);
+   expect(getEffectiveCamera('FS-009',store.getState().camera).dateStamp.enabled).toBe(false);expect(store.getState().camera.optics.glow).toBe(47);
+   store.getState().applyMargarine('cream-daylight');expect(getEffectiveCamera(store.getState().activeFilmId,store.getState().camera)).toEqual(DEFAULT_CAMERA);
+   store.getState().applyOldSchool();expect(store.getState().camera.optics.glow).toBe(47);expect(store.getState().camera.dateStamp.date).toBe('2016-03-08');expect(store.getState().isCameraEffectsOpen).toBe(false);
+  });
+  it('keeps imported unsupported camera settings inert and rejects unsupported UI actions',()=>{
+   const store=useEditorStore;const initial=store.getState().camera;store.getState().updateDateStamp({date:'2016-03-08',enabled:true});store.getState().updateOptics({glow:80});store.getState().toggleCameraEffects();expect(store.getState().camera).toEqual(initial);expect(store.getState().isCameraEffectsOpen).toBe(false);
+   const recipe=validateRecipeJSON(JSON.stringify({name:'Old custom',baseFilmId:'FS-001',schemaVersion:2,camera:{dateStamp:{...DEFAULT_CAMERA.dateStamp,enabled:true,date:'2016-03-08'},optics:{glow:100,halation:100,softness:100}}}));
+   store.getState().applyRecipe(recipe);expect(getEffectiveCamera(store.getState().activeFilmId,store.getState().camera)).toEqual(DEFAULT_CAMERA);
+  });
+ });

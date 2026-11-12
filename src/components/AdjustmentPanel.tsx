@@ -1,4 +1,4 @@
-import { CameraEffects } from './CameraEffects';
+import { CameraEffects, CameraEffectsButton } from './CameraEffects';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
@@ -25,16 +25,17 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
     <aside className="w-[310px] bg-[#0d0f14] border-l border-[#1e232d] flex flex-col h-full flex-shrink-0 select-none overflow-hidden">
       {/* Header */}
       <div data-testid="adjustment-panel-header" onClick={e => { if (onClose && !(e.target as HTMLElement).closest('button')) onClose(); }} className={`p-3.5 border-b border-[#1c222c] flex items-center justify-between flex-shrink-0 ${onClose ? 'cursor-pointer' : ''}`}>
-        <div className="flex items-center space-x-2">
-          <Contrast className="w-4 h-4 text-amber-400" />
-          <h2 aria-label="Manual Adjustments" className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+        <div className="flex items-center gap-2 min-w-0">
+          <Contrast className="w-4 h-4 text-amber-400 shrink-0" />
+          <h2 aria-label="Manual Adjustments" className="min-w-0 text-xs font-semibold uppercase tracking-wider text-slate-200">
             {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="flex items-center gap-2 text-left uppercase tracking-wider hover:text-white cursor-pointer">Manual Adjustments<ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button> : 'Manual Adjustments'}
           </h2>
+          <CameraEffectsButton controls="desktop-camera-effects" />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex shrink-0 items-center space-x-2">
           <button
             onClick={resetAdjustments}
-            className="text-[10px] text-amber-400/90 hover:text-amber-300 font-mono transition-colors cursor-pointer"
+            className="whitespace-nowrap text-[10px] text-amber-400/90 hover:text-amber-300 font-mono transition-colors cursor-pointer"
           >
             Reset All
           </button>
@@ -53,7 +54,7 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       {/* Adjustments Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         <p className="text-[10px] text-slate-400">{RESET_VALUE_HINT}</p>
-        <CameraEffects />
+        <CameraEffects id="desktop-camera-effects" />
         {categories.map((cat) => {
           const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat);
           return (

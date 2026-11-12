@@ -1,10 +1,13 @@
-import { CameraSettings, DEFAULT_CAMERA } from '../../types/camera';
+import { getEffectiveCamera } from '../../films/cameraEffects';
+import type { FilmId } from '../../types/film';
+import { CameraSettings } from '../../types/camera';
 import { createDateStamp } from '../overlay/dateStamp';
 import { VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE } from './shaderManager';
 import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
 
 export interface RenderOptions {
+  filmId?: FilmId;
   camera?: CameraSettings;
   adjustments: AdjustmentSettings;
   compareMode: 'none' | 'original' | 'split';
@@ -317,7 +320,7 @@ export class WebGL2FilmRenderer {
     gl.bindTexture(gl.TEXTURE_3D, this.lutTexture);
     if (this.uniforms.u_lut) gl.uniform1i(this.uniforms.u_lut, 1);
 
-    const camera = options.camera || DEFAULT_CAMERA;
+    const camera = getEffectiveCamera(options.filmId, options.camera);
     const stamp = camera.dateStamp;
     const stampKey = JSON.stringify([this.canvas.width,this.canvas.height,stamp]);
     gl.activeTexture(gl.TEXTURE2);

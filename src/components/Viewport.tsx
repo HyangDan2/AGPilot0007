@@ -86,6 +86,8 @@ export const Viewport: React.FC = () => {
   // Latest state references for WebGL callbacks
   const imageRef = useRef(image);
   imageRef.current = image;
+  const filmIdRef = useRef(activeFilmId);
+  filmIdRef.current = activeFilmId;
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
   const adjustmentsRef = useRef(adjustments);
@@ -166,6 +168,7 @@ export const Viewport: React.FC = () => {
         renderer.render({
           adjustments: adjustmentsRef.current,
           camera: cameraRef.current,
+          filmId: filmIdRef.current,
           compareMode: effectiveMode,
           splitPos: splitPosRef.current,
           seed: 42.0,
@@ -274,7 +277,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [camera, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {

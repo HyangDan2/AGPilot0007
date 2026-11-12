@@ -1,7 +1,7 @@
 import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
-import { AdjustmentSettings } from '../../types/film';
+import { AdjustmentSettings, FilmId } from '../../types/film';
 import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
 import { ExportOptions, PreparedExport } from '../../types/export';
 
@@ -33,7 +33,8 @@ export async function prepareExportImage(
   adjustments: AdjustmentSettings,
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings
+  camera?: CameraSettings,
+  filmId?: FilmId
 ): Promise<PreparedExport> {
   onProgress?.(10, 'Initializing export pipeline...');
 
@@ -89,6 +90,7 @@ export async function prepareExportImage(
   renderer.render({
     adjustments,
     camera,
+    filmId,
     compareMode: 'none',
     splitPos: 1.0,
     seed: 42.0,
@@ -152,9 +154,10 @@ export async function exportFullResolutionImage(
   adjustments: AdjustmentSettings,
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings
+  camera?: CameraSettings,
+  filmId?: FilmId
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera);
+  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId);
   return {
     blob: prepared.blob,
     filename: prepared.filename,

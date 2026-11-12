@@ -1,4 +1,4 @@
-import { CameraEffects } from './CameraEffects';
+import { CameraEffects, CameraEffectsButton } from './CameraEffects';
 import { FilterSetCard } from './FilterSet';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React, { useState, useEffect, useRef } from 'react';
@@ -127,8 +127,9 @@ export const MobileControls: React.FC = () => {
             onPointerMove={e => { if (swipeStart.current !== null && Math.abs(e.clientY - swipeStart.current) > 6) e.currentTarget.setPointerCapture(e.pointerId); }}
             onPointerUp={e => { if (swipeStart.current !== null && e.clientY - swipeStart.current > 60) closeSheet(); swipeStart.current = null; }}
             onPointerCancel={() => { swipeStart.current = null; }}>
-            <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="flex flex-1 items-center gap-2 self-stretch text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer">Adjustments ({currentProfile.name})<ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button>
-            <div className="flex items-center gap-3">
+            <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer"><span className="truncate">Adjustments ({currentProfile.name})</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400 shrink-0" /></button>
+            <CameraEffectsButton controls="mobile-camera-effects" />
+            <div className="flex shrink-0 items-center gap-3 ml-3">
               <button onClick={resetAdjustments} title="Reset" aria-label="Reset adjustments" className="p-1 text-slate-400"><RotateCcw className="w-4 h-4" /></button>
               <button ref={closeRef} onClick={closeSheet} aria-label="Close adjustments" className="p-1 text-slate-300"><X className="w-5 h-5" /></button>
             </div>
@@ -152,7 +153,7 @@ export const MobileControls: React.FC = () => {
             ))}
           </div>
 
-          <CameraEffects />
+          <CameraEffects id="mobile-camera-effects" />
           {/* Sliders in active category */}
           <div className="space-y-3.5 pt-1">
             {activeItems.map((def) => {

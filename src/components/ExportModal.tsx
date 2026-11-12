@@ -118,7 +118,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         (p, currentStage) => {
           setProgress({ value: p, stage: currentStage });
         },
-        camera
+        camera,
+        activeFilmId
       );
 
       // Clean up previous prepared objectUrl if existing

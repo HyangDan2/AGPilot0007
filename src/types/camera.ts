@@ -1,3 +1,4 @@
+export type CameraEffect = 'dateStamp' | 'glow' | 'halation' | 'softness';
 export interface DateStampSettings {
   enabled: boolean;
   date: string;

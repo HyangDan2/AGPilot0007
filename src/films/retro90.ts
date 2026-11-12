@@ -1,5 +1,6 @@
 import { DEFAULT_ADJUSTMENTS, FilmProfile } from '../types/film';
 export const RETRO90: FilmProfile = {
+  cameraEffects: ['dateStamp', 'glow', 'halation', 'softness'],
   id: 'FS-010', code: 'RETRO90', name: 'RETRO 90', style: 'Night Amber',
   description: 'Deep night shadows, warm amber lamps and gentle compact-camera character.',
   technicalTarget: 'Warm midtones, restrained yellow-green highlights and a smooth highlight shoulder.',

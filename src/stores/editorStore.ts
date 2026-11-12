@@ -1,4 +1,5 @@
-import { CameraSettings, DateStampSettings, OpticalSettings, DEFAULT_CAMERA, normalizeCamera } from '../types/camera';
+import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects';
+import { CameraSettings, DateStampSettings, OpticalSettings, normalizeCamera } from '../types/camera';
 import { RETRO90 } from '../films/retro90';
 import { create } from 'zustand';
 import { DecodedImage } from '../engine/image/decoder';
@@ -14,6 +15,9 @@ export type AppView = 'home' | 'editor';
 
 interface EditorState {
   camera: CameraSettings;
+  hasOldSchoolSettings: boolean;
+  isCameraEffectsOpen: boolean;
+  toggleCameraEffects: () => void;
   isFilterSetOpen: boolean;
   openFilterSet: () => void;
   closeFilterSet: () => void;
@@ -70,6 +74,9 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   camera: normalizeCamera(),
+  hasOldSchoolSettings: false,
+  isCameraEffectsOpen: false,
+  toggleCameraEffects: () => { if (supportsCameraEffects(get().activeFilmId)) set({ isCameraEffectsOpen: !get().isCameraEffectsOpen }); },
   isFilterSetOpen: false,
   currentView: 'home',
   image: null,
@@ -98,9 +105,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   applyMargarine: (id) => {
     const preset = getMargarinePreset(id);
     if (!preset) return;
-    const snapshot = { camera: normalizeCamera({ ...get().camera, optics: DEFAULT_CAMERA.optics }), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
+    const snapshot = { camera: normalizeCamera(get().camera), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
-    set({ ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
+    set({ isCameraEffectsOpen: false, ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
   },
   openFilterSet: () => set({ isFilterSetOpen: true, isMargarineOpen: false }),
   closeFilterSet: () => set({ isFilterSetOpen: false }),
@@ -108,13 +115,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const snapshot: EditorSnapshot = {
       activeFilmId: 'FS-010', activePresetId: null,
       adjustments: { ...DEFAULT_ADJUSTMENTS, ...RETRO90.defaultAdjustments },
-      camera: normalizeCamera({ ...get().camera, optics: { glow: 12, halation: 8, softness: 8, quality: 'standard' } }),
+      camera: get().hasOldSchoolSettings ? normalizeCamera(get().camera) : normalizeCamera({ ...get().camera, optics: { glow: 12, halation: 8, softness: 8, quality: 'standard' } }),
     };
     const history = [...get().history.slice(0,get().historyIndex+1),snapshot].slice(-50);
-    set({ ...snapshot, isFilterSetOpen: false, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
+    set({ ...snapshot, hasOldSchoolSettings: true, isCameraEffectsOpen: false, isFilterSetOpen: false, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
   updateDateStamp: (patch) => {
     const state = get();
+    if (!getCameraEffects(state.activeFilmId).includes('dateStamp')) return;
     const camera = normalizeCamera({ ...state.camera, dateStamp: { ...state.camera.dateStamp, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
     const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
@@ -123,6 +131,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   updateOptics: (patch) => {
     const state = get();
+    if (!supportsCameraEffects(state.activeFilmId)) return;
     const camera = normalizeCamera({ ...state.camera, optics: { ...state.camera.optics, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
     const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
@@ -131,6 +140,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   resetCamera: () => {
     const state=get();
+    if (!supportsCameraEffects(state.activeFilmId)) return;
     const snapshot={ camera: normalizeCamera(), activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: {...state.adjustments} };
     const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({...snapshot,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
@@ -152,6 +162,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     } : state.camera);
     const snapshot = { camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     set({
+      isCameraEffectsOpen: false,
       camera, history: [snapshot], historyIndex: 0, canUndo: false, canRedo: false,
       image: img,
       currentView: 'editor',
@@ -172,11 +183,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
 
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    const camera = normalizeCamera({ ...get().camera, optics: DEFAULT_CAMERA.optics });
+    const camera = normalizeCamera(get().camera);
     newHistory.push({ camera, adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
 
     set({
       camera,
+      isCameraEffectsOpen: false,
       activeFilmId: filmId,
       activePresetId: null,
       adjustments: newAdjustments,
@@ -215,7 +227,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...(get().activeFilmId === 'FS-010' ? RETRO90.defaultAdjustments : {}),
     };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    const camera = normalizeCamera({ ...get().camera, optics: get().activeFilmId === 'FS-010' ? { glow: 12, halation: 8, softness: 8, quality: 'standard' } : DEFAULT_CAMERA.optics });
+    const camera = normalizeCamera({ ...get().camera, optics: get().activeFilmId === 'FS-010' ? { glow: 12, halation: 8, softness: 8, quality: 'standard' } : get().camera.optics });
     newHistory.push({ camera, adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     set({
@@ -234,6 +246,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex - 1;
       set({
         historyIndex: newIndex,
+        isCameraEffectsOpen: false,
         ...history[newIndex],
         ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
         adjustments: { ...history[newIndex].adjustments },
@@ -249,6 +262,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex + 1;
       set({
         historyIndex: newIndex,
+        isCameraEffectsOpen: false,
         ...history[newIndex],
         ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
         adjustments: { ...history[newIndex].adjustments },
@@ -323,7 +337,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   applyRecipe: (recipe: CustomRecipe) => {
     const snapshot = { camera: normalizeCamera(recipe.camera), activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
-    set({ camera: snapshot.camera, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
+    set({ camera: snapshot.camera, isCameraEffectsOpen: false, ...(recipe.baseFilmId === 'FS-010' ? { hasOldSchoolSettings: true } : {}), history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
       activeFilmId: recipe.baseFilmId,
       activePresetId: getMargarinePreset(recipe.presetId)?.id || null,
       ...(recipe.presetId && getMargarinePreset(recipe.presetId) ? { lastPresetId: recipe.presetId } : {}),
