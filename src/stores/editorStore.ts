@@ -276,6 +276,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   importRecipe: async (jsonStr: string) => {
     const validated = validateRecipeJSON(jsonStr);
+    if (get().recipes.some(recipe => recipe.id === validated.id)) {
+      validated.id = `rcp-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    }
     const updated = [validated, ...get().recipes];
     set({ recipes: updated });
     await persistRecipes(updated);

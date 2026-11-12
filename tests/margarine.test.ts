@@ -37,6 +37,15 @@ describe('Margarine workflow', () => {
     expect(store.getState().activeFilmId).toBe('FS-009');
     expect(store.getState().activePresetId).toBeNull();
   });
+  it('gives a repeated recipe import its own local identity', async () => {
+    const json = JSON.stringify({ id: 'same-file', name: 'Imported', baseFilmId: 'FS-007', presetId: 'soft-white' });
+    const first = await useEditorStore.getState().importRecipe(json);
+    const second = await useEditorStore.getState().importRecipe(json);
+    expect(first.id).not.toBe(second.id);
+    expect(second.presetId).toBe('soft-white');
+    useEditorStore.getState().deleteRecipe(second.id);
+    expect(useEditorStore.getState().recipes).toHaveLength(1);
+  });
   it('round-trips modified preset recipes and preserves old recipes', async () => {
     const store = useEditorStore;
     store.getState().applyMargarine('cream-daylight');
