@@ -8,15 +8,17 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-test:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -48,10 +50,19 @@ jobs:
       - name: Build static web application
         run: npm run build
 
+      - name: Preserve beta build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          beta_run=$(gh run list --workflow beta.yml --branch beta --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          test -n "$beta_run" && test "$beta_run" != "null"
+          gh run download "$beta_run" --name film-studio-beta --dir .beta-artifact
+          node tools/deployment/assemble-pages.mjs --production dist --beta .beta-artifact --output .pages-site
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './.pages-site'
 
   deploy:
     environment:

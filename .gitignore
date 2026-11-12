@@ -10,6 +10,7 @@ test-results
 
 # Production build
 dist
+dist-beta
 dist-ssr
 *.local
 
@@ -28,3 +29,8 @@ yarn-error.log*
 __pycache__
 .env
 .env.local
+
+# Combined Pages staging and approved production snapshots
+/.pages-site/
+/.production-root/
+/.beta-artifact/

@@ -1,3 +1,4 @@
+import { FilterSetModal } from './components/FilterSet';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
@@ -121,6 +122,7 @@ export const App: React.FC = () => {
 
       {/* Modals */}
       <MargarineModal />
+      <FilterSetModal />
       <RecipeModal
         isOpen={isRecipeModalOpen}
         onClose={() => setIsRecipeModalOpen(false)}

@@ -72,3 +72,28 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 
 - 접힌 조정 메뉴에는 위쪽, 열린 패널에는 아래쪽 셰브론을 표시한다. 숫자 버튼은 hover·키보드 focus 툴팁과 패널 도움말로 단일 항목 초기화를 안내한다. 숫자 버튼 크기와 슬라이더 사이 간격은 유지한다. 모바일 도움말은 슬라이더 스크롤 영역 아래 패널 맨 하단에 표시한다.
 - 단위 검사 수집에서도 `.private/`를 제외하여 로컬 배포 확인용 Playwright 파일이 Vitest에 섞이지 않게 한다.
+
+## Beta 브랜치와 빌드
+
+- `beta`는 실험 기능 작업 브랜치다. `npm run dev:beta`, `npm run build:beta`, `npm run preview:beta`는 `/AGPilot0007/beta/`를 사용한다. 베타 산출물은 Git 제외 `dist-beta/`에 저장한다. CI의 `GITHUB_REF_NAME=beta`도 베타 경로를 선택한다.
+- 베타 PWA는 별도 이름·scope·start_url·캐시 ID를 사용한다. 운영 서비스 워커 설정에는 beta 경로의 navigation fallback 제외 규칙을 둔다. 운영에 해당 설정을 반영하기 전에는 기존 서비스 워커가 beta 탐색을 가로챌 수 있다.
+- `.github/workflows/beta.yml`은 beta push 시 LUT 생성·단위 검사·베타 빌드 후 마지막 성공 main 배포 산출물과 합쳐 Pages에 게시한다. 운영 소스 브랜치를 병합하지 않는다. `tools/deployment/fetch-production.mjs`는 main 배포 artifact 또는 같은 main SHA의 90일 보관 snapshot만 사용하며 없으면 배포를 중단한다.
+- `tools/deployment/assemble-pages.mjs`는 운영 루트와 beta 하위 폴더를 `.pages-site/`에 합친다. 운영 파일은 sw.js를 제외하고 바이트 일치를 검사한다. 운영 SW에는 beta navigation fallback 제외와 기존 캐시 방문자를 beta로 재탐색하는 activate handler를 추가하고, beta 캐시까지 매칭하는 구형 Workbox 전역 캐시 정리는 우회한다. 운영 precache의 revision 정리는 유지된다. beta를 단독 배포하지 않는다. 두 워크플로는 pages concurrency로 직렬화한다. main용 워크플로도 최신 성공 beta artifact를 포함하도록 준비되어 있으며 main 반영은 사용자 승인 후 수행한다.
+- 같은 origin의 IndexedDB는 경로로 격리되지 않는다. beta 레시피는 별도 `hd2lab_film_studio_beta_recipes_v1` 키를 사용하여 운영 레시피와 분리한다.
+
+## RETRO 90 / Date Imprint (beta)
+
+- 기존 개별 Film 목록은 9종을 유지한다. MARGARINE 뒤 Filter Set 카드는 즉시 모달을 열고 `01 Old School Film` 선택 시 FS-010 RETRO 90의 전체 보정값과 기본 광학 효과를 적용한다. `src/films/retro90.ts`와 `public/luts/FS-010_RETRO90.cube`가 신규 프로필이다.
+- `FilmProfile.cameraEffects`에 지원 항목을 선언한 필터에서만 조정 패널 타이틀 옆 카메라 버튼을 표시한다. 현재는 RETRO 90만 지원한다. 버튼으로 전용 설정을 열고 닫으며, 기존 9종과 마가린에서는 버튼과 설정 DOM을 렌더링하지 않는다. 날짜는 기본 OFF, 날짜 입력·Today·EXIF 선택 후 ON으로 켠다. EXIF는 파일의 DateTimeOriginal만 로컬 파싱하며 임의의 날짜로 대체하지 않는다. 기록된 달력 날짜를 보존한다. 사진 교체 시 EXIF 소스 날짜는 새 사진에 맞추고 날짜가 없으면 OFF로 전환한다.
+- 필름 변경은 날짜·광학 효과 설정값을 보존하지만 미지원 필터에서는 실제 효과를 적용하지 않는다. 필터 전환·Undo/Redo·레시피 적용 시 전용 설정창을 닫고, RETRO 90으로 돌아오면 보존한 설정을 사용한다. 보정 Reset은 날짜를 유지한다. Camera Effects Reset은 날짜와 광학 효과를 초기화한다. Undo/Redo는 색·필름·날짜·광학 효과를 함께 복원하며, 새 사진은 현재 설정으로 이력을 새로 시작한다.
+- 날짜는 자체 7세그먼트 Canvas 벡터를 작은 투명 텍스처로 생성해 공통 WebGL 렌더러에서 필름 처리 후 합성한다. 사진 좌표·짧은 변 비율로 크기·여백·발광을 계산하고 프리뷰/내보내기에 동일하게 적용한다. 원본 보기에는 숨기고 Split은 보정 영역에만 합성한다. 설정·출력 크기가 같으면 텍스처를 재사용한다.
+- Glow/Halation/Softness는 0이면 우회한다. Standard는 주변 4샘플, High는 8샘플을 사용하며 추가 전체 해상도 버퍼/다중 패스를 할당하지 않는다. 고해상도 및 실기기 성능을 브라우저 에뮬레이션 수치로 보장하지 않는다.
+- 신규 레시피 스키마는 2이며 camera 설정을 저장한다. 스키마 1을 읽을 때 날짜 OFF·추가 효과 0을 채운다. 미래 버전과 잘못된 활성 날짜는 가져오기 오류로 처리한다. 기존 마가린 메타데이터는 유지한다.
+- FS-010만 생성: `npm run generate-luts -- --only FS-010`. 기존 LUT 변경은 승인 없이 허용하지 않으며 생성 전후 해시를 비교한다.
+- 필수 검증: `npm test`, `npx playwright test`, `npm run build:beta`, 운영 base 빌드. 신규 `tests/e2e/retro90.spec.ts`는 로컬 EXIF fixture, 날짜 UI/레시피/실제 PNG 출력, JPEG/PNG 렌더 일치·원본/Split·Context Loss 복구를 확인한다. 색/성능 비교와 증거는 `.private/`에만 둔다.
+
+- 공개 beta 배포는 승인된 동작이다. GitHub Pages 환경의 main/beta 브랜치 허용 정책을 유지하며, 운영 기능 변경의 main 병합 승인은 별개다. 게시 후 새 방문자와 기존 운영 SW 캐시 방문자, 두 경로의 사진 편집·내보내기·오프라인 동작을 각각 확인한다.
+
+- 현재 main 브랜치의 과거 워크플로는 beta 폴더를 보존하지 않는다. 이 PR의 통합 배포 워크플로를 main에 승인 반영하기 전에는 과거 main 배포를 재실행하지 않는다. beta 배포는 승인된 운영 snapshot과 최신 beta를 함께 게시한다.
+
+- 카메라 효과 허용 조건은 `src/films/cameraEffects.ts`에서 공유한다. 미리보기와 내보내기 모두 실제 필터 ID를 공통 WebGL 렌더러에 전달한다. 렌더러/내보내기 API에서 필터 ID가 없거나 미지원이면 날짜·광학 효과를 모두 OFF로 취급한다. 저장된 레시피의 camera 값이 활성화되어 있어도 이 제한을 우회하지 못한다.

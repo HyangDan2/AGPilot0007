@@ -14,6 +14,7 @@ Profiles generated:
   - FS-007 LYSEN (Soft Portrait)
   - FS-008 MYRVEL (Cinema Dusk)
   - FS-009 RIMVA (Silver Monochrome)
+  - FS-010 RETRO 90 (Night Amber; Filter Set collection)
 """
 
 import os
@@ -338,6 +339,22 @@ def transform_rimva(rgb):
     rgb_out = np.stack([y_curved, y_curved, y_curved], axis=-1)
     return rgb_out
 
+def transform_retro90(rgb):
+    """Original Night Amber transform. Spatial glow/grain stay in the renderer."""
+    lum = np.dot(rgb, [0.2126, 0.7152, 0.0722])
+    mid = (4.0 * lum * (1.0 - lum))[:, None]
+    color = np.power(np.clip(rgb, 0, 1), 1.035)
+    neutral = np.dot(color, [0.2126, 0.7152, 0.0722])[:, None]
+    # Quiet shadow chroma with a black-preserving toe.
+    shadow = np.clip((0.32 - lum) / 0.32, 0, 1)[:, None]
+    color = color * (1.0 - 0.10 * shadow) + neutral * (0.10 * shadow)
+    color[:, 0] += 0.025 * mid[:, 0] * (1.0 - color[:, 0])
+    color[:, 1] += 0.010 * mid[:, 0] * (1.0 - color[:, 1])
+    color[:, 2] *= 1.0 - 0.085 * mid[:, 0]
+    # Small smooth shoulder rather than hard channel clipping.
+    color = color - 0.025 * np.maximum(color - 0.65, 0) ** 2
+    return np.clip(color, 0, 1)
+
 PROFILES = [
     {
         "id": "identity",
@@ -426,6 +443,12 @@ PROFILES = [
         "filename": "FS-009_RIMVA.cube",
         "transform": transform_rimva,
         "description": "Black-and-white transformation, refined contrast and grain."
+    },
+    {
+        "id": "FS-010", "code": "RETRO90", "name": "RETRO 90",
+        "style": "Night Amber", "filename": "FS-010_RETRO90.cube",
+        "transform": transform_retro90,
+        "description": "Original warm compact-camera night interpretation."
     }
 ]
 
@@ -454,7 +477,14 @@ def main():
 
     base_rgb, size = generate_base_lattice(33)
 
-    for profile in PROFILES:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--only', help='Generate only the given film ID')
+    args = parser.parse_args()
+    profiles = [p for p in PROFILES if not args.only or p['id'] == args.only]
+    if not profiles:
+        parser.error('Unknown film ID')
+    for profile in profiles:
         print(f"  -> Generating {profile['id']}: {profile['name']} ({profile['filename']})...")
         transformed = profile["transform"](base_rgb)
         
@@ -472,7 +502,7 @@ def main():
         size_kb = os.path.getsize(out_path) / 1024.0
         print(f"     Written: {out_path} ({size_kb:.1f} KB)")
 
-    print("\nAll 10 3D LUT profiles (Identity + 9 HD2Lab Originals) generated successfully!")
+    print(f"\nGenerated {len(profiles)} 3D LUT profile(s) successfully!")
 
 if __name__ == "__main__":
     main()

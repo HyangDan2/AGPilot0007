@@ -1,3 +1,4 @@
+import { normalizeCamera, isValidStampDate } from '../types/camera';
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
 
@@ -5,8 +6,10 @@ import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
 import { getMargarinePreset } from '../presets/margarine';
 
-const RECIPES_IDB_KEY = 'hd2lab_film_studio_recipes_v1';
-const CURRENT_SCHEMA_VERSION = 1;
+const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
+  ? 'hd2lab_film_studio_beta_recipes_v1'
+  : 'hd2lab_film_studio_recipes_v1';
+const CURRENT_SCHEMA_VERSION = 2;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
@@ -45,6 +48,7 @@ function migrateRecipe(recipe: any): CustomRecipe {
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
     schemaVersion: CURRENT_SCHEMA_VERSION,
+    camera: normalizeCamera(recipe.camera),
   };
 }
 
@@ -68,6 +72,8 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
     throw new Error('Recipe missing valid "baseFilmId" property');
   }
 
+  if (parsed.schemaVersion !== undefined && (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion < 1 || parsed.schemaVersion > CURRENT_SCHEMA_VERSION)) throw new Error('Unsupported recipe version');
+  if (parsed.camera?.dateStamp?.enabled && !isValidStampDate(parsed.camera.dateStamp.date)) throw new Error('Invalid imprint date');
   if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
   if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
     throw new Error('Unknown or incompatible preset');

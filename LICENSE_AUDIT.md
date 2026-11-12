@@ -65,6 +65,7 @@ The project policy strictly mandates:
 | `react` | `^19.0.0` | MIT | Core UI framework |
 | `react-dom` | `^19.0.0` | MIT | DOM rendering |
 | `zustand` | `^5.0.0` | MIT | Lightweight client-side reactive state management |
+| `exifr` | `7.1.3` | MIT | Local DateTimeOriginal parsing; no external upload |
 | `idb-keyval` | `^6.2.1` | Apache-2.0 | Minimalist IndexedDB key-value store for custom recipes |
 | `lucide-react` | `^1.x` | ISC | Permissive icon library for camera & tool controls |
 | `clsx` / `tailwind-merge` | `^2.x` | MIT | Utility class composition |

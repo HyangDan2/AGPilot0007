@@ -1,0 +1,67 @@
+name: Deploy Film Studio Beta
+
+on:
+  push:
+    branches: [beta]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-beta:
+    if: github.ref == 'refs/heads/beta'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy pillow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run generate-luts
+      - run: npm test
+      - run: npm run build:beta
+      - uses: actions/upload-artifact@v4
+        with:
+          name: film-studio-beta
+          path: dist-beta/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Fetch approved production snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/deployment/fetch-production.mjs .production-root
+      - name: Assemble production and beta
+        run: node tools/deployment/assemble-pages.mjs --production .production-root/site --beta dist-beta --output .pages-site
+      - name: Retain production snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-root
+          path: .production-root/
+          include-hidden-files: true
+          retention-days: 90
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .pages-site/
+
+  deploy:
+    needs: build-beta
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://hyangdan2.github.io/AGPilot0007/beta/
+    steps:
+      - uses: actions/deploy-pages@v4

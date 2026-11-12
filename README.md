@@ -33,6 +33,7 @@ It provides nine original film profiles technically grounded in photographic sen
 - **Privacy & Security by Design**: Photos are decoded and processed exclusively in device memory. Zero analytics, zero tracking, zero external network requests.
 - **Real-Time Interactive Viewport**: Buttery 60fps slider adjustments with split-screen before/after comparison and press-and-hold original preview.
 - **Margarine Collection**: 58 original tonal looks, available after FS-009. Select MARGARINE once to apply the last look, then select it again to browse the collection. Mobile adjustments open above the photo as a bottom sheet.
+- **Old School Film (beta)**: Open FILTER SET to choose RETRO 90 / Night Amber. The camera button beside the Adjustments title opens RETRO 90’s optional seven-segment dates, local EXIF date selection, glow, halation and softness. These controls and effects are unavailable on the nine individual films and Margarine; settings are retained when returning to RETRO 90. Camera settings are preserved in version 2 recipes; version 1 recipes remain readable.
 - **Custom Recipe Management**: Save, duplicate, rename, apply, and export/import custom film looks via offline **IndexedDB**.
 - **Two-Stage Native Photo Export & Mobile Share**: Stage A in-memory development followed by Stage B instant delivery via **Web Share API** (save to iOS Apple Photos & Android Google Photos), zero-re-render direct file download, and full-resolution image preview with long-press saving.
 - **Offline PWA Support**: Installable Progressive Web Application with service worker asset caching.
@@ -122,3 +123,9 @@ npm run generate-luts
 
 Published by **HD2Lab**. Released under the permissive **MIT License**.  
 See [LICENSE_AUDIT.md](LICENSE_AUDIT.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for full compliance details.
+
+## Beta development
+
+The `beta` branch stages new features independently of `main`. Run `npm run dev:beta`, `npm run build:beta`, or `npm run preview:beta` for `/AGPilot0007/beta/`. Beta output is written to `dist-beta/`; normal output remains in `dist/`. GitHub Actions on `beta` also selects the beta target automatically.
+
+The beta workflow publishes `https://hyangdan2.github.io/AGPilot0007/beta/` by combining the approved production deployment artifact with the beta build. Production application files remain unchanged; only its service worker receives a beta navigation exclusion, migration handler, and nested-scope cache protection. Approved production snapshots are retained for 90 days so beta deployment can continue after the short-lived Pages artifact expires. Once this workflow change is approved and merged, main deployments also retain the latest successful beta build. Main merges require user approval.

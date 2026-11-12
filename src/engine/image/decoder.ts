@@ -1,4 +1,7 @@
+import { readCaptureDate } from './captureDate';
 export interface DecodedImage {
+  captureDate?: string;
+  captureDateStatus?: 'available'|'missing'|'unreadable';
   sourceUrl: string;
   name: string;
   originalWidth: number;
@@ -10,6 +13,7 @@ export interface DecodedImage {
 }
 
 export async function decodeImageFile(file: File | Blob, name = 'photo.jpg'): Promise<DecodedImage> {
+  const metadata = await readCaptureDate(file);
   const objectUrl = URL.createObjectURL(file);
 
   return new Promise((resolve, reject) => {
@@ -46,6 +50,7 @@ export async function decodeImageFile(file: File | Blob, name = 'photo.jpg'): Pr
       ctx.drawImage(img, 0, 0, pWidth, pHeight);
 
       resolve({
+        ...metadata,
         sourceUrl: objectUrl,
         name: (file as File).name || name,
         originalWidth,
