@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { DecodedImage } from '../engine/image/decoder';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
-import { loadSavedRecipes, persistRecipes, validateRecipeJSON } from './recipeStore';
+import { loadSavedRecipes, persistRecipes, validateRecipeJSON, CURRENT_SCHEMA_VERSION } from './recipeStore';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
 
@@ -323,7 +323,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      schemaVersion: 3,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       curves: normalizeCurves(state.curves),
       camera: normalizeCamera(state.camera),
     };

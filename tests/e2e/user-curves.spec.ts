@@ -48,11 +48,12 @@ test('curves share exact PNG preview/export, original/split, identity and contex
   const gradient=ctx.createLinearGradient(0,0,256,0);gradient.addColorStop(0,'black');gradient.addColorStop(1,'white');ctx.fillStyle=gradient;ctx.fillRect(0,0,256,128);
   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;
   const lut=await loadCubeLut('luts/identity.cube');
-  const curves=defaultCurves();curves.white=[[0,.05],[.5,.65],[1,.95]];curves.blue=[[0,.1],[1,.9]];
+  const curves=defaultCurves();curves.white=[[.15,.05],[.5,.65],[.85,.95]];curves.blue=[[0,.1],[1,.9]];
   const options={adjustments:DEFAULT_ADJUSTMENTS,compareMode:'none' as const,splitPos:.5,filmId:'FS-001' as const};
   let recovered=false;const renderer=new WebGL2FilmRenderer(canvas,()=>{renderer.setImage(source);renderer.setLut(lut);renderer.render({...options,curves});recovered=true;});
   renderer.setImage(source);renderer.setLut(lut);renderer.render(options);const baseline=renderer.readPixels(0,0,256,128)!;
   renderer.render({...options,curves:defaultCurves()});const neutral=renderer.readPixels(0,0,256,128)!;
+  const diagonal=defaultCurves();diagonal.white=[[.2,.2],[.8,.8]];renderer.render({...options,curves:diagonal});const plateau=renderer.readPixels(0,0,256,128)!;const partialDiagonal=plateau[4]===plateau[40*4]&&Math.abs(plateau[4]-51)<=1&&plateau[220*4]===plateau[254*4]&&Math.abs(plateau[254*4]-204)<=1;
   renderer.render({...options,curves});const developed=renderer.readPixels(0,0,256,128)!;
   renderer.render({...options,compareMode:'original'});const originalOff=renderer.readPixels(0,0,256,128)!;
   renderer.render({...options,curves,compareMode:'original'});const original=renderer.readPixels(0,0,256,128)!;
@@ -63,9 +64,9 @@ test('curves share exact PNG preview/export, original/split, identity and contex
   for(const format of ['image/png','image/jpeg'] as const){const prepared=await prepareExportImage(img,lut,DEFAULT_ADJUSTMENTS,{format,quality:1,scale:1},undefined,undefined,'FS-001',curves);const bm=await createImageBitmap(prepared.blob);decoded.drawImage(bm,0,0);const pixels=decoded.getImageData(0,0,256,128).data;let maxDiff=0;for(let y=0;y<128;y++)for(let x=0;x<256;x++)for(let c=0;c<3;c++)maxDiff=Math.max(maxDiff,Math.abs(pixels[(y*256+x)*4+c]-developed[((127-y)*256+x)*4+c]));exports.push({format,maxDiff,size:prepared.blob.size});bm.close();URL.revokeObjectURL(prepared.objectUrl);}
   renderer.render({...options,adjustments:{...DEFAULT_ADJUSTMENTS,blacks:50,whites:-50}});const endpoints=renderer.readPixels(0,0,256,128)!;
   const ext=canvas.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;ext.loseContext();await new Promise(r=>setTimeout(r,100));ext.restoreContext();for(let i=0;i<100&&!recovered;i++)await new Promise(r=>setTimeout(r,20));const restored=renderer.readPixels(0,0,256,128)!;
-  const result={identity:baseline.every((v,i)=>v===neutral[i]),original:originalOff.every((v,i)=>v===original[i]),changed:developed.some((v,i)=>v!==baseline[i]),splitOK,exports,endpoints:endpoints[0]>baseline[0]&&endpoints[255*4]<baseline[255*4],recovered:recovered&&developed.every((v,i)=>v===restored[i])};renderer.destroy();return result;
+  const result={partialDiagonal,identity:baseline.every((v,i)=>v===neutral[i]),original:originalOff.every((v,i)=>v===original[i]),changed:developed.some((v,i)=>v!==baseline[i]),splitOK,exports,endpoints:endpoints[0]>baseline[0]&&endpoints[255*4]<baseline[255*4],recovered:recovered&&developed.every((v,i)=>v===restored[i])};renderer.destroy();return result;
  });
- expect(result.identity,JSON.stringify(result)).toBe(true);expect(result.original).toBe(true);expect(result.changed).toBe(true);expect(result.splitOK).toBe(true);expect(result.endpoints).toBe(true);expect(result.recovered,JSON.stringify(result)).toBe(true);
+ expect(result.partialDiagonal).toBe(true);expect(result.identity,JSON.stringify(result)).toBe(true);expect(result.original).toBe(true);expect(result.changed).toBe(true);expect(result.splitOK).toBe(true);expect(result.endpoints).toBe(true);expect(result.recovered,JSON.stringify(result)).toBe(true);
  for(const output of result.exports){expect(output.size).toBeGreaterThan(100);expect(output.maxDiff).toBeLessThanOrEqual(output.format==='image/png'?1:8);}
 });
 
@@ -74,10 +75,10 @@ test('imports and exports all curve channels through the recipe manager',async({
  await page.goto('/');await page.getByRole('button',{name:/Portrait/}).filter({visible:true}).first().click();await expect(page.getByTestId('image-workspace')).toBeVisible();
  const openRecipes=async()=>{if(isMobile){await page.locator('#main-nav-menu-button').click();await page.getByRole('button',{name:'Film Recipes',exact:true}).click();}else await page.getByRole('button',{name:'Recipes',exact:true}).click();};
  await openRecipes();const dialog=page.getByRole('dialog',{name:'Film Recipe Manager'});
- const curves={white:[[0,0],[.5,.7],[1,1]],red:[[0,.1],[1,.9]],green:[[0,0],[1,1]],blue:[[0,.05],[1,1]]};
- const recipe={name:'Curve import',baseFilmId:'FS-001',schemaVersion:3,curves,adjustments:{blacks:-15,whites:20}};
+ const curves={white:[[0,0],[.5,.7],[1,1]],red:[[.1,.1],[.9,.9]],green:[[0,0],[1,1]],blue:[[0,.05],[1,1]]};
+ const recipe={name:'Curve import',baseFilmId:'FS-001',schemaVersion:4,curves,adjustments:{blacks:-15,whites:20}};
  await dialog.locator('input[type=file]').setInputFiles({name:'curves.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(recipe))});await dialog.getByRole('button',{name:'Apply',exact:true}).click();
  await page.getByTestId('tone-curve-toggle').filter({visible:true}).click();await page.getByRole('button',{name:'red curve',exact:true}).filter({visible:true}).click();await expect(page.getByLabel('Curve Output',{exact:true})).toHaveValue('26');
  await page.getByRole('button',{name:'Close tone curve',exact:true}).click();await openRecipes();
- const downloaded=page.waitForEvent('download');await dialog.getByTitle('Export JSON',{exact:true}).click();const stream=await (await downloaded).createReadStream();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const saved=JSON.parse(Buffer.concat(chunks).toString());expect(saved.curves).toEqual(curves);expect(saved.adjustments.blacks).toBe(-15);expect(saved.adjustments.whites).toBe(20);
+ const downloaded=page.waitForEvent('download');await dialog.getByTitle('Export JSON',{exact:true}).click();const stream=await (await downloaded).createReadStream();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const saved=JSON.parse(Buffer.concat(chunks).toString());expect(saved.schemaVersion).toBe(4);expect(saved.curves).toEqual(curves);expect(saved.adjustments.blacks).toBe(-15);expect(saved.adjustments.whites).toBe(20);
 });
