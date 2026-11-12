@@ -64,7 +64,7 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 
 ## 2026-11-12 조정 시트와 마가린 컬렉션
 
-- 모바일 조정 시트는 fixed 오버레이이며 열기·닫기로 사진 컨테이너 크기나 zoom/pan이 바뀌지 않아야 한다. 닫기·Escape·헤더 아래 방향 드래그, 가로 화면과 키보드 조작을 확인한다.
+- 모바일 조정 시트는 fixed 오버레이이며 열기·닫기로 사진 컨테이너 크기나 zoom/pan이 바뀌지 않아야 한다. 타이틀 클릭·탭·닫기·Escape·헤더 아래 방향 드래그, 가로 화면과 키보드 조작을 확인한다.
 - FS-009 다음 MARGARINE을 처음 선택하면 마지막 독자 프리셋을 적용하고, 선택 상태에서 다시 누르면 검색·분류 가능한 모달을 연다. 공개 데이터는 `src/presets/margarine.ts`에서 관리한다.
 - 기존 FilmId와 preset ID는 별개다. 레시피 스키마 1에 선택적 presetId/presetVersion을 보존하며, 기존 레시피도 가져올 수 있어야 한다. Undo/Redo는 보정값·기반 필름·프리셋을 함께 복원한다.
 - 관련 검증: `npm test`, `npx playwright test tests/e2e/margarine.spec.ts tests/e2e/adjustment-recipe.spec.ts`, `npm run build`. 파이프라인·저장 변경은 기존 내보내기·탐색·렌더링 검사도 실행한다.

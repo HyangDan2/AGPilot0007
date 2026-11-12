@@ -22,6 +22,11 @@ test('mobile sheet overlays the image without resizing or resetting zoom', async
   await page.getByRole('button', { name: 'Reset Exposure to default', exact: true }).filter({ visible: true }).tap();
   await expect(page.getByTestId('slider-exposure').filter({ visible: true })).toHaveValue('0');
   await page.screenshot({ path: testInfo.outputPath('sheet.png') });
+  await page.getByRole('button', { name: 'Collapse adjustments', exact: true }).tap();
+  await expect(sheet).not.toBeVisible();
+  expect(await workspace.boundingBox()).toEqual(before);
+  await page.getByRole('button', { name: /Adjustments \(/ }).click();
+  await expect(page.getByTestId('slider-exposure').filter({ visible: true })).toHaveValue('0');
   await page.getByRole('button', { name: 'Close adjustments', exact: true }).click();
   await expect(sheet).not.toBeVisible();
   expect(await workspace.boundingBox()).toEqual(before);
@@ -72,4 +77,16 @@ test('Margarine reselect opens searchable 58-look dialog, selects, and restores 
   await page.keyboard.press('Escape');
   await expect(modal).not.toBeVisible();
   expect(errors).toEqual([]);
+});
+
+
+test('tablet adjustment title collapses the closable panel', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Portrait/ }).filter({ visible: true }).first().click();
+  const toggle = page.getByRole('button', { name: 'Adjustments', exact: true });
+  await toggle.click();
+  await expect(page.getByRole('heading', { name: 'Manual Adjustments' })).toBeVisible();
+  await page.getByRole('button', { name: 'Collapse adjustments', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Manual Adjustments' })).not.toBeVisible();
 });

@@ -25,8 +25,8 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       <div className="p-3.5 border-b border-[#1c222c] flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2">
           <Contrast className="w-4 h-4 text-amber-400" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-            Manual Adjustments
+          <h2 aria-label="Manual Adjustments" className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+            {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="text-left uppercase tracking-wider hover:text-white cursor-pointer">Manual Adjustments</button> : 'Manual Adjustments'}
           </h2>
         </div>
         <div className="flex items-center space-x-2">

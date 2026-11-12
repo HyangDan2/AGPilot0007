@@ -117,10 +117,11 @@ export const MobileControls: React.FC = () => {
           className="adjustment-sheet fixed inset-x-0 bottom-0 z-40 bg-[#11141c] border-t border-[#303641] rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-between px-4 py-3 touch-none border-b border-[#232b3b]"
             data-testid="sheet-handle"
-            onPointerDown={e => { if ((e.target as HTMLElement).closest('button')) return; swipeStart.current = e.clientY; e.currentTarget.setPointerCapture(e.pointerId); }}
+            onPointerDown={e => { const button = (e.target as HTMLElement).closest('button'); if (button && !button.hasAttribute('data-sheet-title')) return; swipeStart.current = e.clientY; }}
+            onPointerMove={e => { if (swipeStart.current !== null && Math.abs(e.clientY - swipeStart.current) > 6) e.currentTarget.setPointerCapture(e.pointerId); }}
             onPointerUp={e => { if (swipeStart.current !== null && e.clientY - swipeStart.current > 60) closeSheet(); swipeStart.current = null; }}
             onPointerCancel={() => { swipeStart.current = null; }}>
-            <span className="text-xs font-semibold text-slate-200">Adjustments ({currentProfile.name})</span>
+            <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer">Adjustments ({currentProfile.name})</button>
             <div className="flex items-center gap-3">
               <button onClick={resetAdjustments} title="Reset" aria-label="Reset adjustments" className="p-1 text-slate-400"><RotateCcw className="w-4 h-4" /></button>
               <button ref={closeRef} onClick={closeSheet} aria-label="Close adjustments" className="p-1 text-slate-300"><X className="w-5 h-5" /></button>
