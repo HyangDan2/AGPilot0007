@@ -1,3 +1,4 @@
+import { ColorMixerSettings } from '../../types/colorMixer';
 import { ToneCurves } from '../../types/curves';
 import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
@@ -36,7 +37,8 @@ export async function prepareExportImage(
   onProgress?: (progress: number, stage: string) => void,
   camera?: CameraSettings,
   filmId?: FilmId,
-  curves?: ToneCurves
+  curves?: ToneCurves,
+  colorMixer?: ColorMixerSettings
 ): Promise<PreparedExport> {
   onProgress?.(10, 'Initializing export pipeline...');
 
@@ -94,6 +96,7 @@ export async function prepareExportImage(
     camera,
     filmId,
     curves,
+    colorMixer,
     compareMode: 'none',
     splitPos: 1.0,
     seed: 42.0,
@@ -159,9 +162,10 @@ export async function exportFullResolutionImage(
   onProgress?: (progress: number, stage: string) => void,
   camera?: CameraSettings,
   filmId?: FilmId,
-  curves?: ToneCurves
+  curves?: ToneCurves,
+  colorMixer?: ColorMixerSettings
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId, curves);
+  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId, curves, colorMixer);
   return {
     blob: prepared.blob,
     filename: prepared.filename,

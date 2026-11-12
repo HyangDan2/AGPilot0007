@@ -1,3 +1,4 @@
+import { normalizeColorMixer, validateColorMixer } from '../types/colorMixer';
 import { normalizeCurves, CURVE_CHANNELS } from '../types/curves';
 import { normalizeCamera, isValidStampDate } from '../types/camera';
 import { get, set } from 'idb-keyval';
@@ -10,7 +11,7 @@ import { getMargarinePreset } from '../presets/margarine';
 const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
   ? 'hd2lab_film_studio_beta_recipes_v1'
   : 'hd2lab_film_studio_recipes_v1';
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
@@ -51,6 +52,7 @@ function migrateRecipe(recipe: any): CustomRecipe {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     camera: normalizeCamera(recipe.camera),
     curves: normalizeCurves(recipe.curves),
+    colorMixer: normalizeColorMixer(recipe.colorMixer),
   };
 }
 
@@ -85,5 +87,6 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
     const normalized = normalizeCurves(parsed.curves);
     for (const channel of CURVE_CHANNELS) if (parsed.curves[channel] !== undefined && JSON.stringify(parsed.curves[channel]) !== JSON.stringify(normalized[channel])) throw new Error('Invalid tone curve points');
   }
+  if(parsed.colorMixer!==undefined)validateColorMixer(parsed.colorMixer);
   return migrateRecipe(parsed);
 }

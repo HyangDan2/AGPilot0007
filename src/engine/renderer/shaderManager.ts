@@ -1,3 +1,4 @@
+import { MIXER_SHADER } from '../color/colorMixer';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
 in vec2 a_position;
 in vec2 a_uv;
@@ -76,6 +77,7 @@ vec3 applyCurves(vec3 c) {
     vec3 w = vec3(curveSample(c.r).r, curveSample(c.g).r, curveSample(c.b).r);
     return vec3(curveSample(w.r).g, curveSample(w.g).b, curveSample(w.b).a);
 }
+${MIXER_SHADER}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
@@ -125,6 +127,9 @@ vec3 grade(vec3 srgb) {
 
     color = applyCurves(color);
 
+    if (u_mixer_reference) return clamp(color,0.0,1.0);
+    color = mixColors(color);
+
     // 9. Saturation
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     color = mix(vec3(lum), color, max(0.0, 1.0 + u_saturation));
@@ -150,6 +155,7 @@ void main() {
 
     vec3 srgb = rawColor.rgb;
     vec3 color = grade(srgb);
+    if (u_mixer_reference || u_mixer_visualize >= 0) { fragColor = vec4(clamp(color,0.0,1.0),rawColor.a); return; }
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (max(u_optics.x, max(u_optics.y, u_optics.z)) > 0.0) {
         float shortSide = min(u_resolution.x, u_resolution.y);

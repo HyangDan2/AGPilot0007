@@ -46,12 +46,12 @@ describe('Retro film and independent date imprint',()=>{
  it('round-trips version 2 camera recipes and safely migrates legacy recipes',async()=>{
   const store=useEditorStore;store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true,format:'full',position:'bottom-left',glow:70,color:'#fa7020'});
   const saved=await store.getState().saveCurrentAsRecipe('Retro');const parsed=validateRecipeJSON(JSON.stringify(saved));
-  expect(parsed.schemaVersion).toBe(4);expect(parsed.camera).toEqual(store.getState().camera);
+  expect(parsed.schemaVersion).toBe(5);expect(parsed.camera).toEqual(store.getState().camera);
   store.getState().resetCamera();store.getState().applyRecipe(parsed);expect(store.getState().camera).toEqual(saved.camera);
   const old=validateRecipeJSON(JSON.stringify({name:'Legacy',baseFilmId:'FS-001',schemaVersion:1}));expect(old.camera).toEqual(DEFAULT_CAMERA);
   store.getState().applyRecipe(old);expect(store.getState().camera.dateStamp.enabled).toBe(false);
   expect(()=>validateRecipeJSON(JSON.stringify({...saved,camera:{dateStamp:{enabled:true,date:'2016-02-31'}}}))).toThrow(/date/);
-  expect(()=>validateRecipeJSON(JSON.stringify({...saved,schemaVersion:5}))).toThrow(/version/);
+  expect(()=>validateRecipeJSON(JSON.stringify({...saved,schemaVersion:6}))).toThrow(/version/);
  });
  it('does not carry the previous photo EXIF date into a photo with no EXIF',()=>{
   const store=useEditorStore;store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true,source:'exif'});

@@ -24,7 +24,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { image, activeFilmId, activePresetId, adjustments, camera, curves } = useEditorStore();
+  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer } = useEditorStore();
 
   const [stage, setStage] = useState<'config' | 'preparing' | 'ready'>('config');
   const [format, setFormat] = useState<ExportFormat>('image/jpeg');
@@ -120,7 +120,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         },
         camera,
         activeFilmId,
-        curves
+        curves,
+        colorMixer
       );
 
       // Clean up previous prepared objectUrl if existing

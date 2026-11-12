@@ -1,8 +1,11 @@
+import { ColorMixerPanel } from './ColorMixer';
+import { ColorMixerSettings, HSL, MIXER_COLORS, normalizeColorMixer } from '../types/colorMixer';
+import { mixerBandWeights, rgbToHsl, pointFromColor } from '../engine/color/colorMixer';
 import { CameraEffects } from './CameraEffects';
 import { ToneCurveOverlay, Histogram } from './ToneCurve';
 import { histogramFromPixels } from '../engine/color/userCurves';
 import { getMargarinePreset } from '../presets/margarine';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
@@ -48,6 +51,7 @@ export const Viewport: React.FC = () => {
     activePresetId,
     adjustments,
     camera,
+    colorMixer,isColorMixerOpen,mixerTool,mixerVisualize,mixerPointId,
     isToneCurveOpen,
     curves,
     compareMode,
@@ -93,6 +97,14 @@ export const Viewport: React.FC = () => {
   imageRef.current = image;
   const filmIdRef = useRef(activeFilmId);
   filmIdRef.current = activeFilmId;
+  const mixerRef=useRef(colorMixer);mixerRef.current=colorMixer;
+  const visualizeRef=useRef<string|null>(null);visualizeRef.current=isColorMixerOpen&&mixerVisualize?(mixerPointId||colorMixer.points[0]?.id||null):null;
+  const lutFilmRef=useRef('');
+  const mixerGesture=useRef<{pointerId:number|null;y:number;basis:ColorMixerSettings;weights:number[];axis:'hue'|'saturation'|'luminance'}|null>(null);
+  useLayoutEffect(()=>{
+    mixerGesture.current=null;
+    return()=>{if(mixerGesture.current?.pointerId!=null){const state=useEditorStore.getState();state.setColorMixer(state.colorMixer);mixerGesture.current=null;}};
+  },[mixerTool,image]);
   const isToneCurveOpenRef = useRef(isToneCurveOpen); isToneCurveOpenRef.current = isToneCurveOpen;
   const curvesRef = useRef(curves); curvesRef.current = curves;
   const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -180,6 +192,8 @@ export const Viewport: React.FC = () => {
           adjustments: adjustmentsRef.current,
           camera: cameraRef.current,
           curves: curvesRef.current,
+          colorMixer:mixerRef.current,
+          mixerVisualize:visualizeRef.current,
           filmId: filmIdRef.current,
           compareMode: effectiveMode,
           splitPos: splitPosRef.current,
@@ -259,6 +273,7 @@ export const Viewport: React.FC = () => {
       .then((lut) => {
         if (isCancelled) return;
         currentLutRef.current = lut;
+        lutFilmRef.current=activeFilmId;
         if (rendererRef.current && rendererRef.current.isReady()) {
           rendererRef.current.setLut(lut);
           requestRender();
@@ -299,7 +314,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -565,6 +580,47 @@ export const Viewport: React.FC = () => {
     }
   };
 
+  const sampleMixerColor=(clientX:number,clientY:number):HSL|null=>{
+    const canvas=canvasRef.current,renderer=rendererRef.current,state=useEditorStore.getState();
+    if(!canvas||!renderer?.isReady()||lutFilmRef.current!==state.activeFilmId)return null;
+    const rect=canvas.getBoundingClientRect(),u=(clientX-rect.left)/rect.width,v=(clientY-rect.top)/rect.height;
+    if(u<0||u>1||v<0||v>1)return null;
+    const x=Math.min(canvas.width-1,Math.floor(u*canvas.width)),y=Math.min(canvas.height-1,Math.floor(v*canvas.height));
+    const options={adjustments:state.adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
+    try{
+      renderer.render({...options,compareMode:'none',mixerReference:true,mixerVisualize:null});
+      const sx=Math.max(0,x-1),sy=Math.max(0,canvas.height-1-y-1),w=Math.min(3,canvas.width-sx),h=Math.min(3,canvas.height-sy);
+      const pixels=renderer.readPixels(sx,sy,w,h);if(!pixels)return null;
+      const rgb=[0,0,0];let count=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]<128)continue;for(let c=0;c<3;c++)rgb[c]+=pixels[i+c]/255;count++;}
+      return count?rgb.map(v=>v/count) as HSL:null;
+    }finally{renderer.render(options);}
+  };
+  const applyTarget=(delta:number,commit:boolean,current=false)=>{
+    const gesture=mixerGesture.current;if(!gesture)return;
+    const state=useEditorStore.getState(),next=normalizeColorMixer(current?state.colorMixer:gesture.basis);
+    next.enabled=true;
+    MIXER_COLORS.forEach((c,i)=>{next.bands[c][gesture.axis]+=delta*gesture.weights[i];});
+    state.setColorMixer(next,commit);
+  };
+  const mixerDown=(e:React.PointerEvent<HTMLDivElement>)=>{
+    e.preventDefault();e.stopPropagation();if(mixerGesture.current?.pointerId!=null)return;
+    const state=useEditorStore.getState(),rgb=sampleMixerColor(e.clientX,e.clientY);
+    if(!rgb){state.setMixerUI({mixerMessage:'사진 안의 색을 선택하세요. 필터가 준비된 후 다시 시도할 수 있습니다.'});return;}
+    const hsl=rgbToHsl(rgb);
+    if(Math.max(...rgb)-Math.min(...rgb)<.01){state.setMixerUI({mixerMessage:'회색 영역입니다. 색이 있는 부분을 선택하세요.'});return;}
+    if(state.mixerTool==='eyedropper'){
+      if(state.colorMixer.points.length>=8)return;
+      const next=normalizeColorMixer(state.colorMixer),p=pointFromColor(rgb,next.points.length);next.points.push(p);state.setColorMixer(next);state.setMixerUI({mixerPointId:p.id,mixerTool:'none',mixerMessage:''});return;
+    }
+    const weights=mixerBandWeights(hsl[0]);
+    mixerGesture.current={pointerId:e.pointerId,y:e.clientY,basis:normalizeColorMixer(state.colorMixer),weights,axis:state.mixerAxis};
+    state.setMixerUI({mixerColor:MIXER_COLORS[weights.indexOf(Math.max(...weights))],mixerMessage:`${state.mixerAxis} · ${MIXER_COLORS[weights.indexOf(Math.max(...weights))]}`});
+    e.currentTarget.focus();e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const mixerMove=(e:React.PointerEvent)=>{e.stopPropagation();const g=mixerGesture.current;if(g?.pointerId===e.pointerId)applyTarget((g.y-e.clientY)*.5,false);};
+  const commitMixerGesture=()=>{const state=useEditorStore.getState();state.setColorMixer(state.colorMixer);};
+  const mixerUp=(e:React.PointerEvent)=>{e.stopPropagation();const g=mixerGesture.current;if(g?.pointerId!==e.pointerId)return;applyTarget((g.y-e.clientY)*.5,true);g.pointerId=null;};
+
   const baseFilm = FILM_PROFILES[activeFilmId];
   const preset = getMargarinePreset(activePresetId);
   const currentFilm = preset ? { ...baseFilm, name: preset.name, style: 'MARGARINE', id: 'MARGARINE' } : baseFilm;
@@ -579,7 +635,7 @@ export const Viewport: React.FC = () => {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`flex-1 min-w-0 min-h-0 relative flex items-center justify-center overflow-hidden touch-none ${
+        className={`flex-1 min-w-0 min-h-0 relative flex items-center justify-center overflow-hidden ${
           !image
             ? ''
             : zoom > 1.01
@@ -589,6 +645,7 @@ export const Viewport: React.FC = () => {
             : 'cursor-default'
         }`}
       >
+        {image&&<div aria-hidden="true" className="absolute inset-0 touch-none"/>}
         {!image ? (
           <ImageDropzone />
         ) : (
@@ -600,7 +657,7 @@ export const Viewport: React.FC = () => {
                 transformOrigin: 'center center',
                 transition: isPanning || isDraggingSplit || activeTouchesRef.current.size > 1 ? 'none' : 'transform 0.05s ease-out',
               }}
-              className="relative flex items-center justify-center shadow-2xl flex-shrink-0"
+              className="relative flex items-center justify-center shadow-2xl flex-shrink-0 touch-none"
             >
               <canvas
                 ref={handleCanvasRef}
@@ -626,6 +683,8 @@ export const Viewport: React.FC = () => {
               )}
             </div>
 
+            {isColorMixerOpen&&mixerTool!=='none'&&<div data-testid="mixer-photo-tool" data-photo-overlay tabIndex={0} aria-label={mixerTool==='eyedropper'?'Pick a photo color':'Drag photo color to adjust'} className="absolute inset-0 z-10 cursor-crosshair touch-none outline-none" onPointerDown={mixerDown} onPointerMove={mixerMove} onPointerUp={mixerUp} onPointerCancel={e=>{e.stopPropagation();const g=mixerGesture.current;if(g?.pointerId===e.pointerId){commitMixerGesture();g.pointerId=null;}}} onKeyDown={e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();applyTarget((e.key==='ArrowUp'?1:-1)*(e.shiftKey?10:1),true,true);}}}/>}
+            <ColorMixerPanel />
             <>{isToneCurveOpen && <Histogram bins={histogram} />}</>
             <ToneCurveOverlay controlWidth={Math.max(32,Math.min(360,containerSize.width-24))} size={Math.max(32,Math.min(360,containerSize.width-24,containerSize.height-100,displaySize.width,displaySize.height))} />
             <CameraEffects />

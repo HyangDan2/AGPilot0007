@@ -1,3 +1,4 @@
+import { ColorMixerSettings, MIXER_COLORS, normalizeColorMixer, hasColorMixerEdits } from '../../types/colorMixer';
 import { ToneCurves } from '../../types/curves';
 import { buildCurveTexture, CURVE_SAMPLES } from '../color/userCurves';
 import { getEffectiveCamera } from '../../films/cameraEffects';
@@ -9,6 +10,9 @@ import { ParsedLut3D } from '../color/lutLoader';
 import { AdjustmentSettings } from '../../types/film';
 
 export interface RenderOptions {
+  colorMixer?: ColorMixerSettings;
+  mixerReference?: boolean;
+  mixerVisualize?: string | null;
   curves?: ToneCurves;
   filmId?: FilmId;
   camera?: CameraSettings;
@@ -180,6 +184,7 @@ export class WebGL2FilmRenderer {
       'u_film_strength',
       'u_compare_mode',
       'u_split_pos',
+      'u_mixer_enabled','u_mixer_reference','u_mix_bands[0]','u_point_count','u_point_color[0]','u_point_range[0]','u_point_shift[0]','u_mixer_visualize',
       'u_curves', 'u_curves_enabled', 'u_endpoints', 'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
     ];
     for (const name of uniformNames) {
@@ -376,6 +381,15 @@ export class WebGL2FilmRenderer {
     gl.uniform1i(this.uniforms.u_curves, 3);
     gl.uniform1i(this.uniforms.u_curves_enabled, this.curvesEnabled ? 1 : 0);
     gl.uniform2f(this.uniforms.u_endpoints, (options.adjustments.blacks || 0)/100, (options.adjustments.whites || 0)/100);
+    const mixer=normalizeColorMixer(options.colorMixer);
+    gl.uniform1i(this.uniforms.u_mixer_enabled,hasColorMixerEdits(mixer)?1:0);
+    gl.uniform1i(this.uniforms.u_mixer_reference,options.mixerReference?1:0);
+    gl.uniform3fv(this.uniforms['u_mix_bands[0]'],MIXER_COLORS.flatMap(c=>[mixer.bands[c].hue/1200,mixer.bands[c].saturation/100,mixer.bands[c].luminance/100]));
+    gl.uniform1i(this.uniforms.u_point_count,mixer.points.length);
+    const colors=new Float32Array(24),ranges=new Float32Array(32),shifts=new Float32Array(32);
+    mixer.points.forEach((p,i)=>{colors.set(p.color,i*3);ranges.set([p.range.hue/360,p.range.saturation/100,p.range.luminance/100,p.feather/100],i*4);shifts.set([p.shift.hue/200,p.shift.saturation/100,p.shift.luminance/100,p.enabled&&(p.shift.hue!==0||p.shift.saturation!==0||p.shift.luminance!==0)?1:0],i*4);});
+    gl.uniform3fv(this.uniforms['u_point_color[0]'],colors);gl.uniform4fv(this.uniforms['u_point_range[0]'],ranges);gl.uniform4fv(this.uniforms['u_point_shift[0]'],shifts);
+    gl.uniform1i(this.uniforms.u_mixer_visualize,options.mixerVisualize?mixer.points.findIndex(p=>p.id===options.mixerVisualize):-1);
     // Pass uniforms
     if (this.uniforms.u_lut_size) gl.uniform1f(this.uniforms.u_lut_size, this.currentLutSize);
     if (this.uniforms.u_resolution) {

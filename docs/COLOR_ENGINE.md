@@ -118,3 +118,12 @@ Black/white endpoint adjustments precede the film LUT and are zero by default. U
 The histogram is a UI-only 64-bin luminance/R/G/B distribution sampled from the current preview at up to 192×192 and about 8 updates per second. It includes the currently displayed comparison mode and date imprint, excludes editor overlays, and uses a shared vertical scale with square-root display compression. It is neither a RAW histogram nor an export layer.
 
 Recipe schema 4 supports movable endpoints, adds curves and retains older camera settings. Older recipes default to identity curves and zero endpoints. One pointer drag produces one undo entry, while channel/global resets remain independently undoable. THIRD_PARTY_NOTICES.txt is emitted from the canonical notices document in every build.
+
+
+## Selective Color Mixer (beta)
+
+Eight circular hue bands and up to eight Point Colors share a fixed pre-mixer reference in the existing single-pass renderer. Hue shifts use smooth neighboring weights, Point Color masks combine circular hue distance with saturation/lightness distance and feathering, and overlapping point shifts are normalized. Low chroma attenuates changes. Bounded HSL lightness adjustment provides selective brightness without moving neutral pixels. This is an original algorithm, not an Adobe numeric match.
+
+Mixer/Point Color follow curves and precede the existing Global Saturation stage. Neutral or disabled settings bypass the entire transform. Preview-only reference/range modes return before spatial effects/date compositing; exports never enable them. Reference sampling draws the pre-mixer frame, reads only a bounded3×3 region at inverse-transformed canvas coordinates, and restores the normal frame in finally. No image uploads, per-frame full-size readbacks, extra whole-image buffers or new LUT assets are added.
+
+Recipe schema5 adds colorMixer; legacy1–4 recipes default to neutral. Transient sampling/range UI is not serialized. Single-gesture history commits on release, cancel or exit. Uniform packets are reuploaded after context recovery through the shared render options.

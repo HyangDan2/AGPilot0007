@@ -1,10 +1,11 @@
+import { ColorMixerButton } from './ColorMixer';
 import { ToneCurveButton } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { ADJUSTMENT_DEFINITIONS, AdjustmentCategory, CATEGORY_LABELS } from '../types/adjustments';
-import { Sun, Contrast, Droplets, Sparkles, Sliders, X, ChevronDown } from 'lucide-react';
+import { Sun, Droplets, Sparkles, Sliders, X, ChevronDown } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<AdjustmentCategory, React.ReactNode> = {
   film: <Sliders className="w-3.5 h-3.5" />,
@@ -26,15 +27,15 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
     <aside className="w-[310px] bg-[#0d0f14] border-l border-[#1e232d] flex flex-col h-full flex-shrink-0 select-none overflow-hidden">
       {/* Header */}
       <div data-testid="adjustment-panel-header" onClick={e => { if (onClose && !(e.target as HTMLElement).closest('button')) onClose(); }} className={`p-3.5 border-b border-[#1c222c] flex items-center justify-between flex-shrink-0 ${onClose ? 'cursor-pointer' : ''}`}>
-        <div className="flex items-center gap-2 min-w-0">
-          <Contrast className="w-4 h-4 text-amber-400 shrink-0" />
-          <h2 aria-label="Manual Adjustments" className="min-w-0 text-xs font-semibold uppercase tracking-wider text-slate-200">
-            {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="flex items-center gap-2 text-left uppercase tracking-wider hover:text-white cursor-pointer"><span className="truncate">Adjustments</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button> : 'Adjustments'}
+        <div className="flex flex-1 items-center gap-1.5 min-w-0">
+          <h2 aria-label="Manual Adjustments" className="min-w-0 flex-1 truncate text-[10px] font-semibold uppercase tracking-wider text-slate-200">
+            {onClose ? <button type="button" onClick={onClose} aria-label="Collapse adjustments" title="Collapse adjustments" className="flex min-w-0 w-full items-center gap-1 text-left uppercase tracking-wider hover:text-white cursor-pointer"><span className="truncate">Adjustments</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400" /></button> : 'Adjustments'}
           </h2>
+          <ColorMixerButton onOpen={onClose} />
           <ToneCurveButton onOpen={onClose} />
           <CameraEffectsButton onOpen={onClose} />
         </div>
-        <div className="flex shrink-0 items-center space-x-2">
+        <div className="ml-2 flex shrink-0 items-center space-x-2">
           <button
             onClick={resetAdjustments}
             className="whitespace-nowrap text-[10px] text-amber-400/90 hover:text-amber-300 font-mono transition-colors cursor-pointer"

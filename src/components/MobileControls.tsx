@@ -1,3 +1,4 @@
+import { ColorMixerButton, MixerToolbar } from './ColorMixer';
 import { ToneCurveButton, CurveToolbar } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
 import { FilterSetCard } from './FilterSet';
@@ -57,7 +58,7 @@ export const MobileControls: React.FC = () => {
     <div className="flex flex-col bg-[#0e1117] border-t border-[#1d232f] z-30 flex-shrink-0 select-none pb-[env(safe-area-inset-bottom)] shadow-2xl">
       {/* Horizontal Film Carousel */}
       <div data-testid="filter-area" className="relative">
-      <div className="absolute z-30 inset-x-3 top-1/2 -translate-y-1/2"><CurveToolbar /></div>
+      <div className="absolute z-30 inset-x-3 top-1/2 -translate-y-1/2"><CurveToolbar /><MixerToolbar /></div>
       <div className="py-2 px-2.5 overflow-x-auto flex space-x-2 border-b border-[#1a202c] scrollbar-none">
         {FILM_LIST.map((profile) => {
           const isSelected = activeFilmId === profile.id && !activePresetId;
@@ -117,7 +118,7 @@ export const MobileControls: React.FC = () => {
           <span className="truncate">Adjustments ({currentProfile?.name})</span>
           {isOpen ? <ChevronDown className="w-4 h-4 text-amber-400" /> : <ChevronUp className="w-4 h-4 text-amber-400" />}
         </button>
-        {!isOpen && <><ToneCurveButton onOpen={()=>setIsOpen(false)} />
+        {!isOpen && <><ColorMixerButton onOpen={()=>setIsOpen(false)} /><ToneCurveButton onOpen={()=>setIsOpen(false)} />
         <CameraEffectsButton onOpen={()=>setIsOpen(false)} /></>}
       </div>
 
@@ -134,6 +135,7 @@ export const MobileControls: React.FC = () => {
             onPointerUp={e => { if (swipeStart.current !== null && e.clientY - swipeStart.current > 60) closeSheet(); swipeStart.current = null; }}
             onPointerCancel={() => { swipeStart.current = null; }}>
             <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer"><span className="truncate">Adjustments ({currentProfile.name})</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400 shrink-0" /></button>
+            <ColorMixerButton onOpen={()=>setIsOpen(false)} />
             <ToneCurveButton onOpen={()=>setIsOpen(false)} />
             <CameraEffectsButton onOpen={()=>setIsOpen(false)} />
             <div className="flex shrink-0 items-center gap-3 ml-3">

@@ -27,7 +27,7 @@ describe('User tone curves',()=>{
  });
  it('round-trips v4 curves and endpoints, preserves camera and migrates v1/v2/v3',async()=>{
   store.getState().setCurve('white',[[.15,.1],[.85,.9]]);store.getState().setAdjustment('blacks',-20);store.getState().setAdjustment('whites',15);
-  const saved=await store.getState().saveCurrentAsRecipe('Curve');const parsed=validateRecipeJSON(JSON.stringify(saved));expect(parsed.curves).toEqual(saved.curves);expect(parsed.schemaVersion).toBe(4);
+  const saved=await store.getState().saveCurrentAsRecipe('Curve');const parsed=validateRecipeJSON(JSON.stringify(saved));expect(parsed.curves).toEqual(saved.curves);expect(parsed.schemaVersion).toBe(5);
   store.getState().resetAdjustments();expect(store.getState().curves).toEqual(defaultCurves());store.getState().applyRecipe(parsed);expect(store.getState().curves).toEqual(saved.curves);expect(store.getState().adjustments.whites).toBe(15);
   store.getState().setFilm('FS-009');store.getState().applyMargarine('cream-daylight');expect(store.getState().curves).toEqual(saved.curves);
   for(const schemaVersion of [1,2,3]){const old=validateRecipeJSON(JSON.stringify({name:'Old',baseFilmId:'FS-001',schemaVersion}));expect(old.curves).toEqual(defaultCurves());expect(old.adjustments.blacks).toBe(0);}
@@ -63,7 +63,7 @@ describe('Movable curve endpoints',()=>{
   store.getState().redo();expect(store.getState().curves.red).toEqual([[.2,.05],[.8,.95]]);
   store.getState().setCurveChannel('red');store.getState().resetCurves();expect(store.getState().curves.red).toEqual([[0,0],[1,1]]);
   store.getState().undo();const saved=await store.getState().saveCurrentAsRecipe('Endpoints');
-  const parsed=validateRecipeJSON(JSON.stringify(saved));expect(parsed.schemaVersion).toBe(4);expect(parsed.curves!.red).toEqual([[.2,.05],[.8,.95]]);
+  const parsed=validateRecipeJSON(JSON.stringify(saved));expect(parsed.schemaVersion).toBe(5);expect(parsed.curves!.red).toEqual([[.2,.05],[.8,.95]]);
  });
 });
 
