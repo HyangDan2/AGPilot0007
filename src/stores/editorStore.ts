@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { DecodedImage } from '../engine/image/decoder';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
-import { loadSavedRecipes, persistRecipes, validateRecipeJSON } from './recipeStore';
+import { loadSavedRecipes, persistRecipes, validateRecipeJSON, CURRENT_SCHEMA_VERSION } from './recipeStore';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
 
@@ -18,6 +18,8 @@ interface EditorState {
   curves: ToneCurves;
   isToneCurveOpen: boolean;
   curveChannel: CurveChannel;
+  curvePointIndex: number;
+  setCurvePointIndex: (index: number) => void;
   toggleToneCurve: () => void;
   setCurveChannel: (channel: CurveChannel) => void;
   setCurve: (channel: CurveChannel, points: CurvePoint[], commit?: boolean) => void;
@@ -84,8 +86,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   curves: defaultCurves(),
   isToneCurveOpen: false,
   curveChannel: 'white',
+  curvePointIndex: 0,
+  setCurvePointIndex: index => set({curvePointIndex: Math.max(0,Math.min(15,Math.floor(index)))}),
   toggleToneCurve: () => set({isToneCurveOpen: !get().isToneCurveOpen, isCameraEffectsOpen: false}),
-  setCurveChannel: curveChannel => set({curveChannel}),
+  setCurveChannel: curveChannel => set({curveChannel,curvePointIndex:0}),
   setCurve: (channel, points, commit = true) => {
     const state = get();
     const curves = normalizeCurves({...state.curves, [channel]: points});
@@ -323,7 +327,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      schemaVersion: 3,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       curves: normalizeCurves(state.curves),
       camera: normalizeCamera(state.camera),
     };
