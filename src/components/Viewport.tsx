@@ -1,3 +1,4 @@
+import { CameraEffects } from './CameraEffects';
 import { ToneCurveOverlay, Histogram } from './ToneCurve';
 import { histogramFromPixels } from '../engine/color/userCurves';
 import { getMargarinePreset } from '../presets/margarine';
@@ -47,6 +48,7 @@ export const Viewport: React.FC = () => {
     activePresetId,
     adjustments,
     camera,
+    isToneCurveOpen,
     curves,
     compareMode,
     setCompareMode,
@@ -91,6 +93,7 @@ export const Viewport: React.FC = () => {
   imageRef.current = image;
   const filmIdRef = useRef(activeFilmId);
   filmIdRef.current = activeFilmId;
+  const isToneCurveOpenRef = useRef(isToneCurveOpen); isToneCurveOpenRef.current = isToneCurveOpen;
   const curvesRef = useRef(curves); curvesRef.current = curves;
   const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
   const histogramTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,10 +185,10 @@ export const Viewport: React.FC = () => {
           splitPos: splitPosRef.current,
           seed: 42.0,
         });
-        if (!histogramTimer.current) histogramTimer.current = setTimeout(()=>{
+        if (isToneCurveOpenRef.current && !histogramTimer.current) histogramTimer.current = setTimeout(()=>{
           histogramTimer.current = null;
           const canvas = canvasRef.current;
-          if (!canvas) return;
+          if (!canvas || !isToneCurveOpenRef.current) return;
           const sample = histogramCanvas.current ||= document.createElement('canvas');
           sample.width = 192; sample.height = Math.max(1,Math.round(192*canvas.height/canvas.width));
           sample.height = Math.min(sample.height,192);
@@ -296,7 +299,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, curves, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -623,8 +626,9 @@ export const Viewport: React.FC = () => {
               )}
             </div>
 
-            <Histogram bins={histogram} />
-            <ToneCurveOverlay />
+            <>{isToneCurveOpen && <Histogram bins={histogram} />}</>
+            <ToneCurveOverlay controlWidth={Math.max(32,Math.min(360,containerSize.width-24))} size={Math.max(32,Math.min(360,containerSize.width-24,containerSize.height-100,displaySize.width,displaySize.height))} />
+            <CameraEffects />
             {/* Floating Active Film Tag */}
             <div className="absolute top-3 right-3 pointer-events-none flex items-center space-x-2 bg-[#12161f]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#242b3b] shadow-md z-10">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('curve overlay edits channels, resets independently, and preserves workspace geometry',async({page,isMobile})=>{
  await page.goto('/');await page.getByRole('button',{name:/Portrait/}).filter({visible:true}).first().click();
+ await expect(page.getByTestId('histogram')).toHaveCount(0);
  const workspace=page.getByTestId('image-workspace');await expect(workspace).toBeVisible();const before=await workspace.boundingBox();
  const toggle=page.getByTestId('tone-curve-toggle').filter({visible:true});await toggle.click();
  await expect(page.getByTestId('tone-curve-overlay')).toBeVisible();await expect(page.getByTestId('curve-toolbar').filter({visible:true})).toBeVisible();
@@ -20,13 +21,13 @@ test('curve overlay edits channels, resets independently, and preserves workspac
  await page.getByRole('button',{name:'blue curve',exact:true}).filter({visible:true}).click();await expect(page.getByLabel('Curve Output',{exact:true})).toHaveValue('30');
  await page.getByRole('button',{name:'전체 커브 초기화'}).click();await expect(page.getByLabel('Curve Output',{exact:true})).toHaveValue('0');
  await expect(page.getByTestId('histogram').locator('path')).toHaveCount(4);
- await page.getByRole('button',{name:'Close tone curve',exact:true}).click();await expect(page.getByTestId('tone-curve-overlay')).toHaveCount(0);
+ await page.getByRole('button',{name:'Close tone curve',exact:true}).click();await expect(page.getByTestId('tone-curve-overlay')).toHaveCount(0);await expect(page.getByTestId('histogram')).toHaveCount(0);
  // Camera is shared, date imprint works before selecting Old School, optics stay profile specific.
  await page.getByTestId('camera-effects-toggle').filter({visible:true}).click();
  const camera=page.getByTestId('camera-effects').filter({visible:true});await expect(camera).toBeVisible();
  await expect(camera.getByLabel('Highlight Glow',{exact:true})).toHaveCount(0);
  await camera.getByLabel('Imprint Date',{exact:true}).fill('2026-11-12');await camera.getByRole('checkbox',{name:'Date Imprint'}).check();
- if(isMobile)await page.getByRole('button',{name:'Close adjustments',exact:true}).click();
+ if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();
  await page.getByTestId('tone-curve-toggle').filter({visible:true}).click();await graph.waitFor();box=(await graph.boundingBox())!;
  // Pointer drag is captured by graph and cannot move/zoom the photograph.
  await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);await page.mouse.down();await page.mouse.move(box.x+box.width*.6,box.y+box.height*.4,{steps:5});await page.mouse.up();

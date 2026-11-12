@@ -1,5 +1,5 @@
-import { ToneCurveButton } from './ToneCurve';
-import { CameraEffects, CameraEffectsButton } from './CameraEffects';
+import { ToneCurveButton, CurveToolbar } from './ToneCurve';
+import { CameraEffectsButton } from './CameraEffects';
 import { FilterSetCard } from './FilterSet';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React, { useState, useEffect, useRef } from 'react';
@@ -56,6 +56,8 @@ export const MobileControls: React.FC = () => {
   return (
     <div className="flex flex-col bg-[#0e1117] border-t border-[#1d232f] z-30 flex-shrink-0 select-none pb-[env(safe-area-inset-bottom)] shadow-2xl">
       {/* Horizontal Film Carousel */}
+      <div data-testid="filter-area" className="relative">
+      <div className="absolute z-30 inset-x-3 top-1/2 -translate-y-1/2"><CurveToolbar /></div>
       <div className="py-2 px-2.5 overflow-x-auto flex space-x-2 border-b border-[#1a202c] scrollbar-none">
         {FILM_LIST.map((profile) => {
           const isSelected = activeFilmId === profile.id && !activePresetId;
@@ -101,6 +103,7 @@ export const MobileControls: React.FC = () => {
         <FilterSetCard compact />
       </div>
 
+      </div>
       {/* Expand/Collapse Toggle Handle */}
       <div className="flex shrink-0 h-[47px] items-center justify-between px-3 py-2 bg-[#121620] border-b border-[#1b212d]">
         <button
@@ -115,7 +118,7 @@ export const MobileControls: React.FC = () => {
           {isOpen ? <ChevronDown className="w-4 h-4 text-amber-400" /> : <ChevronUp className="w-4 h-4 text-amber-400" />}
         </button>
         {!isOpen && <><ToneCurveButton onOpen={()=>setIsOpen(false)} />
-        <span onClick={()=>setIsOpen(true)}><CameraEffectsButton controls="mobile-camera-effects" /></span></>}
+        <CameraEffectsButton onOpen={()=>setIsOpen(false)} /></>}
       </div>
 
 
@@ -132,7 +135,7 @@ export const MobileControls: React.FC = () => {
             onPointerCancel={() => { swipeStart.current = null; }}>
             <button type="button" data-sheet-title onClick={closeSheet} aria-label="Collapse adjustments" title="Collapse adjustments" aria-expanded="true" aria-controls="mobile-adjustment-sheet" className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left text-xs font-semibold text-slate-200 hover:text-white cursor-pointer"><span className="truncate">Adjustments ({currentProfile.name})</span><ChevronDown aria-hidden="true" className="w-4 h-4 text-amber-400 shrink-0" /></button>
             <ToneCurveButton onOpen={()=>setIsOpen(false)} />
-            <span onClick={()=>setIsOpen(true)}><CameraEffectsButton controls="mobile-camera-effects" /></span>
+            <CameraEffectsButton onOpen={()=>setIsOpen(false)} />
             <div className="flex shrink-0 items-center gap-3 ml-3">
               <button onClick={resetAdjustments} title="Reset" aria-label="Reset adjustments" className="p-1 text-slate-400"><RotateCcw className="w-4 h-4" /></button>
               <button ref={closeRef} onClick={closeSheet} aria-label="Close adjustments" className="p-1 text-slate-300"><X className="w-5 h-5" /></button>
@@ -157,7 +160,6 @@ export const MobileControls: React.FC = () => {
             ))}
           </div>
 
-          <CameraEffects id="mobile-camera-effects" />
           {/* Sliders in active category */}
           <div className="space-y-3.5 pt-1">
             {activeItems.map((def) => {
