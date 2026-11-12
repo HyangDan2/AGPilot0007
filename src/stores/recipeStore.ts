@@ -5,7 +5,9 @@ import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
 import { getMargarinePreset } from '../presets/margarine';
 
-const RECIPES_IDB_KEY = 'hd2lab_film_studio_recipes_v1';
+const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
+  ? 'hd2lab_film_studio_beta_recipes_v1'
+  : 'hd2lab_film_studio_recipes_v1';
 const CURRENT_SCHEMA_VERSION = 1;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {

@@ -10,7 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "generate-luts": "python3 tools/lut-generation/generate_luts.py"
+    "generate-luts": "python3 tools/lut-generation/generate_luts.py",
+    "dev:beta": "vite --mode beta",
+    "build:beta": "tsc && vite build --mode beta",
+    "preview:beta": "vite preview --mode beta"
   },
   "dependencies": {
     "idb-keyval": "^6.2.1",

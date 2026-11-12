@@ -122,3 +122,9 @@ npm run generate-luts
 
 Published by **HD2Lab**. Released under the permissive **MIT License**.  
 See [LICENSE_AUDIT.md](LICENSE_AUDIT.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for full compliance details.
+
+## Beta development
+
+The `beta` branch stages new features independently of `main`. Run `npm run dev:beta`, `npm run build:beta`, or `npm run preview:beta` for `/AGPilot0007/beta/`. Beta output is written to `dist-beta/`; normal output remains in `dist/`. GitHub Actions on `beta` also selects the beta target automatically.
+
+The beta workflow validates and uploads a build artifact only. It does not publish Pages. Public hosting at `https://hyangdan2.github.io/AGPilot0007/beta/` requires a combined Pages artifact containing the approved production site at the root and beta under `beta/`. Do not deploy `dist-beta/` alone to the existing Pages site. The production service worker must also exclude beta navigation before public beta rollout.

@@ -72,3 +72,11 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 
 - 접힌 조정 메뉴에는 위쪽, 열린 패널에는 아래쪽 셰브론을 표시한다. 숫자 버튼은 hover·키보드 focus 툴팁과 패널 도움말로 단일 항목 초기화를 안내한다. 숫자 버튼 크기와 슬라이더 사이 간격은 유지한다. 모바일 도움말은 슬라이더 스크롤 영역 아래 패널 맨 하단에 표시한다.
 - 단위 검사 수집에서도 `.private/`를 제외하여 로컬 배포 확인용 Playwright 파일이 Vitest에 섞이지 않게 한다.
+
+## Beta 브랜치와 빌드
+
+- `beta`는 실험 기능 작업 브랜치다. `npm run dev:beta`, `npm run build:beta`, `npm run preview:beta`는 `/AGPilot0007/beta/`를 사용한다. 베타 산출물은 Git 제외 `dist-beta/`에 저장한다. CI의 `GITHUB_REF_NAME=beta`도 베타 경로를 선택한다.
+- 베타 PWA는 별도 이름·scope·start_url·캐시 ID를 사용한다. 운영 서비스 워커 설정에는 beta 경로의 navigation fallback 제외 규칙을 둔다. 운영에 해당 설정을 반영하기 전에는 기존 서비스 워커가 beta 탐색을 가로챌 수 있다.
+- `.github/workflows/beta.yml`은 beta push 시 LUT 생성·단위 검사·베타 빌드·일반 artifact 업로드만 한다. Pages 배포 권한과 배포 단계는 없다. 기존 배포 워크플로는 main에서만 실행한다.
+- 공개 beta 게시에는 운영 루트와 beta 하위 폴더를 함께 포함하는 Pages 산출물이 필요하다. beta만 단독으로 Pages 배포하지 않는다. main 병합·운영 배포는 최종 승인 후 진행한다. 빌드 경로 설정과 공개 URL 배포 완료를 구분해 보고한다.
+- 같은 origin의 IndexedDB는 경로로 격리되지 않는다. beta 레시피는 별도 `hd2lab_film_studio_beta_recipes_v1` 키를 사용하여 운영 레시피와 분리한다.

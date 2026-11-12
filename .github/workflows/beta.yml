@@ -1,0 +1,37 @@
+name: Validate Film Studio Beta
+
+on:
+  push:
+    branches: [beta]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-build
+  cancel-in-progress: true
+
+jobs:
+  build-beta:
+    if: github.ref == 'refs/heads/beta'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy pillow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run generate-luts
+      - run: npm test
+      - run: npm run build:beta
+      - uses: actions/upload-artifact@v4
+        with:
+          name: film-studio-beta
+          path: dist-beta/
+          if-no-files-found: error
