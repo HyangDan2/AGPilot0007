@@ -1,5 +1,6 @@
 import { readCaptureDate } from './captureDate';
 export interface DecodedImage {
+  workspaceKey?: string;
   captureDate?: string;
   captureDateStatus?: 'available'|'missing'|'unreadable';
   sourceUrl: string;
@@ -12,14 +13,18 @@ export interface DecodedImage {
   originalElement: HTMLImageElement;
 }
 
-export async function decodeImageFile(file: File | Blob, name = 'photo.jpg'): Promise<DecodedImage> {
+export async function decodeImageFile(file: File | Blob, name = 'photo.jpg', signal?:AbortSignal): Promise<DecodedImage> {
   const metadata = await readCaptureDate(file);
+  if(signal?.aborted)throw new DOMException('Image loading cancelled','AbortError');
   const objectUrl = URL.createObjectURL(file);
 
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    const abort=()=>{img.onload=null;img.onerror=null;img.src='';URL.revokeObjectURL(objectUrl);reject(new DOMException('Image loading cancelled','AbortError'));};
+    signal?.addEventListener('abort',abort,{once:true});
     img.onload = () => {
+      signal?.removeEventListener('abort',abort);
       const originalWidth = img.naturalWidth || img.width;
       const originalHeight = img.naturalHeight || img.height;
 
@@ -44,6 +49,7 @@ export async function decodeImageFile(file: File | Blob, name = 'photo.jpg'): Pr
       canvas.height = pHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
         reject(new Error('Failed to create 2D canvas context'));
         return;
       }
@@ -63,10 +69,12 @@ export async function decodeImageFile(file: File | Blob, name = 'photo.jpg'): Pr
     };
 
     img.onerror = (err) => {
+      signal?.removeEventListener('abort',abort);
       URL.revokeObjectURL(objectUrl);
       reject(new Error(`Failed to decode image: ${err}`));
     };
 
+    if(signal?.aborted){abort();return;}
     img.src = objectUrl;
   });
 }

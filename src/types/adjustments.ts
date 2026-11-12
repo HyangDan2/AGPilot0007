@@ -98,7 +98,7 @@ export const ADJUSTMENT_DEFINITIONS: AdjustmentDef[] = [
   },
   {
     key: 'saturation',
-    label: 'Saturation',
+    label: 'Global Saturation',
     category: 'color',
     min: -100,
     max: 100,

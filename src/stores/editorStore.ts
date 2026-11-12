@@ -1,3 +1,5 @@
+import {SharpeningSettings,normalizeSharpening,DEFAULT_SHARPENING} from '../types/sharpening';
+import { ColorMixerSettings, MixerUI, defaultColorMixer, normalizeColorMixer } from '../types/colorMixer';
 import { ToneCurves, CurveChannel, CurvePoint, defaultCurves, normalizeCurves, identityPoints } from '../types/curves';
 import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects';
 import { CameraSettings, DateStampSettings, OpticalSettings, normalizeCamera } from '../types/camera';
@@ -10,11 +12,25 @@ import { loadSavedRecipes, persistRecipes, validateRecipeJSON, CURRENT_SCHEMA_VE
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
 
-interface EditorSnapshot { curves: ToneCurves; camera: CameraSettings; adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
+interface EditorSnapshot { sharpening:SharpeningSettings; colorMixer: ColorMixerSettings; curves: ToneCurves; camera: CameraSettings; adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
+
+function sameSnapshot(a:EditorSnapshot,b:EditorSnapshot|undefined){if(!b)return false;const values=(s:EditorSnapshot)=>[s.sharpening,s.colorMixer,s.curves,s.camera,s.adjustments,s.activeFilmId,s.activePresetId];return JSON.stringify(values(a))===JSON.stringify(values(b));}
 
 export type AppView = 'home' | 'editor';
 
-interface EditorState {
+interface EditorState extends MixerUI {
+  sharpening:SharpeningSettings;
+  sharpeningMask:boolean;
+  isSharpeningDragging:boolean;
+  detailZoomReturn:{zoom:number;pan:{x:number;y:number}}|null;
+  setSharpening:(value:SharpeningSettings,commit?:boolean)=>void;
+  setSharpeningMask:(value:boolean)=>void;
+  toggleDetailZoom:()=>void;
+  colorMixer: ColorMixerSettings;
+  toggleColorMixer: () => void;
+  setMixerUI: (patch: Partial<MixerUI>) => void;
+  setColorMixer: (value: ColorMixerSettings, commit?: boolean) => void;
+  resetColorMixer: () => void;
   curves: ToneCurves;
   isToneCurveOpen: boolean;
   curveChannel: CurveChannel;
@@ -83,19 +99,46 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
+  sharpening:{...DEFAULT_SHARPENING},sharpeningMask:false,isSharpeningDragging:false,detailZoomReturn:null,
+  setSharpeningMask:sharpeningMask=>set({sharpeningMask,isColorMixerOpen:false,isToneCurveOpen:false,isCameraEffectsOpen:false,mixerTool:'none',mixerVisualize:false}),
+  toggleDetailZoom:()=>{const s=get();if(s.detailZoomReturn){set({...s.detailZoomReturn,detailZoomReturn:null});}else{set({detailZoomReturn:{zoom:s.zoom,pan:s.pan}});}},
+  setSharpening:(value,commit=true)=>{
+    const state=get(),sharpening=normalizeSharpening(value),adjustments={...state.adjustments,sharpness:0};
+    if(!commit){set({sharpening,adjustments,isSharpeningDragging:true});return;}
+    set({isSharpeningDragging:false});
+    const snapshot={sharpening,colorMixer:normalizeColorMixer(state.colorMixer),curves:normalizeCurves(state.curves),camera:normalizeCamera(state.camera),adjustments,activeFilmId:state.activeFilmId,activePresetId:state.activePresetId};
+    if(sameSnapshot(snapshot,state.history[state.historyIndex]))return;
+    const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
+    set({sharpening,adjustments,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
+  },
+  colorMixer: defaultColorMixer(),
+  isColorMixerOpen: false,
+  mixerTab: 'mixer', mixerView: 'color', mixerAxis: 'hue', mixerColor: 'red', mixerPointId: null,
+  mixerTool: 'none', mixerVisualize: false, mixerMessage: '',
+  setMixerUI: patch => set(patch),
+  toggleColorMixer: () => set({detailZoomReturn:null,sharpeningMask:false,isColorMixerOpen:!get().isColorMixerOpen,isToneCurveOpen:false,isCameraEffectsOpen:false,mixerTool:'none',mixerVisualize:false,mixerMessage:''}),
+  setColorMixer: (value, commit=true) => {
+    const state=get(), colorMixer=normalizeColorMixer(value);
+    if(!commit){set({colorMixer});return;}
+    const snapshot={sharpening:normalizeSharpening(state.sharpening),colorMixer,curves:normalizeCurves(state.curves),camera:normalizeCamera(state.camera),adjustments:{...state.adjustments},activeFilmId:state.activeFilmId,activePresetId:state.activePresetId};
+    if(sameSnapshot(snapshot,state.history[state.historyIndex]))return;
+    const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
+    set({colorMixer,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
+  },
+  resetColorMixer: () => {get().setColorMixer(defaultColorMixer());set({mixerPointId:null,mixerVisualize:false,mixerTool:'none'});},
   curves: defaultCurves(),
   isToneCurveOpen: false,
   curveChannel: 'white',
   curvePointIndex: 0,
   setCurvePointIndex: index => set({curvePointIndex: Math.max(0,Math.min(15,Math.floor(index)))}),
-  toggleToneCurve: () => set({isToneCurveOpen: !get().isToneCurveOpen, isCameraEffectsOpen: false}),
+  toggleToneCurve: () => set({detailZoomReturn:null,sharpeningMask:false,isToneCurveOpen: !get().isToneCurveOpen, isCameraEffectsOpen: false, isColorMixerOpen:false,mixerTool:'none',mixerVisualize:false}),
   setCurveChannel: curveChannel => set({curveChannel,curvePointIndex:0}),
   setCurve: (channel, points, commit = true) => {
     const state = get();
     const curves = normalizeCurves({...state.curves, [channel]: points});
     if (!commit) { set({curves}); return; }
-    const snapshot = {curves, camera: normalizeCamera(state.camera), adjustments: {...state.adjustments}, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId};
-    if (JSON.stringify(snapshot) === JSON.stringify(state.history[state.historyIndex])) return;
+    const snapshot = {sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer),curves, camera: normalizeCamera(state.camera), adjustments: {...state.adjustments}, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId};
+    if (sameSnapshot(snapshot,state.history[state.historyIndex])) return;
     const history = [...state.history.slice(0,state.historyIndex+1), snapshot].slice(-50);
     set({curves, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo:false});
   },
@@ -106,7 +149,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   camera: normalizeCamera(),
   hasOldSchoolSettings: false,
   isCameraEffectsOpen: false,
-  toggleCameraEffects: () => { if (supportsCameraEffects(get().activeFilmId)) set({ isCameraEffectsOpen: !get().isCameraEffectsOpen, isToneCurveOpen: false }); },
+  toggleCameraEffects: () => { if (supportsCameraEffects(get().activeFilmId)) set({ detailZoomReturn:null,sharpeningMask:false,isCameraEffectsOpen: !get().isCameraEffectsOpen, isToneCurveOpen: false, isColorMixerOpen:false,mixerTool:'none',mixerVisualize:false }); },
   isFilterSetOpen: false,
   currentView: 'home',
   image: null,
@@ -122,7 +165,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activePresetId: null,
   lastPresetId: MARGARINE_PRESETS[0].id,
   isMargarineOpen: false,
-  history: [{ curves: defaultCurves(), camera: normalizeCamera(), adjustments: { ...DEFAULT_ADJUSTMENTS }, activeFilmId: 'FS-001', activePresetId: null }],
+  history: [{ sharpening:{...DEFAULT_SHARPENING}, colorMixer:defaultColorMixer(), curves: defaultCurves(), camera: normalizeCamera(), adjustments: { ...DEFAULT_ADJUSTMENTS }, activeFilmId: 'FS-001', activePresetId: null }],
   historyIndex: 0,
   canUndo: false,
   canRedo: false,
@@ -135,28 +178,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   applyMargarine: (id) => {
     const preset = getMargarinePreset(id);
     if (!preset) return;
-    const snapshot = { curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
+    const snapshot = { sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: { ...preset.adjustments }, activeFilmId: preset.baseFilmId, activePresetId: id };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
-    set({ isCameraEffectsOpen: false, ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
+    set({ isCameraEffectsOpen: false,mixerTool:'none',mixerVisualize:false, ...snapshot, lastPresetId: id, history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false });
   },
   openFilterSet: () => set({ isFilterSetOpen: true, isMargarineOpen: false }),
   closeFilterSet: () => set({ isFilterSetOpen: false }),
   applyOldSchool: () => {
     const snapshot: EditorSnapshot = {
+      sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer),
       curves: normalizeCurves(get().curves),
       activeFilmId: 'FS-010', activePresetId: null,
       adjustments: { ...DEFAULT_ADJUSTMENTS, ...RETRO90.defaultAdjustments },
       camera: get().hasOldSchoolSettings ? normalizeCamera(get().camera) : normalizeCamera({ ...get().camera, optics: { glow: 12, halation: 8, softness: 8, quality: 'standard' } }),
     };
     const history = [...get().history.slice(0,get().historyIndex+1),snapshot].slice(-50);
-    set({ ...snapshot, hasOldSchoolSettings: true, isCameraEffectsOpen: false, isFilterSetOpen: false, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
+    set({ ...snapshot, hasOldSchoolSettings: true, isCameraEffectsOpen: false,mixerTool:'none',mixerVisualize:false, isFilterSetOpen: false, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
   updateDateStamp: (patch) => {
     const state = get();
     if (!getCameraEffects(state.activeFilmId).includes('dateStamp')) return;
     const camera = normalizeCamera({ ...state.camera, dateStamp: { ...state.camera.dateStamp, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
-    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     const history = [...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({ camera, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
@@ -165,14 +209,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!getCameraEffects(state.activeFilmId).some(effect => effect !== 'dateStamp')) return;
     const camera = normalizeCamera({ ...state.camera, optics: { ...state.camera.optics, ...patch } });
     if (JSON.stringify(camera) === JSON.stringify(state.camera)) return;
-    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     const history = [...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({ camera, history, historyIndex: history.length-1, canUndo: history.length>1, canRedo: false });
   },
   resetCamera: () => {
     const state=get();
     if (!supportsCameraEffects(state.activeFilmId)) return;
-    const snapshot={ curves: normalizeCurves(get().curves), camera: normalizeCamera(), activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: {...state.adjustments} };
+    const snapshot={ sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera: normalizeCamera(), activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: {...state.adjustments} };
     const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({...snapshot,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
   },
@@ -191,10 +235,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const camera = normalizeCamera(state.camera.dateStamp.source === 'exif' ? {
       ...state.camera, dateStamp: { ...state.camera.dateStamp, date: img.captureDate || '', enabled: state.camera.dateStamp.enabled && !!img.captureDate }
     } : state.camera);
-    const snapshot = { curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
+    const snapshot = { sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera, activeFilmId: state.activeFilmId, activePresetId: state.activePresetId, adjustments: { ...state.adjustments } };
     set({
-      isCameraEffectsOpen: false,
+      isCameraEffectsOpen: false, mixerTool:'none', mixerVisualize:false,
       camera, history: [snapshot], historyIndex: 0, canUndo: false, canRedo: false,
+      isColorMixerOpen:false,mixerPointId:null,
+      sharpeningMask:false,isSharpeningDragging:false,detailZoomReturn:null,
       image: img,
       currentView: 'editor',
       zoom: 1.0,
@@ -215,11 +261,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     const newHistory = get().history.slice(0, get().historyIndex + 1);
     const camera = normalizeCamera(get().camera);
-    newHistory.push({ curves: normalizeCurves(get().curves), camera, adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
+    newHistory.push({ sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera, adjustments: newAdjustments, activeFilmId: filmId, activePresetId: null });
 
     set({
       camera,
-      isCameraEffectsOpen: false,
+      isCameraEffectsOpen: false, mixerTool:'none', mixerVisualize:false,
       activeFilmId: filmId,
       activePresetId: null,
       adjustments: newAdjustments,
@@ -235,8 +281,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (current[key] === val) return;
 
     const updated = { ...current, [key]: val };
+    if(key==='sharpness')set({sharpening:normalizeSharpening(undefined,val)});
     const newHistory = get().history.slice(0, get().historyIndex + 1);
-    newHistory.push({ curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: updated, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
+    newHistory.push({ sharpening:normalizeSharpening(get().sharpening), colorMixer:normalizeColorMixer(get().colorMixer), curves: normalizeCurves(get().curves), camera: normalizeCamera(get().camera), adjustments: updated, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     // Limit history stack to 50
     if (newHistory.length > 50) newHistory.shift();
@@ -259,10 +306,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
     const newHistory = get().history.slice(0, get().historyIndex + 1);
     const camera = normalizeCamera({ ...get().camera, optics: get().activeFilmId === 'FS-010' ? { glow: 12, halation: 8, softness: 8, quality: 'standard' } : get().camera.optics });
-    newHistory.push({ curves: defaultCurves(), camera, adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
+    newHistory.push({ sharpening:{...DEFAULT_SHARPENING}, colorMixer:defaultColorMixer(), curves: defaultCurves(), camera, adjustments: { ...resetValues }, activeFilmId: get().activeFilmId, activePresetId: get().activePresetId });
 
     set({
       camera,
+      sharpening:{...DEFAULT_SHARPENING},sharpeningMask:false,
+      colorMixer:defaultColorMixer(), mixerPointId:null, mixerTool:'none', mixerVisualize:false,
       curves: defaultCurves(),
       adjustments: resetValues,
       history: newHistory,
@@ -278,7 +327,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex - 1;
       set({
         historyIndex: newIndex,
-        isCameraEffectsOpen: false,
+        isCameraEffectsOpen: false,sharpeningMask:false, mixerTool:'none', mixerVisualize:false,
         ...history[newIndex],
         ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
         adjustments: { ...history[newIndex].adjustments },
@@ -294,7 +343,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const newIndex = historyIndex + 1;
       set({
         historyIndex: newIndex,
-        isCameraEffectsOpen: false,
+        isCameraEffectsOpen: false,sharpeningMask:false, mixerTool:'none', mixerVisualize:false,
         ...history[newIndex],
         ...(history[newIndex].activePresetId ? { lastPresetId: history[newIndex].activePresetId! } : {}),
         adjustments: { ...history[newIndex].adjustments },
@@ -328,6 +377,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       schemaVersion: CURRENT_SCHEMA_VERSION,
+      sharpening:normalizeSharpening(state.sharpening),
+      colorMixer:normalizeColorMixer(state.colorMixer),
       curves: normalizeCurves(state.curves),
       camera: normalizeCamera(state.camera),
     };
@@ -368,9 +419,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   applyRecipe: (recipe: CustomRecipe) => {
-    const snapshot = { curves: normalizeCurves(recipe.curves), camera: normalizeCamera(recipe.camera), activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
+    const snapshot = { sharpening:normalizeSharpening(recipe.sharpening,recipe.adjustments.sharpness),colorMixer:normalizeColorMixer(recipe.colorMixer), curves: normalizeCurves(recipe.curves), camera: normalizeCamera(recipe.camera), activeFilmId: recipe.baseFilmId, activePresetId: getMargarinePreset(recipe.presetId)?.id || null, adjustments: { ...recipe.adjustments } };
     const history = [...get().history.slice(0, get().historyIndex + 1), snapshot].slice(-50);
-    set({ curves: snapshot.curves, camera: snapshot.camera, isCameraEffectsOpen: false, ...(recipe.baseFilmId === 'FS-010' ? { hasOldSchoolSettings: true } : {}), history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
+    set({ sharpening:snapshot.sharpening,sharpeningMask:false,isSharpeningDragging:false,detailZoomReturn:null,colorMixer:snapshot.colorMixer,mixerPointId:null,mixerTool:'none',mixerVisualize:false, curves: snapshot.curves, camera: snapshot.camera, isCameraEffectsOpen: false, ...(recipe.baseFilmId === 'FS-010' ? { hasOldSchoolSettings: true } : {}), history, historyIndex: history.length - 1, canUndo: history.length > 1, canRedo: false,
       activeFilmId: recipe.baseFilmId,
       activePresetId: getMargarinePreset(recipe.presetId)?.id || null,
       ...(recipe.presetId && getMargarinePreset(recipe.presetId) ? { lastPresetId: recipe.presetId } : {}),

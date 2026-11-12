@@ -9,7 +9,7 @@ test('transparent centered curves, filter-area toolbar and independent camera ov
   const graph=page.getByTestId('curve-graph');await expect(graph).toBeVisible();const box=(await graph.boundingBox())!;
   expect(Math.abs(box.x+box.width/2-bounds.x-bounds.width/2)).toBeLessThan(1);expect(Math.abs(box.y+box.height/2-bounds.y-bounds.height/2)).toBeLessThan(1);
   const style=await page.getByTestId('tone-curve-overlay').evaluate(el=>({bg:getComputedStyle(el).backgroundColor,blur:getComputedStyle(el).backdropFilter}));expect(style).toEqual({bg:'rgba(0, 0, 0, 0)',blur:'none'});await expect(graph.locator('rect')).toHaveAttribute('fill','none');
-  const toolbar=page.getByTestId('curve-toolbar').filter({visible:true});await expect(toolbar).toBeVisible();expect(await toolbar.evaluate(el=>!!el.closest('[data-testid="filter-area"]'))).toBe(true);expect(await workspace.boundingBox()).toEqual(bounds);
+  const toolbar=page.getByTestId('curve-toolbar').filter({visible:true});await expect(toolbar).toBeVisible();expect(await toolbar.evaluate(el=>!!el.closest(innerWidth>=1280?'[data-testid="tone-curve-overlay"]':'[data-testid="filter-area"]'))).toBe(true);expect(await workspace.boundingBox()).toEqual(bounds);
   await expect(page.getByTestId('histogram')).toBeVisible();await expect(page.getByTestId('histogram').locator('path')).toHaveCount(4);
   // Tablet icon panel opens above the workspace, then closes as camera overlay opens.
   await openTools();await page.getByTestId('camera-effects-toggle').filter({visible:true}).click();

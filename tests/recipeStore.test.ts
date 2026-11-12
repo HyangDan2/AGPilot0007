@@ -25,7 +25,7 @@ describe('Recipe Store & Schema Validation', () => {
     expect(parsed.baseFilmId).toBe('FS-002');
     expect(parsed.adjustments.exposure).toBe(0.35);
     expect(parsed.adjustments.contrast).toBe(15);
-    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.schemaVersion).toBe(7);
   });
 
   it('safely handles missing adjustment fields by merging defaults', () => {

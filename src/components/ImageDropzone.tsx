@@ -48,8 +48,8 @@ export const ImageDropzone: React.FC = () => {
       }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
-      className={`flex-1 flex flex-col items-center justify-center p-6 bg-[#07090c] transition-colors select-none ${
-        isDragOver ? 'bg-[#0f141f] border-2 border-dashed border-[#ff824f]' : ''
+      className={`flex-1 flex flex-col items-center justify-center p-6 bg-[var(--ui-bg-07090c)] transition-colors select-none ${
+        isDragOver ? 'bg-[var(--ui-bg-0f141f)] border-2 border-dashed border-[color:var(--ui-border-ff824f)]' : ''
       }`}
     >
       <input
@@ -60,10 +60,10 @@ export const ImageDropzone: React.FC = () => {
         className="hidden"
       />
 
-      <div className="max-w-md w-full bg-[#11141b] border border-[#202735] rounded-2xl p-8 text-center shadow-2xl">
-        <div className="w-16 h-16 rounded-2xl bg-[#141822] border border-[#273244] shadow-md flex items-center justify-center mx-auto mb-5">
+      <div className="max-w-md w-full bg-[var(--ui-bg-11141b)] border border-[color:var(--ui-border-202735)] rounded-2xl p-8 text-center shadow-2xl">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--ui-bg-141822)] border border-[color:var(--ui-border-273244)] shadow-md flex items-center justify-center mx-auto mb-5">
           <svg
-            className="w-9 h-9 text-[#ff824f]"
+            className="w-9 h-9 text-[color:var(--ui-text-ff824f)]"
             viewBox="0 0 64 64"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -79,22 +79,22 @@ export const ImageDropzone: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-center space-x-2 mb-2">
-          <h1 className="text-xl font-bold text-slate-100">Film Studio</h1>
-          <span className="text-[10px] font-mono tracking-wider text-[#ff824f] bg-[#ff824f]/10 border border-[#ff824f]/30 px-1.5 py-0.5 rounded font-semibold">
+          <h1 className="text-xl font-bold text-[color:var(--ui-text-slate100)]">Film Studio</h1>
+          <span className="text-[10px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#ff824f]/10 border border-[color:var(--ui-border-ff824f)]/30 px-1.5 py-0.5 rounded font-semibold">
             HD2Lab
           </span>
         </div>
 
-        <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+        <p className="text-xs text-[color:var(--ui-text-slate400)] mb-6 leading-relaxed">
           HD2Lab Browser-based Photographic Color Simulation Engine.
           Select or drag-and-drop a photo to begin color development.
         </p>
 
         {/* Continue Editing if session is active */}
         {image && (
-          <div className="mb-5 p-3.5 rounded-xl bg-[#171d28] border border-amber-500/50 text-left">
+          <div className="mb-5 p-3.5 rounded-xl bg-[var(--ui-bg-171d28)] border border-amber-500/50 text-left">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 rounded-lg overflow-hidden bg-black/40 border border-[#323d52] flex-shrink-0 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-black/40 border border-[color:var(--ui-border-323d52)] flex-shrink-0 flex items-center justify-center">
                 {image.previewCanvas ? (
                   <img
                     src={image.previewCanvas.toDataURL('image/jpeg', 0.7)}
@@ -102,17 +102,17 @@ export const ImageDropzone: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className="w-4 h-4 text-slate-500" />
+                  <ImageIcon className="w-4 h-4 text-[color:var(--ui-text-slate500)]" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-mono uppercase text-amber-400 font-bold flex items-center gap-1">
+                <div className="text-[11px] font-mono uppercase text-[color:var(--ui-text-amber-400)] font-bold flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> Active Session
                 </div>
-                <div className="text-xs font-semibold text-slate-200 truncate">
+                <div className="text-xs font-semibold text-[color:var(--ui-text-slate200)] truncate">
                   {image.name}
                 </div>
-                <div className="text-[10px] text-slate-400 truncate">
+                <div className="text-[10px] text-[color:var(--ui-text-slate400)] truncate">
                   Profile: {currentFilm?.name}
                 </div>
               </div>
@@ -137,26 +137,26 @@ export const ImageDropzone: React.FC = () => {
         </button>
 
         {/* Or load test targets */}
-        <div className="border-t border-[#1d232f] pt-5">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-3">
+        <div className="border-t border-[color:var(--ui-border-1d232f)] pt-5">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--ui-text-slate400)] block mb-3">
             Or load calibration sample
           </span>
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => loadSample('samples/film_test_portrait.jpg', 'HD2Lab_Film_Portrait.jpg')}
-              className="px-2 py-2 rounded-lg bg-[#181d26] hover:bg-[#222937] border border-[#273042] text-xs text-slate-300 font-medium transition-colors cursor-pointer"
+              className="px-2 py-2 rounded-lg bg-[var(--ui-bg-181d26)] hover:bg-[var(--ui-bg-222937)] border border-[color:var(--ui-border-273042)] text-xs text-[color:var(--ui-text-slate300)] font-medium transition-colors cursor-pointer"
             >
               Portrait
             </button>
             <button
               onClick={() => loadSample('samples/color_chart.png', 'HD2Lab_Color_Target.png')}
-              className="px-2 py-2 rounded-lg bg-[#181d26] hover:bg-[#222937] border border-[#273042] text-xs text-slate-300 font-medium transition-colors cursor-pointer"
+              className="px-2 py-2 rounded-lg bg-[var(--ui-bg-181d26)] hover:bg-[var(--ui-bg-222937)] border border-[color:var(--ui-border-273042)] text-xs text-[color:var(--ui-text-slate300)] font-medium transition-colors cursor-pointer"
             >
               Color Target
             </button>
             <button
               onClick={() => loadSample('samples/landscape_test.png', 'HD2Lab_Landscape_Gamut.png')}
-              className="px-2 py-2 rounded-lg bg-[#181d26] hover:bg-[#222937] border border-[#273042] text-xs text-slate-300 font-medium transition-colors cursor-pointer"
+              className="px-2 py-2 rounded-lg bg-[var(--ui-bg-181d26)] hover:bg-[var(--ui-bg-222937)] border border-[color:var(--ui-border-273042)] text-xs text-[color:var(--ui-text-slate300)] font-medium transition-colors cursor-pointer"
             >
               Landscape
             </button>
@@ -164,12 +164,12 @@ export const ImageDropzone: React.FC = () => {
         </div>
 
         {/* Technical Guarantee Badge */}
-        <div className="mt-6 pt-4 border-t border-[#1b202a] flex items-center justify-center space-x-4 text-[10px] text-slate-400 font-mono">
+        <div className="mt-6 pt-4 border-t border-[color:var(--ui-border-1b202a)] flex items-center justify-center space-x-4 text-[10px] text-[color:var(--ui-text-slate400)] font-mono">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> 100% Local (Zero Upload)
           </span>
           <span className="flex items-center gap-1">
-            <Cpu className="w-3.5 h-3.5 text-amber-400" /> WebGL2 GPU Powered
+            <Cpu className="w-3.5 h-3.5 text-[color:var(--ui-text-amber-400)]" /> WebGL2 GPU Powered
           </span>
         </div>
       </div>

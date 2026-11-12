@@ -1,0 +1,11 @@
+import {it,expect,vi,beforeEach} from 'vitest';
+const deferred=vi.hoisted(()=>new Map<string,{resolve:(image:any)=>void;reject:(e:Error)=>void}>());
+vi.mock('../src/engine/image/decoder',()=>({decodeImageFile:vi.fn((file:File)=>new Promise((resolve,reject)=>deferred.set(file.name,{resolve,reject})))}));
+import {useWorkspaceStore as ws} from '../src/stores/workspaceStore';
+import {useEditorStore as editor} from '../src/stores/editorStore';
+const fake=(name:string)=>({workspaceKey:name,name,sourceUrl:'blob:'+name,originalWidth:64,originalHeight:48,previewWidth:64,previewHeight:48,previewCanvas:document.createElement('canvas'),originalElement:new Image()});
+const settle=async()=>{await Promise.resolve();await Promise.resolve();await Promise.resolve();};
+beforeEach(()=>{URL.revokeObjectURL=vi.fn();ws.getState().close();deferred.clear();ws.getState().setEntries(['a','b'].map(name=>({id:name,name,path:name,getFile:async()=>new File(['test'],name)})),'Folder');});
+it('keeps the latest selection when old decoding finishes later and revokes its unused URL',async()=>{const a=ws.getState().select('a');await settle();const b=ws.getState().select('b');await settle();deferred.get('b')!.resolve(fake('b'));await b;deferred.get('a')!.resolve(fake('a'));await a;expect(editor.getState().image?.name).toBe('b');expect(ws.getState().activeId).toBe('b');expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:a');});
+it('does not replace the current photo on a decoder failure and can retry',async()=>{const current=editor.getState().image;const loading=ws.getState().select('a');await settle();deferred.get('a')!.reject(Error('corrupt'));await loading;expect(editor.getState().image).toBe(current);expect(ws.getState().error).toContain('corrupt');expect(ws.getState().loading).toBe(false);const retry=ws.getState().select('a');await settle();deferred.get('a')!.resolve(fake('a'));await retry;expect(editor.getState().image?.name).toBe('a');});
+it('cancels an outstanding selection when workspace closes',async()=>{const current=editor.getState().image,loading=ws.getState().select('a');await settle();ws.getState().close();deferred.get('a')!.resolve(fake('a'));await loading;expect(editor.getState().image).toBe(current);expect(ws.getState().entries).toHaveLength(0);expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:a');});

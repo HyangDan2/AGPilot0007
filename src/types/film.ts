@@ -1,3 +1,5 @@
+import {SharpeningSettings} from './sharpening';
+import type { ColorMixerSettings } from './colorMixer';
 import type { ToneCurves } from './curves';
 import type { CameraSettings, CameraEffect } from './camera';
 export type FilmId =
@@ -70,6 +72,8 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 };
 
 export interface CustomRecipe {
+  sharpening?:SharpeningSettings;
+  colorMixer?: ColorMixerSettings;
   curves?: ToneCurves;
   camera?: CameraSettings;
   presetId?: string;
