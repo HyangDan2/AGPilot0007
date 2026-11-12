@@ -1,0 +1,22 @@
+{
+  "id": "hd2lab-experiment-soft-white",
+  "name": "HD2Lab Soft White — Experimental",
+  "baseFilmId": "FS-007",
+  "profileVersion": "1.0.0",
+  "adjustments": {
+    "exposure": 0.2,
+    "temperature": -3,
+    "tint": 2,
+    "highlights": -25,
+    "shadows": 25,
+    "contrast": -8,
+    "saturation": -7,
+    "grain": 0,
+    "sharpness": 0,
+    "vignette": 0,
+    "filmStrength": 55
+  },
+  "createdAt": 1794351600000,
+  "updatedAt": 1794351600000,
+  "schemaVersion": 1
+}

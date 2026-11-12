@@ -1,0 +1,22 @@
+{
+  "id": "hd2lab-experiment-cafe-brown",
+  "name": "HD2Lab Cafe Brown — Experimental",
+  "baseFilmId": "FS-003",
+  "profileVersion": "1.0.0",
+  "adjustments": {
+    "exposure": 0.1,
+    "temperature": 14,
+    "tint": 2,
+    "highlights": -28,
+    "shadows": 14,
+    "contrast": -8,
+    "saturation": -15,
+    "grain": 0,
+    "sharpness": 0,
+    "vignette": 0,
+    "filmStrength": 50
+  },
+  "createdAt": 1794351600000,
+  "updatedAt": 1794351600000,
+  "schemaVersion": 1
+}

@@ -1,0 +1,22 @@
+{
+  "id": "hd2lab-experiment-cream-daylight",
+  "name": "HD2Lab Cream Daylight — Experimental",
+  "baseFilmId": "FS-007",
+  "profileVersion": "1.0.0",
+  "adjustments": {
+    "exposure": 0.15,
+    "temperature": 12,
+    "tint": 3,
+    "highlights": -22,
+    "shadows": 18,
+    "contrast": -10,
+    "saturation": -10,
+    "grain": 0,
+    "sharpness": 0,
+    "vignette": 0,
+    "filmStrength": 60
+  },
+  "createdAt": 1794351600000,
+  "updatedAt": 1794351600000,
+  "schemaVersion": 1
+}
