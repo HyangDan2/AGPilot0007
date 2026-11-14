@@ -19,8 +19,10 @@ test.describe('Responsive Layout & Viewport Verification', () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/');
 
-      // Wait for app load
-      await expect(page.locator('text=Film Studio').first()).toBeVisible();
+      // Wait for app load — the header carries the HD2Lab lockup
+      // (phone widths keep the mark + HD2Lab; the sub-label returns from 481px up)
+      await expect(page.locator('header .brand-name')).toHaveText('HD2Lab');
+      await expect(page.locator('header .brand')).toBeVisible();
 
       // Check no unintended horizontal overflow
       const overflow = await page.evaluate(() => {

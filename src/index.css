@@ -347,3 +347,74 @@ input[type="range"]::-webkit-slider-thumb:active {
 
 :root { --ui-session-from:#171d28; --ui-session-via:#1a2232; --ui-tooltip-text:#fff; --ui-selection-border:#fff; }
 :root[data-theme="light"] { --ui-session-from:#fff7ed; --ui-session-via:#ffedd5; --ui-tooltip-text:#172033; --ui-selection-border:#334155; }
+
+/* ── HD2Lab brand header — the Web-HQ standard (mark · HD2Lab · | name) ───── */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  min-width: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: 25px;
+  letter-spacing: -1.5px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.brand:hover .brand-name { color: var(--ui-text-slate100); }
+.brand:hover em { color: var(--ui-text-slate300); }
+.brand:focus-visible { outline: 2px solid var(--ui-text-ff824f); outline-offset: 4px; border-radius: 3px; }
+.brand-name {
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  color: var(--ui-text-slate100);
+}
+.brand em {
+  font-size: 12px;
+  letter-spacing: 0;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ui-text-slate400);
+  border-left: 1px solid var(--ui-border-344055);
+  padding-left: 13px;
+}
+/* HD2Lab dual-skew mark — the same geometry as Web-HQ */
+.mark {
+  display: inline-block;
+  width: 17px;
+  height: 22px;
+  border: 3px solid var(--ui-text-ff824f);
+  transform: skewY(-23deg);
+  position: relative;
+  flex-shrink: 0;
+}
+.mark:after {
+  content: '';
+  position: absolute;
+  inset: 4px -8px -7px 4px;
+  border: 2px solid var(--ui-text-ff824f);
+}
+@media (max-width: 720px) {
+  .brand { min-height: 42px; font-size: 22px; }
+  .brand-name { font-size: 22px; }
+  .brand em { padding-left: 10px; }
+}
+@media (max-width: 480px) {
+  /* phone header: the action buttons need the room, so the lockup keeps mark + HD2Lab */
+  .brand { gap: 10px; }
+  .brand em { display: none; }
+}
+@media (max-width: 359px) {
+  .brand { gap: 6px; }
+  .brand-name { font-size: 20px; }
+  .mark { width: 14px; height: 18px; border-width: 2px; }
+  .mark:after { inset: 3px -6px -5px 3px; }
+}

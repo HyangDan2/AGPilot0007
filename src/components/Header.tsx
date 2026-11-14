@@ -100,43 +100,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
 
   return (
     <header className="h-14 bg-[var(--ui-bg-0f1218)] border-b border-[color:var(--ui-border-1f2532)] px-3 sm:px-4 flex items-center justify-between z-30 flex-shrink-0 select-none relative">
-      {/* Brand & Title — Interactive Logo/Home Navigation */}
+      {/* Brand & Title — the Web-HQ header: [mark] HD2Lab | Film Studio */}
       <button
         type="button"
         onClick={() => setView('home')}
         aria-label="Go to Film Studio home"
         title="Go to Film Studio home"
-        className="flex items-center space-x-2.5 p-1 -m-1 rounded-xl text-left transition-all hover:bg-[var(--ui-bg-161a22)] focus:outline-none focus:ring-2 focus:ring-[#ff824f]/60 cursor-pointer group"
+        className="brand"
       >
-        <div className="w-8 h-8 rounded-lg bg-[var(--ui-bg-161a22)] group-hover:bg-[var(--ui-bg-1e2430)] border border-[color:var(--ui-border-293242)] group-hover:border-[color:var(--ui-border-ff824f)]/50 flex items-center justify-center shadow-sm flex-shrink-0 transition-colors">
-          <svg
-            className="w-5 h-5 text-[color:var(--ui-text-ff824f)]"
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-label="HD2Lab Logo"
-          >
-            <path
-              d="M15 20L35 10V43L15 53ZM29 24L49 14V47L29 57Z"
-              stroke="currentColor"
-              strokeWidth="4.5"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex items-center space-x-1.5 sm:space-x-2">
-            <span className="font-bold tracking-tight text-xs sm:text-sm text-[color:var(--ui-text-slate100)] group-hover:text-[color:var(--ui-text-slate100)] transition-colors">
-              Film Studio
-            </span>
-            <span className="text-[9px] sm:text-[10px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#ff824f]/10 border border-[color:var(--ui-border-ff824f)]/30 px-1.5 py-0.5 rounded font-semibold">
-              HD2Lab
-            </span>
-          </div>
-          <span className="text-[10px] text-[color:var(--ui-text-slate400)] font-mono tracking-tight hidden lg:inline">
-            Precision Color Development Engine
-          </span>
-        </div>
+        <span className="mark" aria-hidden="true" />
+        <span className="brand-name">HD2Lab</span>
+        <em>Film Studio</em>
       </button>
 
       {/* Center Actions: Sample images quick switcher (Desktop/Tablet) */}
