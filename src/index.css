@@ -7,8 +7,8 @@
     --bg-tertiary: #1b1f27;
     --border-subtle: #242933;
     --border-active: #3b4252;
-    --accent-amber: #d97706;
-    --accent-amber-light: #f59e0b;
+    --accent-amber: #8B6CE8;
+    --accent-amber-light: #A78BFA;
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
@@ -52,14 +52,14 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #f59e0b;
+  background: #8B6CE8;
   cursor: pointer;
   transition: transform 0.1s ease, background-color 0.1s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.15);
-  background: #fbbf24;
+  background: #A78BFA;
 }
 input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.25);
@@ -179,17 +179,17 @@ input[type="range"]::-webkit-slider-thumb:active {
   --ui-border-323d52: #323d52;
   --ui-border-344055: #344055;
   --ui-border-526079: #526079;
-  --ui-border-ff824f: #ff824f;
+  --ui-border-ff824f: #8B6CE8;
   --ui-border-slate500: #64748b;
   --ui-border-slate600: #475569;
   --ui-border-slate700: #334155;
   --ui-text-3b4455: #3b4455;
-  --ui-text-amber-300: #fcd34d;
-  --ui-text-amber-400: #fbbf24;
-  --ui-text-amber-500: #f59e0b;
+  --ui-text-amber-300: #C4B5FD;
+  --ui-text-amber-400: #A78BFA;
+  --ui-text-amber-500: #8B6CE8;
   --ui-text-blue-400: #60a5fa;
   --ui-text-e2e8f0: #e2e8f0;
-  --ui-text-ff824f: #ff824f;
+  --ui-text-ff824f: #8B6CE8;
   --ui-text-green-400: #4ade80;
   --ui-text-red-200: #fecaca;
   --ui-text-red-300: #fca5a5;
@@ -201,152 +201,165 @@ input[type="range"]::-webkit-slider-thumb:active {
   --ui-text-slate500: #64748b;
   --ui-text-slate600: #475569;
 }
-:root[data-theme="light"] {
-  --ui-bg-07090c: #f4f6f9;
-  --ui-bg-07090d: #f4f6f9;
-  --ui-bg-08090d: #f4f6f9;
-  --ui-bg-0b0e14: #f4f6f9;
-  --ui-bg-0d0f14: #f4f6f9;
-  --ui-bg-0d1119: #ffffff;
-  --ui-bg-0e1117: #ffffff;
-  --ui-bg-0e1118: #ffffff;
-  --ui-bg-0f1217: #ffffff;
-  --ui-bg-0f1218: #ffffff;
-  --ui-bg-0f141f: #ffffff;
-  --ui-bg-0f1522: #ffffff;
-  --ui-bg-10131b: #ffffff;
-  --ui-bg-10141d: #ffffff;
-  --ui-bg-11141a: #ffffff;
-  --ui-bg-11141b: #ffffff;
-  --ui-bg-11141c: #ffffff;
-  --ui-bg-11151e: #ffffff;
-  --ui-bg-111722: #ffffff;
-  --ui-bg-12151d: #ffffff;
-  --ui-bg-12161e: #ffffff;
-  --ui-bg-12161f: #ffffff;
-  --ui-bg-121620: #ffffff;
-  --ui-bg-121722: #ffffff;
-  --ui-bg-131720: #ffffff;
-  --ui-bg-141822: #ffffff;
-  --ui-bg-151a24: #edf1f6;
-  --ui-bg-161a22: #ffffff;
-  --ui-bg-161b26: #edf1f6;
-  --ui-bg-161c28: #edf1f6;
-  --ui-bg-171c26: #edf1f6;
-  --ui-bg-171d28: #edf1f6;
-  --ui-bg-181c24: #edf1f6;
-  --ui-bg-181d26: #edf1f6;
-  --ui-bg-181d2a: #edf1f6;
-  --ui-bg-181e28: #edf1f6;
-  --ui-bg-181f2c: #edf1f6;
-  --ui-bg-191e28: #edf1f6;
-  --ui-bg-1a202b: #edf1f6;
-  --ui-bg-1a202c: #edf1f6;
-  --ui-bg-1c2331: #dce3ec;
-  --ui-bg-1d2433: #dce3ec;
-  --ui-bg-1e2430: #dce3ec;
-  --ui-bg-1e2533: #dce3ec;
-  --ui-bg-1e2636: #dce3ec;
-  --ui-bg-1f2635: #dce3ec;
-  --ui-bg-202734: #dce3ec;
-  --ui-bg-202735: #dce3ec;
-  --ui-bg-202737: #dce3ec;
-  --ui-bg-222937: #dce3ec;
-  --ui-bg-222a38: #dce3ec;
-  --ui-bg-222b3a: #dce3ec;
-  --ui-bg-232b3b: #dce3ec;
-  --ui-bg-252b37: #dce3ec;
-  --ui-bg-252e40: #dce3ec;
-  --ui-bg-2a3447: #dce3ec;
-  --ui-bg-slate700: #e2e8f0;
-  --ui-bg-slate800: #edf1f6;
-  --ui-border-121620: #cbd5e1;
-  --ui-border-1a202c: #cbd5e1;
-  --ui-border-1b202a: #cbd5e1;
-  --ui-border-1b212c: #cbd5e1;
-  --ui-border-1b212d: #cbd5e1;
-  --ui-border-1c222c: #cbd5e1;
-  --ui-border-1d222d: #cbd5e1;
-  --ui-border-1d232f: #cbd5e1;
-  --ui-border-1e232d: #cbd5e1;
-  --ui-border-1e2430: #cbd5e1;
-  --ui-border-1f2532: #cbd5e1;
-  --ui-border-1f2634: #cbd5e1;
-  --ui-border-1f2635: #cbd5e1;
-  --ui-border-202735: #cbd5e1;
-  --ui-border-202737: #cbd5e1;
-  --ui-border-222836: #cbd5e1;
-  --ui-border-222938: #cbd5e1;
-  --ui-border-232a39: #cbd5e1;
-  --ui-border-232b3a: #cbd5e1;
-  --ui-border-232b3b: #cbd5e1;
-  --ui-border-242b3b: #cbd5e1;
-  --ui-border-242c3c: #cbd5e1;
-  --ui-border-252f42: #cbd5e1;
-  --ui-border-262c36: #cbd5e1;
-  --ui-border-262f3f: #cbd5e1;
-  --ui-border-263042: #cbd5e1;
-  --ui-border-273040: #cbd5e1;
-  --ui-border-273042: #cbd5e1;
-  --ui-border-273244: #cbd5e1;
-  --ui-border-283141: #cbd5e1;
-  --ui-border-283244: #cbd5e1;
-  --ui-border-283346: #cbd5e1;
-  --ui-border-293141: #cbd5e1;
-  --ui-border-293242: #cbd5e1;
-  --ui-border-2a3447: #cbd5e1;
-  --ui-border-2b3548: #cbd5e1;
-  --ui-border-2b354a: #cbd5e1;
-  --ui-border-2b364a: #cbd5e1;
-  --ui-border-2d3748: #cbd5e1;
-  --ui-border-2d384c: #cbd5e1;
-  --ui-border-2e374a: #cbd5e1;
-  --ui-border-2f394c: #cbd5e1;
-  --ui-border-2f3b4e: #cbd5e1;
-  --ui-border-2f3b52: #cbd5e1;
-  --ui-border-303641: #cbd5e1;
-  --ui-border-323d52: #cbd5e1;
-  --ui-border-344055: #94a3b8;
-  --ui-border-526079: #94a3b8;
-  --ui-border-ff824f: #94a3b8;
-  --ui-border-slate500: #94a3b8;
-  --ui-border-slate600: #cbd5e1;
-  --ui-border-slate700: #cbd5e1;
-  --ui-text-3b4455: #475569;
-  --ui-text-amber-300: #854d0e;
-  --ui-text-amber-400: #96500a;
-  --ui-text-amber-500: #925009;
-  --ui-text-blue-400: #1d4ed8;
-  --ui-text-e2e8f0: #172033;
-  --ui-text-ff824f: #a34614;
-  --ui-text-green-400: #166534;
-  --ui-text-red-200: #991b1b;
-  --ui-text-red-300: #b91c1c;
-  --ui-text-red-400: #b91c1c;
-  --ui-text-slate100: #172033;
-  --ui-text-slate200: #263248;
-  --ui-text-slate300: #334155;
-  --ui-text-slate400: #475569;
-  --ui-text-slate500: #526178;
-  --ui-text-slate600: #64748b;
-  --bg-primary: #f4f6f9;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #edf1f6;
-  --text-primary: #172033;
-  --text-secondary: #475569;
-  --text-muted: #526178;
-  --color-amber-600: #a94706;
-  --color-amber-500: #b85b08;
+
+/* Soft Iris (White & Violet) — the amber accent scale becomes the HD2Lab violet brand accent.
+   UI chrome only: image pixels, LUTs, film profiles and shader math are untouched. */
+:root {
+  --color-amber-200: #E4DAFD;
+  --color-amber-300: #C4B5FD;
+  --color-amber-400: #A78BFA;
+  --color-amber-500: #8B6CE8;
+  --color-amber-600: #7655D9;
+  --color-amber-700: #6B4CD6;
+  --color-amber-800: #5B3FBD;
+  --color-amber-950: #241F35;
 }
-:root[data-theme="light"] input[type="range"] { background-color: #cbd5e1; }
-:root[data-theme="light"] input[type="range"]::-webkit-slider-thumb { background-color: #a94706; }
-:root[data-theme="light"] ::-webkit-scrollbar-track { background: #edf1f6; }
-:root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #94a3b8; }
+:root[data-theme="light"] {
+  --ui-bg-07090c: #FAFAFD;
+  --ui-bg-07090d: #FAFAFD;
+  --ui-bg-08090d: #FAFAFD;
+  --ui-bg-0b0e14: #FAFAFD;
+  --ui-bg-0d0f14: #FAFAFD;
+  --ui-bg-0d1119: #FFFFFF;
+  --ui-bg-0e1117: #FFFFFF;
+  --ui-bg-0e1118: #FFFFFF;
+  --ui-bg-0f1217: #FFFFFF;
+  --ui-bg-0f1218: #FFFFFF;
+  --ui-bg-0f141f: #FFFFFF;
+  --ui-bg-0f1522: #FFFFFF;
+  --ui-bg-10131b: #FFFFFF;
+  --ui-bg-10141d: #FFFFFF;
+  --ui-bg-11141a: #FFFFFF;
+  --ui-bg-11141b: #FFFFFF;
+  --ui-bg-11141c: #FFFFFF;
+  --ui-bg-11151e: #FFFFFF;
+  --ui-bg-111722: #FFFFFF;
+  --ui-bg-12151d: #FFFFFF;
+  --ui-bg-12161e: #FFFFFF;
+  --ui-bg-12161f: #FFFFFF;
+  --ui-bg-121620: #FFFFFF;
+  --ui-bg-121722: #FFFFFF;
+  --ui-bg-131720: #FFFFFF;
+  --ui-bg-141822: #FFFFFF;
+  --ui-bg-151a24: #F4F1FC;
+  --ui-bg-161a22: #FFFFFF;
+  --ui-bg-161b26: #F4F1FC;
+  --ui-bg-161c28: #F4F1FC;
+  --ui-bg-171c26: #F4F1FC;
+  --ui-bg-171d28: #F4F1FC;
+  --ui-bg-181c24: #F4F1FC;
+  --ui-bg-181d26: #F4F1FC;
+  --ui-bg-181d2a: #F4F1FC;
+  --ui-bg-181e28: #F4F1FC;
+  --ui-bg-181f2c: #F4F1FC;
+  --ui-bg-191e28: #F4F1FC;
+  --ui-bg-1a202b: #F4F1FC;
+  --ui-bg-1a202c: #F4F1FC;
+  --ui-bg-1c2331: #EFEBFA;
+  --ui-bg-1d2433: #EFEBFA;
+  --ui-bg-1e2430: #EFEBFA;
+  --ui-bg-1e2533: #EFEBFA;
+  --ui-bg-1e2636: #EFEBFA;
+  --ui-bg-1f2635: #EFEBFA;
+  --ui-bg-202734: #EFEBFA;
+  --ui-bg-202735: #EFEBFA;
+  --ui-bg-202737: #EFEBFA;
+  --ui-bg-222937: #EFEBFA;
+  --ui-bg-222a38: #EFEBFA;
+  --ui-bg-222b3a: #EFEBFA;
+  --ui-bg-232b3b: #EFEBFA;
+  --ui-bg-252b37: #EFEBFA;
+  --ui-bg-252e40: #EFEBFA;
+  --ui-bg-2a3447: #EFEBFA;
+  --ui-bg-slate700: #F1ECFE;
+  --ui-bg-slate800: #F4F1FC;
+  --ui-border-121620: #E8E4F2;
+  --ui-border-1a202c: #E8E4F2;
+  --ui-border-1b202a: #E8E4F2;
+  --ui-border-1b212c: #E8E4F2;
+  --ui-border-1b212d: #E8E4F2;
+  --ui-border-1c222c: #E8E4F2;
+  --ui-border-1d222d: #E8E4F2;
+  --ui-border-1d232f: #E8E4F2;
+  --ui-border-1e232d: #E8E4F2;
+  --ui-border-1e2430: #E8E4F2;
+  --ui-border-1f2532: #E8E4F2;
+  --ui-border-1f2634: #E8E4F2;
+  --ui-border-1f2635: #E8E4F2;
+  --ui-border-202735: #E8E4F2;
+  --ui-border-202737: #E8E4F2;
+  --ui-border-222836: #E8E4F2;
+  --ui-border-222938: #E8E4F2;
+  --ui-border-232a39: #E8E4F2;
+  --ui-border-232b3a: #E8E4F2;
+  --ui-border-232b3b: #E8E4F2;
+  --ui-border-242b3b: #E8E4F2;
+  --ui-border-242c3c: #E8E4F2;
+  --ui-border-252f42: #E8E4F2;
+  --ui-border-262c36: #E8E4F2;
+  --ui-border-262f3f: #E8E4F2;
+  --ui-border-263042: #E8E4F2;
+  --ui-border-273040: #E8E4F2;
+  --ui-border-273042: #E8E4F2;
+  --ui-border-273244: #E8E4F2;
+  --ui-border-283141: #E8E4F2;
+  --ui-border-283244: #E8E4F2;
+  --ui-border-283346: #E8E4F2;
+  --ui-border-293141: #E8E4F2;
+  --ui-border-293242: #E8E4F2;
+  --ui-border-2a3447: #E8E4F2;
+  --ui-border-2b3548: #E8E4F2;
+  --ui-border-2b354a: #E8E4F2;
+  --ui-border-2b364a: #E8E4F2;
+  --ui-border-2d3748: #E8E4F2;
+  --ui-border-2d384c: #E8E4F2;
+  --ui-border-2e374a: #E8E4F2;
+  --ui-border-2f394c: #E8E4F2;
+  --ui-border-2f3b4e: #E8E4F2;
+  --ui-border-2f3b52: #E8E4F2;
+  --ui-border-303641: #E8E4F2;
+  --ui-border-323d52: #E8E4F2;
+  --ui-border-344055: #D4CCE8;
+  --ui-border-526079: #D4CCE8;
+  --ui-border-ff824f: #D4CCE8;
+  --ui-border-slate500: #D4CCE8;
+  --ui-border-slate600: #E8E4F2;
+  --ui-border-slate700: #E8E4F2;
+  --ui-text-3b4455: #68627A;
+  --ui-text-amber-300: #6B4CD6;
+  --ui-text-amber-400: #7C5CE0;
+  --ui-text-amber-500: #8B6CE8;
+  --ui-text-blue-400: #4F46E5;
+  --ui-text-e2e8f0: #1D192B;
+  --ui-text-ff824f: #6B4CD6;
+  --ui-text-green-400: #15803D;
+  --ui-text-red-200: #B91C1C;
+  --ui-text-red-300: #DC2626;
+  --ui-text-red-400: #DC2626;
+  --ui-text-slate100: #1D192B;
+  --ui-text-slate200: #3A3350;
+  --ui-text-slate300: #4A4360;
+  --ui-text-slate400: #68627A;
+  --ui-text-slate500: #7A7390;
+  --ui-text-slate600: #8A839C;
+  --bg-primary: #FAFAFD;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F4F1FC;
+  --text-primary: #1D192B;
+  --text-secondary: #68627A;
+  --text-muted: #7A7390;
+  --color-amber-600: #8B6CE8;
+  --color-amber-500: #7655D9;
+}
+:root[data-theme="light"] input[type="range"] { background-color: #E8E4F2; }
+:root[data-theme="light"] input[type="range"]::-webkit-slider-thumb { background-color: #8B6CE8; }
+:root[data-theme="light"] ::-webkit-scrollbar-track { background: #F4F1FC; }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #D4CCE8; }
 :root[data-theme="light"] [data-testid="tone-curve-overlay"] { text-shadow: none; }
 [data-neutral-plot] { --ui-bg-10141d: #10141d; --ui-text-slate300: #cbd5e1; --ui-border-slate600: #475569; }
 
-:root { --ui-session-from:#171d28; --ui-session-via:#1a2232; --ui-tooltip-text:#fff; --ui-selection-border:#fff; }
-:root[data-theme="light"] { --ui-session-from:#fff7ed; --ui-session-via:#ffedd5; --ui-tooltip-text:#172033; --ui-selection-border:#334155; }
+:root { --ui-session-from:#1F1B2E; --ui-session-via:#241F35; --ui-tooltip-text:#fff; --ui-selection-border:#fff; }
+:root[data-theme="light"] { --ui-session-from:#F4F1FC; --ui-session-via:#EBE4FD; --ui-tooltip-text:#1D192B; --ui-selection-border:#D4CCE8; }
 
 /* ── HD2Lab brand header — the Web-HQ standard (mark · HD2Lab · | name) ───── */
 .brand {
