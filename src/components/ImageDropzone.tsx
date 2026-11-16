@@ -80,7 +80,7 @@ export const ImageDropzone: React.FC = () => {
 
         <div className="flex items-center justify-center space-x-2 mb-2">
           <h1 className="text-xl font-bold text-[color:var(--ui-text-slate100)]">Film Studio</h1>
-          <span className="text-[10px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#ff824f]/10 border border-[color:var(--ui-border-ff824f)]/30 px-1.5 py-0.5 rounded font-semibold">
+          <span className="text-[10px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#8B6CE8]/10 border border-[color:var(--ui-border-ff824f)]/30 px-1.5 py-0.5 rounded font-semibold">
             HD2Lab
           </span>
         </div>

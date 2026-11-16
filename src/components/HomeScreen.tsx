@@ -114,7 +114,7 @@ export const HomeScreen: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[color:var(--ui-text-slate100)]">
               Film Studio
             </h1>
-            <span className="text-[11px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#ff824f]/10 border border-[color:var(--ui-border-ff824f)]/30 px-2 py-0.5 rounded font-semibold">
+            <span className="text-[11px] font-mono tracking-wider text-[color:var(--ui-text-ff824f)] bg-[#8B6CE8]/10 border border-[color:var(--ui-border-ff824f)]/30 px-2 py-0.5 rounded font-semibold">
               HD2Lab
             </span>
           </div>

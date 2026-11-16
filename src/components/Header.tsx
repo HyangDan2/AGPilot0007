@@ -228,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
             aria-expanded={isMenuOpen}
             id="main-nav-menu-button"
             title="More options and navigation"
-            className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] border border-[color:var(--ui-border-242c3c)] focus:outline-none focus:ring-2 focus:ring-[#ff824f]/60 transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] border border-[color:var(--ui-border-242c3c)] focus:outline-none focus:ring-2 focus:ring-[#8B6CE8]/60 transition-colors cursor-pointer"
           >
             {isMenuOpen ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
           </button>
