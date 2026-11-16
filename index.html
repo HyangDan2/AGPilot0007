@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Film Studio | HD2Lab</title>
     <meta name="description" content="HD2Lab Film Studio — Nine Original Film Signatures engineered with WebGL2 3D LUTs and authentic characteristic curves. 100% client-side photographic color development." />
     <meta name="author" content="HD2Lab" />
-    <meta name="theme-color" content="#101110" />
+    <meta name="theme-color" content="#FAFAFD" />
 
-    <script>try{const t=localStorage.getItem('hd2lab_film_studio_theme')==='light'?'light':'dark';document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;}catch{}</script>
+    <!-- Theme bootstrap: shared hd2-theme (Navy & Lavender dark / Soft Iris light), before first paint -->
+    <script>try{var own=localStorage.getItem('hd2lab_film_studio_theme'),shared=localStorage.getItem('hd2-theme');var t=(own==='light'||own==='dark')?own:((shared==='light'||shared==='dark')?shared:'light');document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#0B1020':'#FAFAFD');}catch(e){}</script>
     <!-- Canonical URL -->
     <link rel="canonical" href="https://hyangdan2.github.io/AGPilot0007/" />
 
@@ -35,7 +36,7 @@
     <meta name="twitter:description" content="Nine Original Film Signatures engineered with WebGL2 3D LUTs and authentic characteristic curves. 100% client-side photographic color development." />
     <meta name="twitter:image" content="https://hyangdan2.github.io/AGPilot0007/social-preview.png" />
   </head>
-  <body class="bg-[#101110] text-[#e2e8f0] antialiased select-none overflow-hidden h-screen w-screen">
+  <body class="antialiased select-none overflow-hidden h-screen w-screen">
     <div id="root" class="h-full w-full"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

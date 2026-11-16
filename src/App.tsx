@@ -1,4 +1,5 @@
 import {useUIStore} from './stores/uiStore';
+import {ThemeFab} from './components/ThemeFab';
 import {ColorMixerButton} from './components/ColorMixer';
 import {ToneCurveButton} from './components/ToneCurve';
 import {CameraEffectsButton} from './components/CameraEffects';
@@ -147,6 +148,8 @@ export const App: React.FC = () => {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
       />
+      {/* Floating Light/Dark toggle (Navy & Lavender) */}
+      <ThemeFab />
     </div>
   );
 };

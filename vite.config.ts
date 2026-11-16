@@ -26,8 +26,8 @@ export default defineConfig(({ mode }) => {
           scope: base,
           short_name: 'Film Studio',
           description: 'HD2Lab Film Color Simulation & Photo Development Studio',
-          theme_color: '#101110',
-          background_color: '#101110',
+          theme_color: '#0B1020',
+          background_color: '#0B1020',
           display: 'standalone',
           orientation: 'any',
           icons: [
