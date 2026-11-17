@@ -459,7 +459,24 @@ input[type="range"]::-webkit-slider-thumb:active {
   .mark:after { inset: 3px -6px -5px 3px; }
 }
 
-/* ── Floating Light/Dark toggle (fixed bottom-right, shared hd2-theme) ─────── */
+/* ── Theme toggle icon: one monochrome sun/moon SVG (the Web-HQ mark) ─────── */
+/* The icon shows where the button takes you: light → moon, dark → sun. */
+.theme-ic {
+  display: none;
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+:root[data-theme="dark"] .theme-ic[data-icon="sun"],
+:root[data-theme="light"] .theme-ic[data-icon="moon"] {
+  display: block;
+}
+
+/* ── Floating icon-only Light/Dark toggle (44px circle, bottom-right) ─────── */
 /* Sits above the editor canvas, below side sheets (z-40) and modals, and clears
    the mobile adjustment bar so it never covers an editor control. */
 .theme-fab {
@@ -469,18 +486,18 @@ input[type="range"]::-webkit-slider-thumb:active {
   z-index: 30;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 13px;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border-radius: 999px;
   background: var(--ui-bg-12151d);
   color: var(--ui-text-slate100);
   border: 1px solid var(--ui-border-344055);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -499,14 +516,6 @@ input[type="range"]::-webkit-slider-thumb:active {
   outline: 2px solid var(--ui-text-amber-400);
   outline-offset: 3px;
 }
-.theme-fab-icon {
-  display: inline-block;
-  font-size: 12px;
-  line-height: 1;
-}
-.theme-fab-label {
-  white-space: nowrap;
-}
 
 @media (min-width: 768px) {
   /* clear the canvas status bar (Film / Split / Hold, zoom) along the bottom edge */
@@ -520,7 +529,6 @@ input[type="range"]::-webkit-slider-thumb:active {
   .theme-fab {
     right: max(10px, env(safe-area-inset-right, 0px));
     bottom: calc(env(safe-area-inset-bottom, 0px) + 160px);
-    padding: 7px 11px;
   }
 }
 
