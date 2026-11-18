@@ -2,8 +2,6 @@ import {useUIStore,openPhotoChooser} from '../stores/uiStore';
 import {OpenModal} from './Workspace';
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  Sun,
-  Moon,
   Upload,
   Download,
   Bookmark,
@@ -27,7 +25,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) => {
-  const {isOpenDialog,setOpenDialog:setIsOpenDialog,theme,setTheme}=useUIStore();
+  const {isOpenDialog,setOpenDialog:setIsOpenDialog}=useUIStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -194,7 +192,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
           className="hidden"
         />
 
-        <button type="button" data-testid="theme-toggle" aria-label={theme==='dark'?'Switch to light theme':'Switch to dark theme'} title={theme==='dark'?'Light theme':'Dark theme'} onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="hidden sm:grid min-h-[36px] min-w-[32px] place-items-center rounded-lg border border-[color:var(--ui-border-slate600)] text-[color:var(--ui-text-slate300)] hover:bg-[var(--ui-bg-slate800)]">{theme==='dark'?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}</button>
         {/* Open Button (Visible on all viewports) */}
         <button
           onClick={() => openPhotoChooser(()=>fileInputRef.current?.click())}
@@ -240,7 +237,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
               aria-labelledby="main-nav-menu-button"
               className="absolute right-0 top-11 sm:top-12 w-64 bg-[var(--ui-bg-131720)] border border-[color:var(--ui-border-283244)] rounded-xl shadow-2xl p-2 z-50 space-y-1 select-none"
             >
-              <button type="button" role="menuitem" data-testid="theme-menu-toggle" aria-label={theme==='dark'?'Switch to light theme':'Switch to dark theme'} onClick={()=>{setTheme(theme==='dark'?'light':'dark');setIsMenuOpen(false);}} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-[color:var(--ui-text-slate200)] hover:bg-[var(--ui-bg-slate800)]">{theme==='dark'?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}{theme==='dark'?'Light theme':'Dark theme'}</button>
               {/* Workspace Group */}
               <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-[color:var(--ui-text-slate400)]">
                 Workspace
