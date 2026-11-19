@@ -2,7 +2,7 @@
 
 [![Build and Test](https://github.com/HyangDan2/AGPilot0007/actions/workflows/deploy.yml/badge.svg)](https://github.com/HyangDan2/AGPilot0007/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE_AUDIT.md)
-[![PWA Ready](https://img.shields.io/badge/PWA-Installable-blue.svg)](dist/manifest.webmanifest)
+[![PWA Ready](https://img.shields.io/badge/PWA-Installable-blue.svg)](https://hyangdan2.github.io/AGPilot0007/)
 
 **Film Studio** is a browser-based photographic film colour simulation and development application published under the **HD2Lab** brand.
 
