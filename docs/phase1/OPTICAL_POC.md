@@ -4,8 +4,8 @@
 - 작업 브랜치: `feature/phase1-q02-optical`
 - 기준 Commit: `b850f82e0eb3fc33c76619f5dee9eec3e8a4890a` (`origin/main`)
 - CP1 Commit: `0b5e6caa6aa19b34d778ed8f36886e8cb7434384`
-- 상태: **CP1.1 교정 완료.** OPT-01~05 교정, OPT-06~07 기술 검증·본개발 설계 완료. **`src/` 미변경**,
-  Q01 Engine Contract 확정 후 본 구현 착수.
+- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 완료.** OPT-01~05 교정, OPT-06~07 기술 검증·본개발 설계,
+  Q01 `OpticalTransform` 어댑터·예산 측정 완료. **`src/` 미변경**, Q01 Engine Contract 확정 후 본 구현 착수.
 - 범위: WO-08~WO-21 (Geometry & Local Adjustment), WO-37~WO-40 (Optical Effects)
 
 ## 0. CP1.1 교정 요약 (검토 Commit `0b5e6ca`)
@@ -94,10 +94,12 @@ type LocalMask =
 - 좌표는 corrected NIS, 반경/페더는 short-side 단위.
 - 색/휘도 마스크는 기하 보정 후 색(로컬 노출 적용 전)을 샘플한다.
 - 마스크 스택은 add → `min(1, a+w)`, subtract → `max(0, a−w)`, intersect → `a·w`. invert/opacity는
-  블렌드 전에 적용한다. GPU PoC는 **최대 8개**를 유니폼 배열(`kind/blend/invert/a/b/c/opacity`)로 처리한다.
-- 브러시는 선분 테이블(512×32 RGBA32F, 선분당 2텍셀)로 업로드하며 **마스크당 최대 1024선분**이다.
+  블렌드 전에 적용한다. GPU PoC 하네스는 **최대 8개**를 유니폼 배열(`kind/blend/invert/a/b/c/opacity`)로 처리한다.
+  **8개는 하네스 상한이며 제품 한도가 아니다** — 정본은 Q01의 16이며, 16마스크 유니폼 예산은 12.2에서 측정했다.
+- 브러시는 선분 테이블(512×32 RGBA32F, 선분당 2텍셀)로 업로드하며 **하네스 상한은 마스크당 1024선분**이다.
   한 점짜리 스트로크는 0길이 선분으로 변환하고, 구형 `points/radius/hardness/flow` 입력도 수용한다.
-  여러 마스크가 있으면 (start,count) 범위를 `u_mask_c`로 전달한다.
+  여러 마스크가 있으면 (start,count) 범위를 `u_mask_c`로 전달한다. Q01 정본은 64스트로크×1024포인트이며,
+  전량 수용 비용과 대안은 12.3에 정리했다.
 - GPU 마스크/CoC 거리는 `u_aspect`로 short-side 변환해 CPU와 일치한다(CP1.1). 파이프라인은 NIS 좌표만
   사용하므로 해상도가 달라도 같은 좌표·같은 페더 결과가 나온다.
 - 남은 프로덕션 요구: 마스크 수 상한(8)은 유니폼 기반 PoC의 한계다. 실제 제품에서 마스크 수가 이를 넘으면
@@ -216,16 +218,21 @@ coc = maxCoc · t²(3 − 2t)
 - 각 패스 종료 시 1×1 `readPixels` + `gl.finish()`로 동기화. `gl.finish()`만으로는 ANGLE 명령 스트림이
   플러시되지 않아 0.1ms대의 허수 측정이 나왔다(CP1 기록).
 - `readPixel`은 y-down NIS 기준, 리드백에서 y를 뒤집는다.
-- PoC는 최대 8마스크·최대 1024선분/마스크·8bit 중간 버퍼라는 명시적 한계를 가진다. 프로덕션 구조 제안이 아니다.
+- PoC는 최대 8마스크·최대 1024선분/마스크·8bit 중간 버퍼라는 **하네스 한계**를 가진다. 프로덕션 구조 제안이 아니며,
+  제품 지원 범위를 이 수치로 주장하지 않는다(정본·예산은 12장).
 
 ## 6. 검증 테스트 및 기준 이미지
 
 - 단위: `tests/optical-math.test.ts` — 35 tests. 호모그래피/역행렬, 왜곡 왕복·가역성 게이트, 기울기 복원
   (희소 직선/저텍스처/평면), 좌표 정합, 마스크/페더 0·최대/단일점·121선분/컴포지션, PSF 정규화/항등/에너지/
   점광원 footprint/CoC 단조, 탭 예산, CPU 성능 스모크.
+  `tests/optical-contract.test.ts` — 9 tests. Q01 `OpticalTransform` 어댑터(version/perspective/특이 행렬/
+  범위/왕복/방향) 검증.
 - GPU: `tests/e2e/optical-poc.spec.ts` — chromium 7 tests (CP1). `tests/e2e/optical-cp11.spec.ts` — chromium 8 tests:
   aspect 마스크·CoC 패리티, 단일점/121선분 브러시, 페더 극값, 극단/비가역 왜곡, 미리보기↔Export 마스크 패리티,
   4-마스크 스택, 탭/해상도 비용, half-res 보케 비용·품질.
+  `tests/e2e/optical-contract-budget.spec.ts` — chromium 2 tests: 16마스크 유니폼 probe 링크/GL 한도 측정,
+  PoC 상한 브러시 비용 측정.
   비-chromium 프로젝트는 `beforeEach`에서 skip(데스크톱 Chromium 기준 검증).
 - **CP1.1 필수 검증 결과** (2026-11-27, ANGLE SwiftShader):
 
@@ -240,6 +247,8 @@ coc = maxCoc · t²(3 − 2t)
 | 미리보기/Export 마스크 좌표 | radial+브러시, 160↔320, 9점 | 최대 **2/255** |
 | CPU/GPU 기준 픽셀 | 마스크 뷰 픽셀 vs `composeMaskStack` | 스택 4마스크 차이 **0/255** |
 | half-res 보케 품질 | 256² 합성 16점 full vs half | 평균/최대 차이 **0/255** |
+| Q01 어댑터 | version/perspective/특이 행렬/왕복 | 9 tests 통과 |
+| 16마스크 유니폼 | probe 셰이더 링크, 유니폼 100 vec4 상한 | 링크 성공, 한도 4096 대비 여유 (12.2) |
 
 - 기존 CP1 테스트 7종은 그대로 통과(삭제·단정 완화 없음). 전체 단위 스위트 17 files / 123 tests 통과.
 - CP1에서 테스트로 발견한 결함(모두 수정):
@@ -332,3 +341,77 @@ half-resolution gather(512², 32탭): scale 1 = 28.9~35.1ms, scale 2 = 7.2~8.7ms
    미리보기 정책, RGBA16F 정책, Export 타일링.
 3. 실제 하드웨어(iOS Safari/Android Chrome/데스크톱 GPU)에서 탭/해상도별 성능과 half-res 고주파 품질 재측정.
 4. 자동 기울기/4점 입력 UI와 Recipe 저장 스키마는 Q01·Q03과 인터페이스 합의 후 착수.
+
+## 12. SC-02 Q01 계약 정합 및 한도 예산
+
+### 12.1 `OpticalTransform` 어댑터
+
+Q01 계약(`src/engine/contracts/optical.ts`, branch `feature/phase1-pro-engine`)은 수정하지 않고,
+Q02 쪽 어댑터 `poc/optical/math/optical-transform.ts`에서 차이를 흡수한다.
+
+| 차이 | Q01 계약 | Q02 PoC | 어댑터 처리 |
+|------|----------|---------|-------------|
+| 버전 | `version: 1` 필수 | 버전 필드 없음 | `toOpticalTransform`이 `version: 1` 부여 |
+| 원근 quad | 선택 `perspective` (TL,TR,BR,BL) | `OpticalGeometry`에 없음 | 인자 또는 `geometry.perspective`로 전달, 있으면 보존 |
+| 왜곡 계수 | k1≤1.5, k2/k3≤1, p1/p2≤0.5 | 동일 형식(k3 포함) | 경계 위반 시 변환 단계에서 거부 |
+| 행렬 | 비유한/특이 행렬 거부 (det ≤ 1e-8) | `invertMat3`가 예외 | `assertOpticalTransform`이 선제 거부 |
+| 방향 | corrected NIS → source NIS | 동일 | 변환 없이 그대로 매핑 |
+
+- API: `toOpticalTransform(geometry, perspective?)`, `fromOpticalTransform(transform)`.
+  `fromOpticalTransform`은 검증 후 Q02 `OpticalGeometry`(+`perspective`)로 깊은 복사해 반환한다.
+- 검증 테스트 `tests/optical-contract.test.ts`: version 포함, perspective 포함/복사, 특이·비유한 행렬 거부,
+  계수 범위·비볼록 quad 거부, version 2 거부, 왕복 보존, Q01 quad 공식 일치, corrected→source 방향·역변환 고정.
+- 주의: Q01 검증은 계수 **범위**만 보므로 `k1=−0.5`처럼 Q01을 통과하지만 Q02 렌더 가역성 게이트(4.2)에서
+  거부되는 조합이 있다. 어댑터는 통과시키고 렌더 시 명시적으로 실패한다. Q01 검증에 가역성 조건을 넣을지는
+  Q01 소관이며, 본 브랜치에서 Q01 src를 수정하지 않았다.
+
+### 12.2 GLSL uniform 예산 (16마스크)
+
+측정: `tests/e2e/optical-contract-budget.spec.ts` — 데스크톱 Chromium + ANGLE SwiftShader, probe 셰이더 링크.
+
+| 항목 | 측정/계산 | 결과 |
+|------|-----------|------|
+| `MAX_FRAGMENT_UNIFORM_VECTORS` | 4096 | 16마스크 보수적 요구 100 vec4 대비 충분 |
+| 16마스크 유니폼 | int×3×16 + vec4×2×16 + vec2×16 + float×16 | 활성 배열 `size=16`, `u_mask_a[15]` 등 위치 유효 |
+| probe 링크 | 16마스크 배열 + 기존 기하 유니폼 | `linked=true` |
+| `MAX_TEXTURE_SIZE` / 이미지 유닛 | 8192 / 32 | 세그먼트 텍스처·PSF·장면 동시 바인딩 여유 |
+
+uniform은 16마스크까지 수용 가능하다. 병목은 마스크 수가 아니라 브러시 선분 수다.
+
+### 12.3 브러시 선분/텍스처 예산과 대안
+
+Q01 정본 상한(16마스크 × 64스트로크 × 1024포인트)을 전량 수용할 때:
+
+| 항목 | 계산 | 결과 |
+|------|------|------|
+| 최악 선분 수 | 16 × 64 × 1023 | 1,047,552 segments |
+| 세그먼트 테이블 바이트 | ×32B (선분당 2×RGBA32F) | 33,554,432B (33.5MB) |
+| 필요 텍스처 | 4096×512 RGBA32F (용량 1,048,576 segments) | 크기상 수용, 모바일 메모리 부담 큼 |
+| 현재 하네스 테이블 | 512×32 (8,192 segments) | 262,144B |
+| 측정 비용 | 128², 4마스크×1024선분 = 473.6ms | segment-pixel 백만당 7.06ms |
+| 최악 외삽 | 16×65,472선분 × 512² | 약 1.94×10⁶ms(≈32분) — 단일 패스 불가 |
+
+측정값은 소프트웨어 래스터라이저 기준이며 절대치가 아니라 규모 판단용이다. 단일 패스 선분 루프로는
+정본 상한을 수용할 수 없으므로 다음 대안이 필요하다(정본 한도는 Q01이 결정).
+
+1. **브러시 마스크 사전 래스터화**: 스트로크 SDF를 R8(또는 half-res) 마스크 텍스처에 스탬프.
+   비용은 화면 픽셀×선분이 아니라 스탬프 면적에 비례. 예: 16×512² R8 = 4MB, 16×1024² R8 = 16MB.
+2. **스트로크별 바운딩 박스/scissor**: 화면 전체 루프를 스트로크 영향 영역으로 축소.
+3. **타일 비닝/compute 스탬프**: 타일별 선분 리스트로 반복 횟수를 줄이는 구조.
+4. **통합 전 가드**: 정본 한도 확정 전까지 Q02 하네스의 1024선분/마스크 초과 입력은 거부하거나
+   사전 래스터화 경로로 우회한다. 8마스크·1024선분은 **PoC 하네스 상한**이며 제품 지원 한도가 아니다.
+
+### 12.4 샘플링 규약과 Q01 geometryMappings 경계
+
+- 좌표는 **NIS, 원점 좌상단, y-down**. 광학 호모그래피는 **corrected NIS → source NIS**이며,
+  `sourceToCorrected`가 그 역방향이다(어댑터 테스트로 방향·왕복 < 1e-9 고정).
+- FBO 텍스처는 하단이 texel 0이므로 샘플링 시 `texture(tex, vec2(u, 1−v))`, `readPixels` 리드백에서 y를 뒤집는다(3.2).
+- 마스크·CoC·브러시 거리는 `aspect` short-side 단위로 계산한다. Preview/Export는 같은 NIS·같은 유니폼을 쓰고
+  해상도만 바꾼다.
+- 테스트 고정: 미리보기 160↔Export 320 마스크 좌표 최대 2/255(CP1.1), 512↔1024 합성 최대 1/255(CP1),
+  1:1~9:16 마스크/CoC CPU↔GPU 차이 0/255.
+- Q01 `geometryMappings`는 flip→rotate→straighten→crop 순서로 **geometry NIS**를 만들고, Q02는 그 출력 NIS를
+  광학 샘플링 입력으로 소비한다(픽셀 버퍼 비변경). Q02 브랜치에는 Q01 `src`가 없어 cross-branch 직접 import
+  테스트는 실행할 수 없다 → **UNVERIFIED**, 통합 시 `geometry-contract.spec.ts`와 함께 확인해야 한다.
+- 지원 주장 범위: 이 PoC가 실제로 검증한 것은 8마스크·1024선분/마스크·8bit 중간 버퍼까지다. 16/64/1024와
+  RGBA16F, 모바일 실기기는 본 구현/통합 단계에서 별도 검증 대상이다.
