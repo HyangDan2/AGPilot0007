@@ -20,13 +20,45 @@ export const AI_CAPABILITIES = [
 
 export type AICapability = (typeof AI_CAPABILITIES)[number];
 
+export const AI_OUTPUT_KINDS = [
+  'image-buffer',
+  'mask',
+  'depth-map',
+  'embedding',
+  'recommendation',
+] as const;
+
+export type AIOutputKind = (typeof AI_OUTPUT_KINDS)[number];
+
+export interface AIDepthMap {
+  width: number;
+  height: number;
+  data: Float32Array;
+  near: number;
+  far: number;
+  sourceId: string;
+}
+
+export interface AIEmbedding {
+  modelId: string;
+  dimensions: number;
+  vector: Float32Array;
+}
+
+export interface AIRecommendation {
+  id: string;
+  kind: 'film' | 'adjustment' | 'crop' | 'style';
+  score: number;
+  payload: Record<string, string | number | boolean>;
+}
+
 export interface AIModuleDescriptor {
   id: string;
   version: string;
   capability: AICapability;
   requiresGpu: boolean;
   input: 'image-buffer';
-  output: 'image-buffer' | 'mask';
+  output: AIOutputKind | readonly AIOutputKind[];
 }
 
 export interface AIRequest {
@@ -37,6 +69,9 @@ export interface AIRequest {
 export interface AIResult {
   image?: ImageBuffer;
   mask?: MaskData;
+  depthMap?: AIDepthMap;
+  embedding?: AIEmbedding;
+  recommendations?: AIRecommendation[];
   metadata?: Record<string, string | number>;
 }
 
@@ -63,7 +98,12 @@ export function validateAIModuleDescriptor(value: unknown): void {
   if (!AI_CAPABILITIES.includes(descriptor.capability)) throw new Error('Invalid AI module capability');
   if (typeof descriptor.requiresGpu !== 'boolean') throw new Error('Invalid AI module descriptor');
   if (descriptor.input !== 'image-buffer') throw new Error('Invalid AI module input');
-  if (descriptor.output !== 'image-buffer' && descriptor.output !== 'mask') {
+  const outputs = Array.isArray(descriptor.output) ? descriptor.output : [descriptor.output];
+  if (
+    outputs.length === 0 ||
+    new Set(outputs).size !== outputs.length ||
+    outputs.some((output) => !AI_OUTPUT_KINDS.includes(output as AIOutputKind))
+  ) {
     throw new Error('Invalid AI module output');
   }
 }

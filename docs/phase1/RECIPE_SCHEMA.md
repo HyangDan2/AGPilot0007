@@ -1,6 +1,6 @@
 # Phase 1 Recipe Schema (v8)
 
-상태: CP1 정의 · QA 승인 대기 · 2026-11-27
+상태: CP1.1 정의 · QA 승인 대기 · 2026-11-27
 현재 저장 스키마: **7** (v8은 계약 정의만 완료, 기하 구현 체크포인트에서 활성화)
 
 ## 1. 버전 이력
@@ -12,8 +12,10 @@
 | 8 | 계약 정의 | v7 + `geometry` (회전/반전/스트레이트/크롭) |
 
 - 미래 버전(현재 8 초과)은 가져오기 오류 `Unsupported recipe version`으로 거부한다.
-- v8 활성화 시 허용 상한을 8로 올리고 1~7 마이그레이션을 유지한다.
-- 마스크는 어느 버전에도 저장하지 않는다. 마스크 기능 승인 시 v9에서 정의한다.
+- 저장 상한은 `RECIPE_SCHEMA_MAX = 7`이며 `CURRENT_SCHEMA_VERSION`이 이를 참조한다. v8 활성화 시 허용 상한을 8로 올리고 1~7 마이그레이션을 유지한다.
+- v1~v7 가져오기에서 미승인 `geometry` 필드는 정규화 결과에 복사하지 않는다.
+- Stable/Beta는 서로 다른 IndexedDB 키(`RECIPE_STORAGE_KEYS.stable`/`.beta`)를 사용한다. Beta 경로 여부로만 선택하며 레시피를 교차 저장하지 않는다.
+- 마스크·로컬 보정은 어느 버전에도 저장하지 않는다. 기능 승인 시 v9에서 정의한다.
 - AI 메타데이터·모델 정보는 Phase 1 레시피에 넣지 않는다.
 
 ## 2. 공통 필드
@@ -64,17 +66,20 @@ interface GeometryTransform {
 
 ```
 Import JSON
+  → detectRecipeSchemaVersion / assertRecipeVersionSupported
+      · 버전 식별과 지원 여부만 판정(0 이하·비정수·상한 초과 거부)
   → validateRecipeJSON
       · name/baseFilmId/preset 검증
-      · schemaVersion 1..현재 상한 검증
       · RECIPE_FEATURES 기능 검증(camera/curves/sharpening/colorMixer)
       · v8 활성화 후 validateRecipeV8Geometry
   → migrateRecipe
       · 필름/프리셋/보정/기능 그룹 정규화
+      · 미승인 geometry 등 여분 필드 제거
       · schemaVersion을 현재 버전으로 설정
   → (v8 활성화 시) toRecipeV8
       · geometry 누락 → IDENTITY_GEOMETRY
   → 메모리 저장 및 IndexedDB persist
+      · assertRecipePersistable(recipe, storageKey)로 버전·키 재확인
 ```
 
 - `toRecipeV8(recipe)`는 순수 함수이며 1~7 입력만 허용한다. 8 이상은 `Unsupported recipe version for v8 migration`으로 거부한다.
@@ -90,6 +95,10 @@ Import JSON
 | `validateRecipeV8Geometry(value)` | 가져오기용 엄격 검증 | `Invalid recipe geometry`, `Invalid geometry ...` |
 | `toRecipeV8(recipe)` | v7 → v8 순수 변환 | `Unsupported recipe version for v8 migration` |
 | `isRecipeV8(value)` | schemaVersion 8 판별 | 없음 |
+| `detectRecipeSchemaVersion(value)` | 선언 버전 식별(전체 검증 아님) | 없음(null) |
+| `assertRecipeVersionSupported(value)` | 지원 상한 검사 | `Unsupported recipe version` |
+| `assertRecipePersistable(recipe, key)` | 저장 키·버전 가드 | `Unknown recipe storage key`, `Unsupported recipe version` |
+| `resolveRecipeStorageKey(baseUrl)` | Stable/Beta IDB 키 선택 | 없음 |
 
 `CURRENT_SCHEMA_VERSION`은 기하 렌더·UI가 실제로 연결되는 체크포인트에서 8로 올린다. 그 전에는 v7로 저장해 기존 앱·베타와의 호환을 유지한다.
 
@@ -138,11 +147,11 @@ Import JSON
 - 잘못된 geometry를 포함한 JSON은 부분 적용하지 않고 전체 가져오기를 거부한다.
 - v7 레시피 내보내기 결과는 v8 활성화 전까지 `schemaVersion: 7`을 유지한다.
 - Undo/Redo·프리셋 적용·사진 교체는 geometry를 포함해 원자적으로 복원해야 한다(기하 구현 체크포인트).
-- 검증: `tests/engineContracts.test.ts`(v8 계약), `tests/recipeCompat.test.ts`(v1~v7), 기하 구현 후 v8 왕복 E2E.
+- 검증: `tests/engineContracts.test.ts`(v8 계약), `tests/engineContractCorrective.test.ts`(v1~v7·저장 키·geometry 제거), `tests/recipeCompat.test.ts`(v1~v7), 기하 구현 후 v8 왕복 E2E.
 
 ## 8. 범위 밖
 
-- 마스크·로컬 보정 값 저장(v9 예정).
+- 마스크·로컬 보정 값 저장(v9 예정, `LocalAdjustmentState` 계약은 미저장).
 - AI 프롬프트/모델/결과 메타데이터.
 - 원본 파일 경로·업로드 URL·서버 동기화 정보.
 - 16-bit/ICC/Display-P3 출력 프로파일.

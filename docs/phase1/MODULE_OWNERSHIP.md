@@ -1,6 +1,6 @@
 # Phase 1 Module Ownership
 
-상태: CP1 소유권안 · QA 승인 대기 · 2026-11-27
+상태: CP1.1 소유권 보완 · QA 승인 대기 · 2026-11-27
 
 목적: Q02/Q03/Q04가 공통 파일을 건드리지 않고 자기 모듈을 구현하도록 경계를 고정한다. 소유 경로 밖 변경은 Q01 리뷰 후에만 수행한다.
 
@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | Stable | `main` | `AGPilot0007` | `b850f82` |
 | Beta | `beta` | 원격 | `d8ec276` |
-| Q01 Core / Integration | `feature/phase1-pro-engine` | `AGPilot0007-phase1` | CP0 `c31c790` 위 CP1 |
+| Q01 Core / Integration | `feature/phase1-pro-engine` | `AGPilot0007-phase1` | CP1 `3b22b6f` + beta merge `2a45290` + CP1.1 |
 | Q02 Optical | `feature/phase1-q02-optical` | `AGPilot0007-wt/feature-phase1-q02-optical` | `b850f82` + PoC |
 | Q03 Imaging | `feature/phase1-q03-imaging` | `AGPilot0007-q03-imaging` | `b850f82` + PoC |
 | Q04 Application | `feature/phase1-q04-application` | `AGPilot0007-q04` | `b850f82` + PoC |
@@ -22,6 +22,11 @@ main 직접 수정·병합, beta 직접 병합, 다른 작업 주문의 worktree
 ### Q01 — Core / Integration
 
 - `src/engine/contracts/**` (신규 계약 전체)
+  - `geometryMappings.ts`: 기하 순/역매핑·적용 순서 기준
+  - `optical.ts`: Q02 광학 데이터 계약(호모그래피/원근/왜곡)
+  - `localAdjustments.ts`: 마스크 그룹·그룹별 보정 계약(미활성)
+  - `resourceBudget.ts`: 기기 예산·proxy/tile/full·공유 Broker
+  - `recipeValidation.ts`: 버전 판별·저장 키·저장 가드
 - `src/engine/pipeline/**` (`renderSettings`, `recipeFeatures`, `shaderChunks`)
 - `src/engine/renderer/**` (`webglRenderer`, `shaderManager`, `renderTarget`)
 - `src/engine/export/**`
@@ -31,7 +36,7 @@ main 직접 수정·병합, beta 직접 병합, 다른 작업 주문의 worktree
 - `src/stores/editorStore.ts`, `src/stores/recipeStore.ts`, `src/stores/uiStore.ts`
 - `src/components/Viewport.tsx`, `src/components/ExportModal.tsx`
 - `src/components/App*.tsx` 중 공통 셸
-- `tests/engineContracts.test.ts`, `tests/recipeCompat.test.ts`, `tests/e2e/render-parity.spec.ts`
+- `tests/engineContracts.test.ts`, `tests/engineContractCorrective.test.ts`, `tests/recipeCompat.test.ts`, `tests/e2e/render-parity.spec.ts`, `tests/e2e/geometry-contract.spec.ts`
 - `docs/phase1/**`, `docs/HARNESS_GUIDE.md`
 
 ### Q02 — Optical
@@ -46,6 +51,8 @@ Q02 규칙:
 - 광학 좌표는 정규화 이미지 좌표와 짧은 변 단위를 사용하고 픽셀 좌표를 저장하지 않는다.
 - 원본 버퍼를 수정하지 않고 보정 매핑만 반환한다.
 - `MaskData`는 `src/engine/contracts/masks.ts` 계약으로 맞춘다. 별도 저장 스키마를 만들지 않는다.
+- 광학 결과는 `OpticalTransform`(`homography`, `distortion`, `perspective`)으로 전달하고, `validateOpticalTransform`을 통과해야 한다. 특이 행렬·비볼록 quad는 렌더 전에 거부한다.
+- `LocalAdjustmentState`가 소비할 마스크 그룹 좌표는 광학·기하 이후의 `corrected-nis`다.
 - 기존 LUT·색 수학·날짜 합성 코드를 수정하지 않는다.
 
 ### Q03 — Imaging / Source
@@ -58,6 +65,7 @@ Q02 규칙:
 
 Q03 규칙:
 - 출력은 `DecodedSource` 계약을 만족해야 한다(`linear-srgb`, `rgba16f|rgba32f`, 원본 크기 일치).
+- `validateImageBuffer`를 통과해야 한다: data 타입/길이, `memoryBytes`, `sourceId`, 비유한 픽셀 검사. GPU 버퍼는 `resourceOwner`/`disposable` 필수.
 - 디코딩 단계에서 크롭·색 보정·날짜 합성을 하지 않는다.
 - 외부 디코더 도입 시 라이선스, 번들 크기, 브라우저 호환성, 스레드/WASM 요구사항을 문서화한다.
 - 원본 파일을 업로드하거나 수정하지 않는다.
@@ -73,6 +81,8 @@ Q04 규칙:
 - `EditState`는 `src/engine/contracts/editState.ts`를 사용하고 자체 편집 상태 타입을 만들지 않는다.
 - 배치 Export는 `prepareExportImage`와 `RenderSettings`를 그대로 사용하며 별도 렌더 경로를 만들지 않는다.
 - 동시 실행 수는 기기 프로파일 기반으로 제한하고, GPU/디코딩 리소스를 명시적으로 해제한다.
+- 배치 작업은 `ResourceBroker.request()`로 예산을 예약하고 `grant.release()`를 모든 종료 경로에서 호출한다.
+- `decideResourceAllocation`의 `full/proxy/tile`과 거부 사유를 UI 안내에 사용한다. 타일/축소를 임의로 우회하지 않는다.
 - 메타데이터는 로컬에서만 읽고 서버로 전송하지 않는다.
 
 ## 3. 공통 파일 (Q01 리뷰 필수)
@@ -98,19 +108,19 @@ Q04 규칙:
 
 ## 4. 통합 순서
 
-1. Q01 CP1 계약(이 커밋) — 공유 타입·registry·계획·v8 계약.
-2. Q03 source — `DecodedSource`를 실제로 생성하고 계약 테스트 통과.
-3. Q02 optical — 광학 보정 모듈 등록, 마스크 계약 정렬.
+1. Q01 CP1.1 계약 — registry 동적 활성화, 기하 매핑, 광학/로컬/예산/버전 계약.
+2. Q03 source — `DecodedSource`를 실제로 생성하고 이미지 무결성 테스트 통과.
+3. Q02 optical — `OpticalTransform` 등록, 마스크·로컬 좌표 계약 정렬.
 4. Q01 geometry — 기하 렌더/UI 구현, Recipe v8 스키마 상향.
 5. Core 기능 확장 — histogram/clipping/WB eyedropper, 상세 샤프니스 연동.
-6. Q04 application — 분석/배치/메타데이터/워크스페이스.
+6. Q04 application — 분석/배치(공유 Broker)/메타데이터/워크스페이스.
 7. QA 승인 후 Integration → beta/main 순서로 병합·배포.
 
 각 단계는 이전 단계의 계약 테스트와 패리티 게이트를 깨뜨리지 않아야 한다.
 
 ## 5. 테스트 소유권
 
-- Q01: `tests/engineContracts.test.ts`, `tests/recipeCompat.test.ts`, `tests/e2e/render-parity.spec.ts`, 공통 회귀.
+- Q01: `tests/engineContracts.test.ts`, `tests/engineContractCorrective.test.ts`, `tests/recipeCompat.test.ts`, `tests/e2e/render-parity.spec.ts`, `tests/e2e/geometry-contract.spec.ts`, 공통 회귀.
 - Q02: 광학 수학·GPU PoC·광학 E2E.
 - Q03: 디코딩 단위/브라우저 테스트, RAW fixture.
 - Q04: 분석·배치·메타데이터·워크스페이스 테스트.

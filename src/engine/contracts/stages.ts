@@ -9,6 +9,7 @@ export const PIPELINE_STAGES = [
   'tone',
   'look',
   'colorLab',
+  'local',
   'detail',
   'composite',
   'output',

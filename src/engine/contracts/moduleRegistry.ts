@@ -1,10 +1,30 @@
+import type { RenderSettings } from '../pipeline/renderSettings';
 import { PIPELINE_STAGES, stageIndex, type PipelineStage } from './stages';
+
+export type ModuleRole = 'feature' | 'stage';
+export type ModuleRenderTarget = 'preview' | 'export';
+
+export interface ModuleResourceUsage {
+  gpuBytes?: number;
+  cpuBytes?: number;
+  floatIntermediate?: boolean;
+  textures?: number;
+}
+
+export interface ModuleExecutionContext {
+  target: ModuleRenderTarget;
+  settings: RenderSettings;
+}
 
 export interface EditModule<TSettings = unknown> {
   readonly id: string;
   readonly stage: PipelineStage;
   readonly requires?: readonly string[];
   readonly contractVersion: 1;
+  readonly role?: ModuleRole;
+  isActive?(settings: RenderSettings): boolean;
+  resourceUsage?(settings: RenderSettings): ModuleResourceUsage;
+  execute?(context: ModuleExecutionContext): void | Promise<void>;
   normalize?(value: unknown): TSettings;
   validate?(value: unknown): void;
 }
@@ -14,14 +34,17 @@ export interface RegisteredModule {
   readonly stage: PipelineStage;
   readonly requires: readonly string[];
   readonly contractVersion: 1;
+  readonly role: ModuleRole;
 }
 
 /**
  * Shared module registry. Feature work orders register modules here instead of
  * editing the renderer; the core resolves a deterministic dependency order.
+ * Registered metadata is copied and frozen so callers cannot mutate the
+ * registry through a retained module reference.
  */
 export class EditModuleRegistry {
-  private readonly modules = new Map<string, EditModule<any>>();
+  private readonly modules = new Map<string, Readonly<EditModule<any>>>();
 
   register(module: EditModule<any>): void {
     if (!module || typeof module.id !== 'string' || module.id.length === 0) {
@@ -30,14 +53,15 @@ export class EditModuleRegistry {
     if (this.modules.has(module.id)) throw new Error(`Duplicate module: ${module.id}`);
     if (!PIPELINE_STAGES.includes(module.stage)) throw new Error(`Unknown module stage: ${module.stage}`);
     if (module.contractVersion !== 1) throw new Error(`Unsupported module contract version: ${module.contractVersion}`);
-    for (const dependency of module.requires ?? []) {
+    const requires = Object.freeze([...(module.requires ?? [])]);
+    for (const dependency of requires) {
       const target = this.modules.get(dependency);
       if (!target) continue;
       if (stageIndex(target.stage) > stageIndex(module.stage)) {
         throw new Error(`Module dependency crosses later stage: ${dependency}`);
       }
     }
-    this.modules.set(module.id, module);
+    this.modules.set(module.id, Object.freeze({ ...module, requires }));
   }
 
   get<T = unknown>(id: string): EditModule<T> | undefined {
@@ -47,11 +71,12 @@ export class EditModuleRegistry {
   list(stage?: PipelineStage): RegisteredModule[] {
     return [...this.modules.values()]
       .filter((module) => stage === undefined || module.stage === stage)
-      .map(({ id, stage: moduleStage, requires, contractVersion }) => ({
+      .map(({ id, stage: moduleStage, requires, contractVersion, role }) => ({
         id,
         stage: moduleStage,
-        requires: requires ?? [],
+        requires: [...(requires ?? [])],
         contractVersion,
+        role: role ?? 'feature',
       }));
   }
 
@@ -77,10 +102,14 @@ export class EditModuleRegistry {
         dependents.set(dependency, list);
       }
     }
+    const priority = (a: string, b: string): number => {
+      const stageDelta = stageIndex(this.modules.get(a)!.stage) - stageIndex(this.modules.get(b)!.stage);
+      return stageDelta !== 0 ? stageDelta : (position.get(a) ?? 0) - (position.get(b) ?? 0);
+    };
     const queue = ids.filter((id) => indegree.get(id) === 0);
     const order: string[] = [];
     while (queue.length > 0) {
-      queue.sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
+      queue.sort(priority);
       const id = queue.shift()!;
       order.push(id);
       for (const dependent of dependents.get(id) ?? []) {

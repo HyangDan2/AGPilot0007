@@ -1,15 +1,19 @@
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
 import { normalizeRecipeFeatures, validateRecipeFeatures } from '../engine/pipeline/recipeFeatures';
+import {
+  RECIPE_SCHEMA_MAX,
+  assertRecipePersistable,
+  assertRecipeVersionSupported,
+  resolveRecipeStorageKey,
+} from '../engine/contracts/recipeValidation';
 
 import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
 import { getMargarinePreset } from '../presets/margarine';
 
-const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
-  ? 'hd2lab_film_studio_beta_recipes_v1'
-  : 'hd2lab_film_studio_recipes_v1';
-export const CURRENT_SCHEMA_VERSION = 7;
+const RECIPES_IDB_KEY = resolveRecipeStorageKey((import.meta as any).env?.BASE_URL || '');
+export const CURRENT_SCHEMA_VERSION = RECIPE_SCHEMA_MAX;
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
@@ -25,6 +29,7 @@ export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
 
 export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
   try {
+    for (const recipe of recipes) assertRecipePersistable(recipe, RECIPES_IDB_KEY);
     await set(RECIPES_IDB_KEY, recipes);
   } catch (err) {
     console.error('Failed to persist recipes to IndexedDB:', err);
@@ -72,7 +77,7 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
     throw new Error('Recipe missing valid "baseFilmId" property');
   }
 
-  if (parsed.schemaVersion !== undefined && (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion < 1 || parsed.schemaVersion > CURRENT_SCHEMA_VERSION)) throw new Error('Unsupported recipe version');
+  assertRecipeVersionSupported(parsed.schemaVersion);
   if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
   if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
     throw new Error('Unknown or incompatible preset');
