@@ -2,12 +2,20 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Film Studio E2E Workflow', () => {
   test('loads application and displays branding and controls', async ({ page }) => {
+    const isMobileProject = test.info().project.name.startsWith('mobile-');
     await page.goto('/');
 
     // Check title and branding
     await expect(page).toHaveTitle(/Film Studio \| HD2Lab/);
     await expect(page.locator('text=HD2Lab').first()).toBeVisible();
-    await expect(page.locator('text=Film Studio').first()).toBeVisible();
+    if (isMobileProject) {
+      // Phone header keeps the mark + HD2Lab and hides the "Film Studio" suffix.
+      await expect(page.locator('.brand').first()).toBeVisible();
+      await expect(page.locator('.brand-name').first()).toHaveText('HD2Lab');
+      await expect(page.locator('.brand em').first()).toBeHidden();
+    } else {
+      await expect(page.locator('text=Film Studio').first()).toBeVisible();
+    }
 
     // Check all 9 film profiles are listed
     const filmNames = ['VÆRN', 'SKELD', 'AURVEN', 'VESTRA', 'VEYRA', 'SOLVIK', 'LYSEN', 'MYRVEL', 'RIMVA'];

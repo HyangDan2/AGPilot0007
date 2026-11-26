@@ -22,9 +22,17 @@ export function normalizeRecipeV8Geometry(value: unknown): GeometryTransform {
 }
 
 export function validateRecipeV8Geometry(value: unknown): void {
-  if (value === undefined || value === null) return;
-  if (typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid recipe geometry');
-  validateGeometry((value as { geometry?: unknown }).geometry);
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error('Invalid recipe geometry wrapper');
+  }
+  if (!Object.prototype.hasOwnProperty.call(value, 'geometry')) {
+    throw new Error('Invalid recipe geometry wrapper');
+  }
+  const geometry = (value as { geometry?: unknown }).geometry;
+  if (geometry === null || typeof geometry !== 'object' || Array.isArray(geometry)) {
+    throw new Error('Invalid recipe geometry');
+  }
+  validateGeometry(geometry);
 }
 
 /**

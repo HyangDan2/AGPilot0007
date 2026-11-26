@@ -6,6 +6,7 @@ import { loadCubeLut } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { PreparedExport, ExportFormat } from '../types/export';
 import { isFileShareSupported, sharePreparedFile, isIOS, isAndroid } from '../utils/nativeShare';
+import type { ExportControl } from '../engine/contracts';
 import {
   X,
   Download,
@@ -42,6 +43,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   // Keep a ref to prepared for clean memory revoking on unmount
   const preparedRef = useRef<PreparedExport | null>(null);
   preparedRef.current = prepared;
+  const exportControllerRef = useRef<AbortController | null>(null);
 
   const shareSupported = isFileShareSupported();
   const iosPlatform = isIOS();
@@ -50,6 +52,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   // Clean up object URLs when modal unmounts
   useEffect(() => {
     return () => {
+      exportControllerRef.current?.abort();
       if (preparedRef.current?.objectUrl) {
         URL.revokeObjectURL(preparedRef.current.objectUrl);
       }
@@ -97,6 +100,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
 
   const handlePrepare = async () => {
     if (!image) return;
+    const controller = new AbortController();
+    exportControllerRef.current = controller;
     setStage('preparing');
     setErrorMessage(null);
     setStatusFeedback(null);
@@ -105,6 +110,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
     try {
       const profile = FILM_PROFILES[activeFilmId];
       const lut = await loadCubeLut(profile.lutFile);
+
+      const control: ExportControl = {
+        signal: controller.signal,
+        onStage: (exportStage) => {
+          const stageLabel =
+            exportStage === 'render'
+              ? 'Rendering color pipeline...'
+              : exportStage === 'encode'
+                ? 'Encoding output...'
+                : 'Finishing export...';
+          setProgress((prev) => ({ ...prev, stage: stageLabel }));
+        },
+      };
 
       const result = await prepareExportImage(
         image,
@@ -117,7 +135,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         },
         (p, currentStage) => {
           setProgress({ value: p, stage: currentStage });
-        }
+        },
+        control
       );
 
       // Clean up previous prepared objectUrl if existing
@@ -128,10 +147,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       setPrepared(result);
       setStage('ready');
     } catch (err: any) {
-      console.error('Preparation failed:', err);
-      setErrorMessage(err.message || 'Photo preparation failed. Please verify GPU memory limits.');
-      setStage('config');
+      if (err?.name === 'AbortError') {
+        setProgress({ value: 0, stage: '' });
+        setStatusFeedback('Export cancelled.');
+        setStage('config');
+      } else {
+        console.error('Preparation failed:', err);
+        setErrorMessage(err.message || 'Photo preparation failed. Please verify GPU memory limits.');
+        setStage('config');
+      }
+    } finally {
+      if (exportControllerRef.current === controller) {
+        exportControllerRef.current = null;
+      }
     }
+  };
+
+  const handleCancelExport = () => {
+    exportControllerRef.current?.abort();
   };
 
   const handleNativeShare = async () => {
@@ -473,11 +506,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             ) : (
               <button
                 type="button"
-                onClick={handleClose}
-                disabled={stage === 'preparing'}
-                className="px-3.5 py-1.5 rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] transition-colors text-xs font-medium disabled:opacity-40 cursor-pointer"
+                onClick={stage === 'preparing' ? handleCancelExport : handleClose}
+                className="px-3.5 py-1.5 rounded-lg text-[color:var(--ui-text-slate300)] hover:text-[color:var(--ui-text-slate100)] hover:bg-[var(--ui-bg-1a202c)] transition-colors text-xs font-medium cursor-pointer"
               >
-                Cancel
+                {stage === 'preparing' ? 'Cancel Export' : 'Cancel'}
               </button>
             )}
 
