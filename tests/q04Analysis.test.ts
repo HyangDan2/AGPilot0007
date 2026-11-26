@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { analyzePixels, type PixelSample } from '../src/poc/q04/analysis';
-import { featuresFromAnalysis, recommendFilms, recommendForAnalysis, type RecommendationFeatures } from '../src/poc/q04/recommend';
+import {
+  deriveTargets,
+  featuresFromAnalysis,
+  recommendFilms,
+  recommendForAnalysis,
+  registerRecommendationMetadata,
+  unregisterRecommendationMetadata,
+  type RecommendationFeatures,
+} from '../src/poc/q04/recommend';
+import { FILM_PROFILES } from '../src/films/registry';
+import type { FilmProfile } from '../src/types/film';
 
 function pixels(rgba: Array<[number, number, number, number?]>): PixelSample {
   const data = new Uint8ClampedArray(rgba.length * 4);
@@ -147,5 +157,68 @@ describe('Q04 statistical preset recommendation', () => {
     expect(set.features).toEqual(derived);
     expect(set.recommendations).toHaveLength(3);
     expect(set.recommendations[0].criteria[0].imageValue).toBeCloseTo(derived.brightness, 5);
+  });
+
+  it('registers new film profiles and bonus rules without editing the engine', () => {
+    const profile = {
+      id: 'FS-011',
+      code: 'TEST',
+      name: 'TEST FILM',
+      style: 'Runtime Test Stock',
+      description: 'Registered only for the registry-driven recommendation test.',
+      technicalTarget: 'none',
+      lutFile: 'luts/FS-011_TEST.cube',
+      lutSize: 17,
+      version: '0.0.1',
+      defaultAdjustments: { exposure: 1, contrast: 20, saturation: -40, temperature: 40 },
+      grain: { amount: 0, size: 20, roughness: 40 },
+      provenance: { source: 'test', license: 'MIT', methodology: 'test' },
+    } as unknown as FilmProfile;
+
+    expect(recommendFilms(features(), { limit: 50 }).map((item) => item.filmId)).not.toContain('FS-011');
+    FILM_PROFILES[profile.id] = profile;
+    try {
+      const targets = deriveTargets(profile);
+      expect(targets.brightness).toBeCloseTo(0.56, 5);
+      expect(targets.contrast).toBeCloseTo(0.6, 5);
+      expect(targets.saturation).toBeCloseTo(0.3, 5);
+      expect(targets.warmth).toBeCloseTo(0.7, 5);
+
+      registerRecommendationMetadata({
+        filmId: 'FS-011',
+        targets: { brightness: 0.9 },
+        bonuses: [
+          {
+            key: 'runtime-rule',
+            label: '런타임 규칙',
+            feature: 'shadowShare',
+            reasonLabel: '암부 비중',
+            conditions: [{ feature: 'shadowShare', op: 'gte', value: 0.5 }],
+            fixed: 0.1,
+            cap: 0.1,
+          },
+        ],
+      });
+
+      const ranked = recommendFilms(features({ shadowShare: 0.9 }), { limit: 50 }).find((item) => item.filmId === 'FS-011');
+      expect(ranked).toBeDefined();
+      expect(ranked!.bonuses.map((bonus) => bonus.key)).toContain('runtime-rule');
+      expect(ranked!.bonuses[0].reason).toContain('암부 비중');
+      const brightness = ranked!.criteria.find((criterion) => criterion.key === 'brightness')!;
+      expect(brightness.target).toBe(0.9);
+      const contrast = ranked!.criteria.find((criterion) => criterion.key === 'contrast')!;
+      expect(contrast.target).toBeCloseTo(0.6, 5);
+    } finally {
+      delete FILM_PROFILES[profile.id];
+      unregisterRecommendationMetadata(profile.id);
+    }
+    expect(recommendFilms(features(), { limit: 50 }).map((item) => item.filmId)).not.toContain('FS-011');
+  });
+
+  it('includes every registered look except identity', () => {
+    const ids = recommendFilms(features(), { limit: 50 }).map((item) => item.filmId);
+    expect(ids).toContain('FS-010');
+    expect(ids).not.toContain('identity');
+    expect(new Set(ids).size).toBe(Object.keys(FILM_PROFILES).length - 1);
   });
 });

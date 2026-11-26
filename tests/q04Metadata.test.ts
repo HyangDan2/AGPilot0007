@@ -4,8 +4,8 @@ import { MetadataIndex, parseExifMetadata, searchMetadata, type ImageMetadata } 
 import type { WorkspaceEntry } from '../src/engine/image/workspace';
 import { withExifDate } from './helpers/exifFixture';
 
-function entry(id: string, name = id, path = name): WorkspaceEntry {
-  return { id, name, path, getFile: async () => new File(['x'], name, { type: 'image/jpeg' }) };
+function entry(id: string, name = id, path = name, file = new File(['x'], name, { type: 'image/jpeg' })): WorkspaceEntry {
+  return { id, name, path, getFile: async () => file };
 }
 
 function record(overrides: Partial<ImageMetadata> & Pick<ImageMetadata, 'id'>): ImageMetadata {
@@ -65,6 +65,58 @@ describe('Q04 EXIF indexing', () => {
     const file = new File([new Uint8Array(withExifDate(jpeg))], 'exif.jpg', { type: 'image/jpeg' });
     const parsed = await parseExifMetadata(file);
     expect(parsed.captureDate).toBe('2016-03-08');
+  });
+
+  it('retries failed entries on request and keeps them skipped otherwise', async () => {
+    let attempts = 0;
+    const parser = vi.fn(async () => {
+      attempts++;
+      if (attempts === 1) throw new Error('transient IO');
+      return { iso: 200, cameraModel: 'EOS R5' };
+    });
+    const index = new MetadataIndex(parser);
+    const entries = [entry('a.jpg')];
+
+    const first = await index.index(entries);
+    expect(first).toMatchObject({ indexed: 0, failed: 1, skipped: 0 });
+    expect(index.get('a.jpg')?.error).toContain('transient');
+
+    const skipped = await index.index(entries);
+    expect(skipped).toMatchObject({ indexed: 0, failed: 0, skipped: 1 });
+    expect(parser).toHaveBeenCalledTimes(1);
+
+    const retried = await index.index(entries, { retryFailed: true });
+    expect(retried).toMatchObject({ indexed: 1, failed: 0, skipped: 0 });
+    expect(index.get('a.jpg')?.iso).toBe(200);
+    expect(index.get('a.jpg')?.error).toBeUndefined();
+
+    const helper = new MetadataIndex(vi.fn(async () => {
+      throw new Error('still broken');
+    }));
+    await helper.index(entries);
+    expect(await helper.retryFailed(entries)).toMatchObject({ failed: 1 });
+  });
+
+  it('re-indexes only files whose size or modified time changed', async () => {
+    const parser = vi.fn(async (file: File) => ({ iso: file.size }));
+    const index = new MetadataIndex(parser);
+    const unchanged = entry('same.jpg', 'same.jpg', 'same.jpg', new File(['abc'], 'same.jpg', { lastModified: 1000 }));
+    await index.index([unchanged]);
+    expect(parser).toHaveBeenCalledTimes(1);
+
+    const skipped = await index.index([unchanged]);
+    expect(skipped).toMatchObject({ indexed: 0, skipped: 1 });
+    expect(parser).toHaveBeenCalledTimes(1);
+
+    const replaced = entry('same.jpg', 'same.jpg', 'same.jpg', new File(['abcdef'], 'same.jpg', { lastModified: 1000 }));
+    const bySize = await index.index([replaced]);
+    expect(bySize).toMatchObject({ indexed: 1, skipped: 0 });
+    expect(index.get('same.jpg')?.iso).toBe(6);
+
+    const touched = entry('same.jpg', 'same.jpg', 'same.jpg', new File(['abcdef'], 'same.jpg', { lastModified: 2000 }));
+    const byTime = await index.index([touched]);
+    expect(byTime).toMatchObject({ indexed: 1, skipped: 0 });
+    expect(parser).toHaveBeenCalledTimes(3);
   });
 });
 

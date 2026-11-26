@@ -15,6 +15,9 @@ export interface ImageMetadata {
   focalLength?: number;
   width?: number;
   height?: number;
+  /** File size/lastModified at index time; a change triggers re-indexing. */
+  fileSize?: number;
+  fileModified?: number;
   indexedAt: number;
   error?: string;
 }
@@ -44,6 +47,8 @@ export interface IndexOptions {
   signal?: AbortSignal;
   concurrency?: number;
   force?: boolean;
+  /** Re-attempt entries whose previous parse failed. Default false. */
+  retryFailed?: boolean;
   onProgress?: (progress: IndexProgress) => void;
 }
 
@@ -197,10 +202,17 @@ export class MetadataIndex {
 
   async index(entries: readonly WorkspaceEntry[], options: IndexOptions = {}): Promise<IndexReport> {
     const concurrency = Math.max(1, Math.floor(options.concurrency ?? 2));
-    const queue = options.force ? [...entries] : entries.filter((entry) => !this.records.has(entry.id));
-    const skipped = entries.length - queue.length;
+    // Healthy entries stay in the queue so the worker can compare the file
+    // signature; failed entries only re-enter when retryFailed is set.
+    const queue = options.force
+      ? [...entries]
+      : entries.filter((entry) => {
+          const existing = this.records.get(entry.id);
+          return !existing || !existing.error || options.retryFailed === true;
+        });
     let cursor = 0;
     let indexed = 0;
+    let skipped = entries.length - queue.length;
     let failed = 0;
     let active = 0;
     let aborted = false;
@@ -217,18 +229,37 @@ export class MetadataIndex {
         const entry = queue[position];
         active++;
         report();
+        let file: File | null = null;
         try {
-          const file = await entry.getFile();
+          file = await entry.getFile();
           if (options.signal?.aborted) {
             aborted = true;
             return;
+          }
+          const existing = this.records.get(entry.id);
+          const unchanged =
+            existing &&
+            !existing.error &&
+            existing.fileSize === file.size &&
+            existing.fileModified === file.lastModified;
+          if (unchanged && !options.force) {
+            skipped++;
+            continue;
           }
           const parsed = await this.parser(file, options.signal);
           if (options.signal?.aborted) {
             aborted = true;
             return;
           }
-          this.records.set(entry.id, { id: entry.id, name: entry.name, path: entry.path, indexedAt: Date.now(), ...parsed });
+          this.records.set(entry.id, {
+            id: entry.id,
+            name: entry.name,
+            path: entry.path,
+            indexedAt: Date.now(),
+            fileSize: file.size,
+            fileModified: file.lastModified,
+            ...parsed,
+          });
           indexed++;
         } catch (error) {
           if (options.signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
@@ -241,6 +272,8 @@ export class MetadataIndex {
             name: entry.name,
             path: entry.path,
             indexedAt: Date.now(),
+            fileSize: file?.size,
+            fileModified: file?.lastModified,
             error: error instanceof Error ? error.message : String(error),
           });
         } finally {
@@ -252,6 +285,11 @@ export class MetadataIndex {
 
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
     return { indexed, skipped, failed, total: entries.length, aborted };
+  }
+
+  /** Convenience wrapper for partial-failure recovery. */
+  retryFailed(entries: readonly WorkspaceEntry[], options: Omit<IndexOptions, 'retryFailed'> = {}): Promise<IndexReport> {
+    return this.index(entries, { ...options, retryFailed: true });
   }
 
   search(query: MetadataQuery = {}): ImageMetadata[] {
