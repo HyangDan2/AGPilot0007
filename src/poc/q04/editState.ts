@@ -26,6 +26,14 @@ export function cloneEditState(state: EditState): EditState {
   return JSON.parse(JSON.stringify(state)) as EditState;
 }
 
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
+  }
+  return value;
+}
+
 export function sanitizeAdjustments(value?: Partial<AdjustmentSettings> | null): AdjustmentSettings {
   const result: AdjustmentSettings = { ...DEFAULT_ADJUSTMENTS };
   for (const def of ADJUSTMENT_DEFINITIONS) {
@@ -131,12 +139,26 @@ export function pasteParameters(target: EditState, clip: ParameterClip): EditSta
   return next;
 }
 
+export interface EditStateChange {
+  id: string;
+  /** Frozen snapshot after the change; null for delete/clear. */
+  state: EditState | null;
+  kind: 'create' | 'set' | 'delete' | 'clear';
+}
+
+type EditStateListener = (change: EditStateChange) => void;
+
 /**
  * In-memory per-image edit registry used by the CP1 PoC. Deliberately separate
  * from editorStore/workspaceStore; Q01 owns the eventual shared interface.
+ *
+ * Snapshots are deep-frozen and shared per image id. Every mutation builds a
+ * new normalized state, notifies subscribers and replaces the stored snapshot,
+ * so consumer code cannot mutate another image's edit state by accident.
  */
 export class EditStateRegistry {
   private states = new Map<string, EditState>();
+  private listeners = new Set<EditStateListener>();
 
   constructor(private readonly seed: () => EditState = () => createEditState()) {}
 
@@ -152,23 +174,30 @@ export class EditStateRegistry {
     return [...this.states.keys()];
   }
 
-  /** Treat the returned object as immutable; use update()/set() to change state. */
+  /** Immutable snapshot; mutate through update()/set()/pasteTo() instead. */
   get(id: string): EditState | undefined {
     return this.states.get(id);
+  }
+
+  subscribe(listener: EditStateListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   ensure(id: string): EditState {
     let state = this.states.get(id);
     if (!state) {
-      state = this.seed();
+      state = deepFreeze(createEditState(this.seed()));
       this.states.set(id, state);
+      this.emit({ id, state, kind: 'create' });
     }
     return state;
   }
 
   set(id: string, state: EditState): EditState {
-    const normalized = createEditState(state);
+    const normalized = deepFreeze(createEditState(state));
     this.states.set(id, normalized);
+    this.emit({ id, state: normalized, kind: 'set' });
     return normalized;
   }
 
@@ -182,18 +211,23 @@ export class EditStateRegistry {
   }
 
   delete(id: string): boolean {
-    return this.states.delete(id);
+    const removed = this.states.delete(id);
+    if (removed) this.emit({ id, state: null, kind: 'delete' });
+    return removed;
   }
 
   clear(): void {
     this.states.clear();
+    this.emit({ id: '', state: null, kind: 'clear' });
   }
 
   /** Deep-copies the snapshot per image so edits on one image never leak into another. */
   applyToMany(ids: readonly string[], state: EditState): number {
     let applied = 0;
     for (const id of ids) {
-      this.states.set(id, cloneEditState(state));
+      const snapshot = deepFreeze(createEditState(state));
+      this.states.set(id, snapshot);
+      this.emit({ id, state: snapshot, kind: 'set' });
       applied++;
     }
     return applied;
@@ -206,12 +240,21 @@ export class EditStateRegistry {
 
   pasteTo(id: string, clip: ParameterClip): EditState {
     const next = pasteParameters(this.ensure(id), clip);
-    this.states.set(id, next);
-    return next;
+    return this.set(id, next);
   }
 
   pasteToMany(ids: readonly string[], clip: ParameterClip): number {
     for (const id of ids) this.pasteTo(id, clip);
     return ids.length;
+  }
+
+  private emit(change: EditStateChange): void {
+    for (const listener of this.listeners) {
+      try {
+        listener(change);
+      } catch {
+        // A consumer listener must not break registry consistency.
+      }
+    }
   }
 }
