@@ -12,6 +12,15 @@ import {
   type Vec2,
 } from '../poc/optical/math/homography';
 import { correctedToSource, sourceToCorrected, type OpticalGeometry } from '../poc/optical/math/coordinates';
+import {
+  createOpticalTransform,
+  createPerspectiveQuad,
+  validateOpticalTransform,
+  type PerspectiveQuad,
+} from '../src/engine/contracts/optical';
+import { IDENTITY_GEOMETRY } from '../src/engine/contracts/geometry';
+import { geometryToSource, sourceToGeometry } from '../src/engine/contracts/geometryMappings';
+import { MAX_MASKS, MAX_STROKE_POINTS, MAX_STROKES } from '../src/engine/contracts/masks';
 
 describe('Q01 optical transform adapter', () => {
   it('adds the mandatory version and carries an optional perspective quad', () => {
@@ -129,6 +138,66 @@ describe('Q01 optical transform adapter', () => {
     for (const source of points) {
       const corrected = sourceToCorrected(source, geometry);
       const back = correctedToSource(corrected, geometry);
+      expect(Math.abs(back.x - source.x)).toBeLessThan(1e-9);
+      expect(Math.abs(back.y - source.y)).toBeLessThan(1e-9);
+    }
+  });
+});
+
+describe('Q01 contract cross-checks after merging the engine branch', () => {
+  it('produces payloads that Q01 validateOpticalTransform accepts', () => {
+    const geometry: OpticalGeometry = {
+      homography: perspectiveCorrectionHomography(0.5, 0.2, 0.15),
+      distortion: { k1: 0.22, k2: -0.035, p1: 0.008, p2: -0.006 },
+    };
+    const quad = perspectiveCorrectionQuad(0.5, 0.2, 0.15);
+    const adapted = toOpticalTransform(geometry, quad);
+    expect(() => validateOpticalTransform(adapted)).not.toThrow();
+    expect(() => validateOpticalTransform(JSON.parse(JSON.stringify(adapted)))).not.toThrow();
+  });
+
+  it('agrees with the Q01 perspective quad and converts Q01 payloads back', () => {
+    const quad: PerspectiveQuad = createPerspectiveQuad(0.4, -0.2, 0.12);
+    expect(quad as readonly Vec2[]).toEqual(perspectiveCorrectionQuad(0.4, -0.2, 0.12));
+
+    const q01 = createOpticalTransform({
+      homography: perspectiveCorrectionHomography(0.4, -0.2, 0.12),
+      perspective: quad,
+    });
+    expect(() => validateOpticalTransform(q01)).not.toThrow();
+    const geometry = fromOpticalTransform(q01);
+    expect(geometry.homography).toEqual(q01.homography);
+    expect(geometry.perspective).toEqual(quad);
+  });
+
+  it('pins the Q01 canonical mask limits used by the budget measurements', () => {
+    expect(MAX_MASKS).toBe(16);
+    expect(MAX_STROKES).toBe(64);
+    expect(MAX_STROKE_POINTS).toBe(1024);
+  });
+
+  it('handoffs Q01 geometry output and Q02 optical input with the same y-down NIS', () => {
+    expect(sourceToGeometry({ x: 0, y: 0 }, IDENTITY_GEOMETRY, 1)).toEqual({ x: 0, y: 0 });
+    expect(geometryToSource({ x: 0, y: 0 }, IDENTITY_GEOMETRY, 1)).toEqual({ x: 0, y: 0 });
+    expect(correctedToSource({ x: 0, y: 0 }, { homography: identityMat3() })).toEqual({ x: 0, y: 0 });
+
+    const geometry = {
+      ...IDENTITY_GEOMETRY,
+      straighten: 2,
+      crop: { x: 0.1, y: 0.05, width: 0.8, height: 0.9 },
+    };
+    const points: Vec2[] = [
+      { x: 0.42, y: 0.31 },
+      { x: 0.2, y: 0.6 },
+      { x: 0.75, y: 0.4 },
+    ];
+    for (const source of points) {
+      const mapped = sourceToGeometry(source, geometry, 1.5);
+      expect(mapped.x).toBeGreaterThanOrEqual(0);
+      expect(mapped.x).toBeLessThanOrEqual(1);
+      expect(mapped.y).toBeGreaterThanOrEqual(0);
+      expect(mapped.y).toBeLessThanOrEqual(1);
+      const back = geometryToSource(mapped, geometry, 1.5);
       expect(Math.abs(back.x - source.x)).toBeLessThan(1e-9);
       expect(Math.abs(back.y - source.y)).toBeLessThan(1e-9);
     }

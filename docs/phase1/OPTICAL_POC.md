@@ -5,7 +5,9 @@
 - 기준 Commit: `b850f82e0eb3fc33c76619f5dee9eec3e8a4890a` (`origin/main`)
 - CP1 Commit: `0b5e6caa6aa19b34d778ed8f36886e8cb7434384`
 - 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 완료.** OPT-01~05 교정, OPT-06~07 기술 검증·본개발 설계,
-  Q01 `OpticalTransform` 어댑터·예산 측정 완료. **`src/` 미변경**, Q01 Engine Contract 확정 후 본 구현 착수.
+  Q01 `OpticalTransform` 어댑터·예산 측정 완료. 2026-11-27 Q01 `feature/phase1-pro-engine`(`21fd6dc`)을
+  병합해 Q01 계약 소스와 직접 교차 검증한다. **Q01 `src/`는 병합으로만 수용했고 Q02가 수정하지 않았다.**
+  본 구현은 Q01 Engine Contract 확정 후 착수.
 - 범위: WO-08~WO-21 (Geometry & Local Adjustment), WO-37~WO-40 (Optical Effects)
 
 ## 0. CP1.1 교정 요약 (검토 Commit `0b5e6ca`)
@@ -226,8 +228,9 @@ coc = maxCoc · t²(3 − 2t)
 - 단위: `tests/optical-math.test.ts` — 35 tests. 호모그래피/역행렬, 왜곡 왕복·가역성 게이트, 기울기 복원
   (희소 직선/저텍스처/평면), 좌표 정합, 마스크/페더 0·최대/단일점·121선분/컴포지션, PSF 정규화/항등/에너지/
   점광원 footprint/CoC 단조, 탭 예산, CPU 성능 스모크.
-  `tests/optical-contract.test.ts` — 9 tests. Q01 `OpticalTransform` 어댑터(version/perspective/특이 행렬/
-  범위/왕복/방향) 검증.
+  `tests/optical-contract.test.ts` — 13 tests. Q01 `OpticalTransform` 어댑터(version/perspective/특이 행렬/
+  범위/왕복/방향) + 병합된 Q01 계약 직접 교차 검증 4건(Q01 validator 수용, Q01 quad 일치, 마스크 정본 한도,
+  geometryMappings와 y-down NIS 핸드오프).
 - GPU: `tests/e2e/optical-poc.spec.ts` — chromium 7 tests (CP1). `tests/e2e/optical-cp11.spec.ts` — chromium 8 tests:
   aspect 마스크·CoC 패리티, 단일점/121선분 브러시, 페더 극값, 극단/비가역 왜곡, 미리보기↔Export 마스크 패리티,
   4-마스크 스택, 탭/해상도 비용, half-res 보케 비용·품질.
@@ -248,9 +251,14 @@ coc = maxCoc · t²(3 − 2t)
 | CPU/GPU 기준 픽셀 | 마스크 뷰 픽셀 vs `composeMaskStack` | 스택 4마스크 차이 **0/255** |
 | half-res 보케 품질 | 256² 합성 16점 full vs half | 평균/최대 차이 **0/255** |
 | Q01 어댑터 | version/perspective/특이 행렬/왕복 | 9 tests 통과 |
+| Q01 직접 교차 | Q01 validator 수용, quad 일치, 정본 한도, NIS 핸드오프 | 4 tests 통과 (병합 후) |
 | 16마스크 유니폼 | probe 셰이더 링크, 유니폼 100 vec4 상한 | 링크 성공, 한도 4096 대비 여유 (12.2) |
 
-- 기존 CP1 테스트 7종은 그대로 통과(삭제·단정 완화 없음). 전체 단위 스위트 17 files / 123 tests 통과.
+- 기존 CP1 테스트 7종은 그대로 통과(삭제·단정 완화 없음).
+- 2026-11-27 Q01 `21fd6dc` 병합 후 재실행: tsc 0 errors, vitest 21 files / 193 tests, 광학 E2E 17 passed,
+  Q01 `geometry-contract`·`render-parity` E2E 2 passed. 전체 Chromium 스위트 **직렬 91 passed / 1 skipped /
+  0 failed**. 병렬 실행(기본·2워커)에서는 앱 스펙 6건·3건이 서로 다른 조합으로 시간 초과됐으나 단독·직렬
+  재실행에서 모두 통과해 병렬 리소스 경합 flaky로 판정했다(제품 결함 아님).
 - CP1에서 테스트로 발견한 결함(모두 수정):
   1. GPU FBO 상하 반전 → 마스크/장면 불일치 (3.2 규약으로 수정)
   2. Luminance 마스크 하한 램프 반전 (`bandWeight`) → CPU·셰이더 동시 수정, 하한/상한 페더 단위 테스트 추가
@@ -361,6 +369,9 @@ Q02 쪽 어댑터 `poc/optical/math/optical-transform.ts`에서 차이를 흡수
   `fromOpticalTransform`은 검증 후 Q02 `OpticalGeometry`(+`perspective`)로 깊은 복사해 반환한다.
 - 검증 테스트 `tests/optical-contract.test.ts`: version 포함, perspective 포함/복사, 특이·비유한 행렬 거부,
   계수 범위·비볼록 quad 거부, version 2 거부, 왕복 보존, Q01 quad 공식 일치, corrected→source 방향·역변환 고정.
+- Q01 브랜치 병합 후에는 Q01 `validateOpticalTransform`/`createPerspectiveQuad`/`geometryMappings`를 직접 import해
+  어댑터 출력 수용, quad 일치, 마스크 정본 한도, y-down NIS 핸드오프를 교차 검증한다(총 13 tests).
+  Q01 계약 소스는 병합으로만 수용했고 Q02가 수정하지 않았다.
 - 주의: Q01 검증은 계수 **범위**만 보므로 `k1=−0.5`처럼 Q01을 통과하지만 Q02 렌더 가역성 게이트(4.2)에서
   거부되는 조합이 있다. 어댑터는 통과시키고 렌더 시 명시적으로 실패한다. Q01 검증에 가역성 조건을 넣을지는
   Q01 소관이며, 본 브랜치에서 Q01 src를 수정하지 않았다.
@@ -411,7 +422,9 @@ Q01 정본 상한(16마스크 × 64스트로크 × 1024포인트)을 전량 수�
 - 테스트 고정: 미리보기 160↔Export 320 마스크 좌표 최대 2/255(CP1.1), 512↔1024 합성 최대 1/255(CP1),
   1:1~9:16 마스크/CoC CPU↔GPU 차이 0/255.
 - Q01 `geometryMappings`는 flip→rotate→straighten→crop 순서로 **geometry NIS**를 만들고, Q02는 그 출력 NIS를
-  광학 샘플링 입력으로 소비한다(픽셀 버퍼 비변경). Q02 브랜치에는 Q01 `src`가 없어 cross-branch 직접 import
-  테스트는 실행할 수 없다 → **UNVERIFIED**, 통합 시 `geometry-contract.spec.ts`와 함께 확인해야 한다.
+  광학 샘플링 입력으로 소비한다(픽셀 버퍼 비변경). 2026-11-27 Q01 `21fd6dc` 병합 후 직접 import로
+  `sourceToGeometry`/`geometryToSource` 왕복과 y-down NIS 핸드오프를 검증했고, Q01 `geometry-contract.spec.ts`도
+  Chromium에서 통과했다. Q01이 이후 커밋을 추가하면 재실행이 필요하다.
+- `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. 이번 병합에서는 충돌이 없었고 Q02는 해당 문서를 수정하지 않았다.
 - 지원 주장 범위: 이 PoC가 실제로 검증한 것은 8마스크·1024선분/마스크·8bit 중간 버퍼까지다. 16/64/1024와
   RGBA16F, 모바일 실기기는 본 구현/통합 단계에서 별도 검증 대상이다.
