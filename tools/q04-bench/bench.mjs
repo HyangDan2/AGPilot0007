@@ -106,6 +106,20 @@ async function runBenchmark(page) {
     };
     URL.revokeObjectURL(coldResult.objectUrl);
 
+    function summarize(values) {
+      if (!values.length) return null;
+      const sorted = [...values].sort((a, b) => a - b);
+      const at = (q) => sorted[Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1)))];
+      return {
+        minMs: sorted[0],
+        medianMs: at(0.5),
+        p95Ms: at(0.95),
+        maxMs: sorted.at(-1),
+        avgMs: values.reduce((a, b) => a + b, 0) / values.length,
+        samples: values.length,
+      };
+    }
+
     async function runQueue(label, concurrency, jobCount, processor = handle.processor) {
       const jobs = [];
       for (let i = 0; i < jobCount; i++) {
@@ -164,7 +178,7 @@ async function runBenchmark(page) {
         failed,
         wallMs,
         perJobMs: wallMs / Math.max(1, snapshot.counts.succeeded),
-        avgJobMs: durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null,
+        jobStats: summarize(durations),
         peakHeapMB: peakHeap,
         output,
       };
@@ -225,8 +239,14 @@ function formatTable(result) {
       ? ` out=${run.output.width}x${run.output.height} ${(run.output.bytes / 1024).toFixed(0)} KB`
       : '';
     lines.push(
-      `  ${run.label.padEnd(28)} jobs=${run.jobs} ok=${run.succeeded} fail=${run.failed} wall=${run.wallMs.toFixed(0)} ms per-job=${run.perJobMs.toFixed(0)} ms avg-job=${(run.avgJobMs ?? 0).toFixed(0)} ms peak-heap=${heap}${out}`,
+      `  ${run.label.padEnd(28)} jobs=${run.jobs} ok=${run.succeeded} fail=${run.failed} wall=${run.wallMs.toFixed(0)} ms per-job=${run.perJobMs.toFixed(0)} ms peak-heap=${heap}${out}`,
     );
+    const stats = run.jobStats;
+    if (stats) {
+      lines.push(
+        `  ${' '.repeat(28)} job ms min=${stats.minMs.toFixed(0)} median=${stats.medianMs.toFixed(0)} p95=${stats.p95Ms.toFixed(0)} max=${stats.maxMs.toFixed(0)} avg=${stats.avgMs.toFixed(0)} (n=${stats.samples})`,
+      );
+    }
   }
   return lines.join('\n');
 }

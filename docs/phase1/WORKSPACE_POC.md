@@ -30,12 +30,12 @@
 
 ### 2.1 선택 모델 — `src/poc/q04/selection.ts`
 
-- `SelectionState { ids: string[]; anchor: string | null }`
+- `SelectionState { ids: string[]; anchor: string | null; active: string | null }` — **역할 분리(APP-08)**: `anchor`는 Shift 범위의 기준점, `active`는 상세 편집/복사가 읽는 Primary Selection. 둘은 다를 수 있고, toggle-off 후 anchor는 해제된 ID를 가리킬 수 있지만 active/primary는 절대 비선택 ID가 되지 않는다.
 - `clickSelection(current, orderedIds, id, { shiftKey, toggle })`
-  - Shift: 현재 폴더 정렬 순서(`orderedIds`) 기준 anchor→id **포함 범위** 선택. anchor가 사라졌으면 단일 선택으로 폴백.
-  - Ctrl/Cmd(toggle): 해당 ID 추가/제거. 제거 시 anchor 유지, 빈 선택이면 anchor 해제.
+  - Shift: 현재 폴더 정렬 순서(`orderedIds`) 기준 anchor→id **포함 범위** 선택, active는 클릭한 id. anchor가 사라졌으면 단일 선택으로 폴백.
+  - Ctrl/Cmd(toggle): 해당 ID 추가/제거. 추가 시 active=클릭 id, anchor=클릭 id. **제거 시** 기존 active가 여전히 선택돼 있으면 유지하고, 제거된 항목이 active였으면 정렬 순서상 가장 가까운 남은 항목(앞 → 뒤)으로 이동. 남은 항목이 없으면 null.
   - Shift가 toggle보다 우선한다.
-- `rangeBetween`, `clampSelection`(폴더 재스캔 후 사라진 ID 정리), `isSelected`, `primarySelection`(상세 편집 대상 = 마지막 클릭 항목).
+- `rangeBetween`, `clampSelection`(폴더 재스캔 후 사라진 ID 정리 — anchor/active 둘 다 유효성 재계산), `isSelected`, `primarySelection`(active가 ids에 있으면 active, 아니면 보수적 폴백).
 
 ### 2.2 이미지별 편집 상태 — `src/poc/q04/editState.ts`
 
@@ -44,9 +44,11 @@
 - `editStateFromRecipe` / `recipeFromEditState`: v7 `CustomRecipe`와 상호 변환. **스키마 변경 없음, 하위 호환 유지.**
 - `copyParameters(state, groups)` → `ParameterClip`. 그룹: `film | tone | grain | curves | camera | colorMixer | sharpening`. 붙여넣기는 클립에 담긴 그룹만 대상에 반영하고 나머지는 유지한다(부분 복사/붙여넣기).
 - `EditStateRegistry`:
+  - **불변 스냅샷(APP-04)**: 모든 저장 상태는 `createEditState`로 재정규화한 뒤 깊은 `Object.freeze`로 동결한다. `get`/`ensure`는 동결된 스냅샷을 반환하므로 소비자가 제자리에서 수정하려 하면 `TypeError`가 난다. 수정은 `update`/`updateAdjustment`/`set`/`pasteTo`만 사용한다.
   - `ensure(id)`는 지연 생성(이미지 1만 장이라도 실제 편집한 사진만 상태 보유),
-  - `applyToMany(ids, update)`는 깊은 복사로 이미지 간 참조 공유를 막고,
-  - `copyFrom`/`pasteTo`/`pasteToMany`로 다중 선택 일괄 붙여넣기,
+  - `applyToMany(ids, state)`는 **id마다 별도 깊은 복사본을 동결**해 저장하므로 한 이미지의 편집이 다른 이미지로 새지 않고, 원본 인자 변경도 반영되지 않는다.
+  - `copyFrom`/`pasteTo`/`pasteToMany`로 다중 선택 일괄 붙여넣기. 붙여넣은 클립과 대상 상태가 참조를 공유하지 않는다.
+  - `subscribe(listener)` → `unsubscribe`. `create|set|delete|clear` 변경을 동결 스냅샷(delete/clear는 null)과 함께 전달하고, 리스너 예외는 레지스트리 일관성을 깨지 않도록 격리한다. React `useSyncExternalStore`로 그대로 연결 가능한 형태다.
   - 결과는 항상 새 객체 — 원본 편집 상태의 비파괴성 보장.
 
 ### 2.3 가상화 — `src/poc/q04/virtualization.ts`
@@ -57,7 +59,7 @@
 
 ### 2.4 메타데이터 인덱스(요구 ⑦, 상세는 RECOMMENDATION_POC.md)
 
-`src/poc/q04/metadata.ts` — exifr로 로컬 파싱만 수행하고 업로드하지 않는다. 증분 인덱싱(`indexed/skipped/failed`), AbortSignal, 동시성 2, 정렬/필터 검색. `Intl.Collator(numeric)` + WeakMap 캐시로 1만 장 검색 3.2ms/op.
+`src/poc/q04/metadata.ts` — exifr로 로컬 파싱만 수행하고 업로드하지 않는다. 증분 인덱싱(`indexed/skipped/failed`), AbortSignal, 동시성 2, 정렬/필터 검색. **파일 서명(크기+수정시각) 비교로 변경된 파일만 재인덱싱**하고, 실패 레코드는 기본 skip·`retryFailed` 옵션으로 명시 재시도한다(CP1.1 APP-06). `Intl.Collator(numeric)` + WeakMap 캐시로 1만 장 검색 median 4~11ms/op.
 
 ## 3. API 계약 제안 (Q01 통합 시)
 
@@ -65,12 +67,14 @@
 // Q01 Store가 소유할 것을 제안하는 최소 계약
 interface MultiSelection {
   selectedIds: readonly string[];
-  anchorId: string | null;
+  anchorId: string | null;   // Shift 범위 기준
+  activeId: string | null;   // 상세 편집/복사 대상(Primary)
   select(id: string, mods: { shiftKey?: boolean; toggle?: boolean }): void;
 }
 interface EditStateHost {
-  getEditState(id: string): EditState;          // 없으면 현재 ui defaults로 생성
+  getEditState(id: string): Readonly<EditState>;  // 동결 스냅샷
   setEditState(id: string, state: EditState): void;
+  subscribe(listener: (change: EditStateChange) => void): () => void;
   editSelected(update: (state: EditState) => EditState): void; // 다중 일괄
 }
 ```
@@ -83,18 +87,22 @@ interface EditStateHost {
 
 `tests/q04Workspace.test.ts` (PASS):
 
-- Shift 범위 선택: anchor 포함, 역방향, anchor 소실 폴백, toggle 병행.
+- Shift 범위 선택: anchor 포함, 역방향, anchor 소실 폴백, toggle 병행, active/anchor 역할 분리.
+- **선택 해제 항목이 Primary가 되지 않음**: shift로 [a,b,c] 선택 후 active(c)를 toggle-off하면 primary는 최근접 잔여 항목(b)이고, anchor는 해제된 c를 가리켜도 primary로 쓰이지 않는다.
 - 편집 상태: 클램프, 클론 독립성, 레시피 v7 왕복, 그룹 복사/붙여넣기, 다중 일괄 적용 시 원본 불변.
+- **불변 스냅샷**: 동결된 `adjustments`/`curves` 제자리 수정 시 `TypeError`, 변경은 항상 새 객체.
+- **구독 알림**: `create → set → create → set → delete → clear` 순서, unsubscribe 후 미수신.
+- **다중 붙여넣기 격리**: 클립·소스·대상들이 curves 참조를 공유하지 않음.
 - 가상화: 1만/10만 항목 윈도우 경계, 인덱스↔오프셋 왕복.
 
-`tests/q04Perf.test.ts` (PASS, full suite 기준):
+`tests/q04Perf.test.ts` (PASS, 단독 실행 2026-11-27):
 
-| 측정 | 반복 | ms/op |
-| --- | --- | --- |
-| Shift 범위 선택, 1만 항목 | 2,000 | 0.043 |
-| 가상 윈도우 10만 항목 | 10,000 | 0.0001 |
+| 측정 | 반복 | min | median | p95 | max |
+| --- | --- | --- | --- | --- | --- |
+| Shift 범위 선택, 1만 항목 | 2,000 | 0.058 | 0.098 | 0.561 | 0.561 |
+| 가상 윈도우 10만 항목 | 10,000 | 0.0006 | 0.0011 | 0.0016 | 0.0016 |
 
-측정 방식: vitest 병렬 실행 노이즈를 줄이기 위해 6라운드로 나눠 측정하고 **가장 빠른 라운드**를 사용(임계값은 그대로). 알고리즘 회귀이면 임계값을 넘긴다.
+단위는 ms/op. 측정 방식(APP-07): 6라운드로 나눠 min/median/p95/max를 함께 산출하고 **median으로 판정**한다(최소값 단독 판정 금지). 임계값은 CP1과 동일하게 유지했으며 회귀 시 초과한다.
 
 ## 5. 대용량 폴더 정책
 
