@@ -157,3 +157,11 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - Light/Dark 테마는 PC·태블릿 상단 Sun/Moon 버튼, 작은 화면 More 메뉴에서 전환한다. 기본은 Dark이며 hd2lab_film_studio_theme 키로 선택을 기억한다. 같은 origin의 운영/베타는 테마 선호를 공유하고 레시피 DB는 기존처럼 분리한다. 저장소 사용이 불가능하면 현재 세션에서 동작한다.
 - UI 표면/글자/테두리는 CSS 변수로 테마를 바꾸며 사진·RGB 색상 칩·셰이더·LUT·출력에는 filter나 색상 변환을 적용하지 않는다. 히스토그램은 W/R/G/B 대비를 위해 중립 암부 배경을 유지한다. 초기 HTML과 앱 진입점에서 저장 테마를 적용해 재진입 시 깜박임을 줄인다. 테마는 레시피/Undo 이력에 포함하지 않는다.
 - 관련 검사: tests/uiStore.test.ts, tests/e2e/theme-sidebars.spec.ts와 전체 회귀. PC 홈/편집 Open 일치, 레일 복구·스크롤 보존, 하단 X 부재·복구, 라이트 홈/조정/Color Lab/커브, 사진 픽셀 불변·재로드 테마 보존, 모바일 넘침을 확인한다. 베타·main 배포와 각 공개 URL 및 이전 캐시 업데이트를 별개로 확인한다. 이번 사용자 지시는 beta 검증 후 main 병합·운영 배포까지 승인한 범위다.
+
+## Phase 1 Q04 PoC (선택·배치·분석)
+
+- `src/poc/q04/`는 Q01 공통 상태/Recipe 인터페이스 확정 전까지 **기존 store·컴포넌트를 수정하지 않는 독립 PoC**다. 통합 시점에만 기존 코드를 변경한다.
+- 신규 검사: `npx vitest run tests/q04Workspace.test.ts tests/q04Batch.test.ts tests/q04Metadata.test.ts tests/q04Analysis.test.ts tests/q04Perf.test.ts`. `q04Perf`는 벽시계 측정이므로 6라운드 최소값을 사용하되 임계값은 완화하지 않는다. 임계값 초과는 회귀 증거로 취급한다.
+- 신규 측정 도구: `node tools/q04-bench/bench.mjs` (로컬 Vite dev 서버 + Playwright Chromium, `public/samples`로 실제 decode→WebGL export→encode 실행, 업로드 없음). `Q04_BENCH_GPU=1`은 headless에서 ANGLE Metal 실GPU를 요청하며, 미지정 시 SwiftShader 소프트웨어 렌더링 수치(느린 하한)다. `Q04_BENCH_PORT`, `Q04_BENCH_JSON=0` 지원. 이 벤치마크는 CI 대상이 아니며 로컬 참고 수치로만 보고한다. Playwright 브라우저 설치가 필요하다.
+- 결과 문서: `docs/phase1/WORKSPACE_POC.md`, `docs/phase1/BATCH_POC.md`, `docs/phase1/RECOMMENDATION_POC.md`. 추천 타깃 상수는 학습 데이터가 아닌 레지스트리 설명 기반 휴리스틱이므로 UI에 점수 근거를 항상 노출한다.
+- 배치 동시성 상한은 3(모바일 2)이며, 풀해상도 이미지를 여러 장 동시에 메모리에 보관하지 않는다는 제품 원칙과 함께 유지한다. 기밀 평가·원본 대응 자료는 기존대로 `.private/`에만 둔다.
