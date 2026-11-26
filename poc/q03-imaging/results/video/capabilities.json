@@ -6,7 +6,9 @@
     "AudioEncoder": true,
     "VideoFrame": true,
     "AudioData": true,
-    "ImageDecoder": true
+    "ImageDecoder": true,
+    "showSaveFilePicker": true,
+    "FileSystemWritableFileStream": true
   },
   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
   "platform": "macOS",
@@ -187,5 +189,19 @@
   },
   "webgl2": true,
   "webgl2MaxTexture": 8192,
-  "webgl2Renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  "webgl2Renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "outputTargets": {
+    "showSaveFilePicker": true,
+    "fileSystemWritableFileStream": true,
+    "harnessSink": true,
+    "secureContext": true,
+    "userActivation": {
+      "isActive": true,
+      "hasBeenActive": true
+    },
+    "requiresUserGesture": true,
+    "canOpenPickerNow": true,
+    "defaultMode": "harness-stream",
+    "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+  }
 }

@@ -1,4 +1,20 @@
 import { FlashRaw, init, detectFormat, supportsFile } from 'flashraw';
+import {
+  IMAGING_CONTRACT_VERSION,
+  assertSceneLinearFrame,
+  compareSrgb8,
+  XYZ_D65_TO_LINEAR_SRGB,
+  halfToFloat,
+  invert3x3,
+  linearStats,
+  matMul3,
+  matVec3,
+  resolutionContract,
+  resolveCameraMatrix,
+  sceneLinearToDisplaySrgb8,
+  srgb8,
+  type SceneLinearFrame,
+} from '../shared/imagingContract';
 
 const logEl = () => document.getElementById('log') as HTMLDivElement;
 function log(msg: string) {
@@ -83,34 +99,6 @@ function sampleStats(data: ArrayLike<number>, channels: number, opts: { isFloat:
   };
 }
 
-function halfToFloat(h: number): number {
-  const s = h & 0x8000 ? -1 : 1;
-  const e = (h >> 10) & 0x1f;
-  const f = h & 0x3ff;
-  if (e === 0) return s * (f / 1024) * Math.pow(2, -14);
-  if (e === 31) return f ? NaN : s * Infinity;
-  return s * (1 + f / 1024) * Math.pow(2, e - 15);
-}
-
-const SRGB_ENCODE_LUT = (() => {
-  const lut = new Float32Array(4097);
-  for (let i = 0; i <= 4096; i++) {
-    const v = i / 4096;
-    lut[i] = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
-  }
-  return lut;
-})();
-
-function srgb8(v: number): number {
-  if (!Number.isFinite(v) || v <= 0) return 0;
-  if (v >= 1) return 255;
-  const t = v * 4096;
-  const i = t | 0;
-  const f = t - i;
-  const enc = SRGB_ENCODE_LUT[i] * (1 - f) + SRGB_ENCODE_LUT[Math.min(4096, i + 1)] * f;
-  return Math.round(Math.max(0, Math.min(1, enc)) * 255);
-}
-
 interface CompareResult {
   samples: number;
   mae: number;
@@ -119,6 +107,29 @@ interface CompareResult {
   over001: number;
   over005: number;
   display8: { differingFrac: number; meanAbsCode: number; p99Code: number; maxCode: number };
+}
+
+function compareLinearBand(a: ArrayLike<number>, b: ArrayLike<number>, minValue: number) {
+  let n = 0, abs = 0, sq = 0, mx = 0, diffCount = 0, diffSum = 0;
+  for (let i = 0; i < a.length; i++) {
+    const va = a[i];
+    if (va < minValue) continue;
+    n++;
+    const d = va - b[i];
+    const ad = Math.abs(d);
+    abs += ad;
+    sq += d * d;
+    if (ad > mx) mx = ad;
+    const cd = Math.abs(srgb8(Math.max(0, va)) - srgb8(Math.max(0, b[i])));
+    if (cd > 0) { diffCount++; diffSum += cd; }
+  }
+  return {
+    samples: n,
+    mae: n ? abs / n : 0,
+    rmse: n ? Math.sqrt(sq / n) : 0,
+    maxAbs: mx,
+    display8: { differingFrac: n ? diffCount / n : 0, meanAbsCode: diffCount ? diffSum / diffCount : 0 },
+  };
 }
 
 function compareLinear(a: ArrayLike<number>, b: ArrayLike<number>): CompareResult | null {
@@ -291,11 +302,13 @@ async function runDecode(root: any, raw: any, run: DecodeRun): Promise<DecodeMea
   try {
     for (let i = 0; i < reps; i++) {
       const t0 = performance.now();
-      frame = await raw.decode(run.options);
+      const next = await raw.decode(run.options);
+      frame = next;
       const dt = performance.now() - t0;
       wallTimes.push(Number(dt.toFixed(2)));
       if (i < reps - 1) {
         // release intermediate copies before the next rep
+        try { next.free?.(); } catch {}
         frame = null;
         await new Promise((r) => setTimeout(r, 30));
         const h = heap();
@@ -361,6 +374,7 @@ function meanLinearRGB(data: ArrayLike<number>, channels: number, strideTarget =
 
 function releaseFrame(m: DecodeMeasurement | null | undefined) {
   if (!m) return;
+  try { m.frame?.free?.(); } catch {}
   m.frame = null;
   m.dataRef = null;
 }
@@ -417,6 +431,7 @@ async function runFile(path: string, key: string, opts: { maxImageWidth?: number
     whiteBalance: {},
     region: null,
     precision: null,
+    precisionAfterAdjustments: {} as Record<string, any>,
     images: {},
     notes: [],
   };
@@ -525,23 +540,144 @@ async function runFile(path: string, key: string, opts: { maxImageWidth?: number
   releaseFrame(f16);
   releaseFrame(lin16);
 
-  // Region decode (interactive/preview path)
+  // IMG-10: f16 vs f32 precision after exposure / white balance / highlight recovery.
+  if (f32.ok && f16.ok) {
+    const precisionVariants = [
+      { label: 'exposure+1', options: { output: 'linear-rgb', exposure: 1 } },
+      { label: 'exposure+2', options: { output: 'linear-rgb', exposure: 2 } },
+      { label: 'whiteBalance-daylight', options: { output: 'linear-rgb', whiteBalance: 'daylight' } },
+      { label: 'highlights-blend', options: { output: 'linear-rgb', highlights: 'blend' } },
+    ];
+    for (const variant of precisionVariants) {
+      log(`${key}: precision ${variant.label}`);
+      const m32 = await runDecode(result, raw, { label: `${variant.label}_f32`, options: { ...variant.options } });
+      const m16 = await runDecode(result, raw, { label: `${variant.label}_f16`, options: { ...variant.options, sampleType: 'f16' } });
+      if (m32.ok && m16.ok && m32.frame && m16.frame && m32.frame.data.length === m16.frame.data.length) {
+        const a = m32.frame.data as Float32Array;
+        const b = f16ToFloatArray(m16.frame.data as Uint16Array);
+        result.precisionAfterAdjustments[variant.label] = {
+          full: compareLinear(a, b),
+          highlightBand: compareLinearBand(a, b, 0.8),
+          overOneBand: compareLinearBand(a, b, 1.0),
+          wallMs: { f32: m32.wallMsMedian, f16: m16.wallMsMedian },
+          outputMB: { f32: Number(m32.outputMB.toFixed(1)), f16: Number(m16.outputMB.toFixed(1)) },
+        };
+      } else {
+        result.precisionAfterAdjustments[variant.label] = { error: m32.error?.message ?? m16.error?.message ?? 'dimension mismatch', f32: m32.summary ? `${m32.summary.width}x${m32.summary.height}` : null, f16: m16.summary ? `${m16.summary.width}x${m16.summary.height}` : null };
+      }
+      releaseFrame(m32);
+      releaseFrame(m16);
+    }
+  }
+
+  // IMG-01: contract check on the scene-linear buffer actually produced by the decoder.
+  if (f32.ok && f32.frame) {
+    try {
+      const linearFrame: SceneLinearFrame = {
+        width: f32.frame.width,
+        height: f32.frame.height,
+        channels: f32.frame.channels,
+        dataType: f32.frame.dataType,
+        layout: 'linear',
+        transfer: 'linear',
+        primaries: f32.frame.colorSpace ?? 'srgb',
+        source: f32.frame.source,
+        data: f32.frame.data,
+      };
+      assertSceneLinearFrame(linearFrame);
+      const stats = linearStats(linearFrame, 100000);
+      result.colorContract = {
+        version: IMAGING_CONTRACT_VERSION,
+        accepted: true,
+        resolution: resolutionContract(raw.frameInfo, f32.frame),
+        buffer: { channels: 3, dataType: 'f32', transfer: 'linear', primaries: linearFrame.primaries, source: f32.frame.source, orientation: f32.frame.orientation, bytes: f32.frame.data.byteLength },
+        linearStats: stats,
+        noEarlyClip: {
+          over1ValuesPreserved: stats.max > 1 && stats.over1Frac > 0,
+          atOneFrac: stats.atOneFrac,
+          note: 'atOneFrac counts samples sitting exactly at 1.0; a linear buffer with >1 values cannot have been clipped to 8-bit',
+        },
+        embeddedPreviewSeparate: true,
+      };
+    } catch (err: any) {
+      result.colorContract = { version: IMAGING_CONTRACT_VERSION, accepted: false, error: `${err?.name}: ${String(err?.message ?? err)}` };
+    }
+  }
+
+  // IMG-09: region decode (interactive/preview path) pixel-compared against the full decode.
   try {
     log(`${key}: region decode`);
-    const active = raw.frameInfo?.activeArea ?? raw.frameInfo?.crop;
-    const regionW = 1200;
-    const regionH = 800;
-    const x0 = Math.max(0, Math.floor(((active?.x ?? 0) + (active?.width ?? raw.metadata.width)) / 2 - regionW / 2));
-    const y0 = Math.max(0, Math.floor(((active?.y ?? 0) + (active?.height ?? raw.metadata.height)) / 2 - regionH / 2));
-    const t0 = performance.now();
-    const frame = await raw.decodeRegion({ x: x0, y: y0, width: regionW, height: regionH }, { output: 'rgba8' });
-    const dt = performance.now() - t0;
+    const crop = raw.frameInfo?.crop ?? { x: 0, y: 0, width: raw.metadata.width, height: raw.metadata.height };
+    const regionW = Math.min(1200, crop.width);
+    const regionH = Math.min(800, crop.height);
+    const centre = {
+      x: crop.x + Math.floor((crop.width - regionW) / 2),
+      y: crop.y + Math.floor((crop.height - regionH) / 2),
+    };
+    const corner = { x: crop.x + Math.min(157, crop.width - regionW), y: crop.y + Math.min(211, crop.height - regionH) };
+    const regions = [
+      { label: 'centre', x: centre.x, y: centre.y },
+      { label: 'corner', x: corner.x, y: corner.y },
+    ];
+    const full = rgba8.ok && rgba8.frame ? rgba8.frame : null;
+    const fullPixels = full ? rgba8Channels(full) : null;
+    const fullW = full?.width ?? 0;
+    const fullH = full?.height ?? 0;
+    const entries: any[] = [];
+    for (const r of regions) {
+      const t0 = performance.now();
+      const frame = await raw.decodeRegion({ x: r.x, y: r.y, width: regionW, height: regionH }, { output: 'rgba8' });
+      const dt = performance.now() - t0;
+      const entry: Record<string, any> = {
+        label: r.label,
+        ok: true,
+        region: { x: r.x, y: r.y, w: frame.width, h: frame.height },
+        wallMs: Number(dt.toFixed(2)),
+        totalMs: frame.timings?.totalMs,
+        outputMB: Number((frame.outputBytes / 1024 / 1024).toFixed(2)),
+      };
+      if (fullPixels) {
+        const ox = r.x - crop.x;
+        const oy = r.y - crop.y;
+        const w = Math.min(frame.width, fullW - ox);
+        const h = Math.min(frame.height, fullH - oy);
+        const regionPixels = rgba8Channels(frame);
+        const a: number[] = [];
+        const b: number[] = [];
+        const interiorA: number[] = [];
+        const interiorB: number[] = [];
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const ri = (y * frame.width + x) * 4;
+            const fi = ((oy + y) * fullW + (ox + x)) * 4;
+            for (let c = 0; c < 4; c++) {
+              a.push(regionPixels[ri + c]);
+              b.push(fullPixels[fi + c]);
+              if (x >= 8 && y >= 8 && x < w - 8 && y < h - 8) {
+                interiorA.push(regionPixels[ri + c]);
+                interiorB.push(fullPixels[fi + c]);
+              }
+            }
+          }
+        }
+        entry.vsFull = {
+          width: w,
+          height: h,
+          offsetInFull: { x: ox, y: oy },
+          all: compareSrgb8(a, b),
+          interior8pxExcluded: compareSrgb8(interiorA, interiorB),
+        };
+        entry.vsFull.exactMatchInside = entry.vsFull.interior8pxExcluded?.maxCode === 0;
+      }
+      entries.push(entry);
+      frame.free?.();
+    }
     result.region = {
-      ok: true,
-      region: { x: x0, y: y0, w: frame.width, h: frame.height },
-      wallMs: Number(dt.toFixed(2)),
-      totalMs: frame.timings?.totalMs,
-      outputMB: Number((frame.outputBytes / 1024 / 1024).toFixed(2)),
+      ok: entries.every((e) => e.ok),
+      coordinateSpace: 'sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin',
+      crop,
+      decode: entries,
+      note: 'border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately',
     };
   } catch (err: any) {
     result.region = { ok: false, error: { name: err?.name, message: String(err?.message) } };
@@ -572,6 +708,406 @@ async function runFile(path: string, key: string, opts: { maxImageWidth?: number
   try { raw.close(); } catch {}
   result.notes.push('All decode outputs released (frames dropped, raw.close() called).');
   return sanitize(result);
+}
+
+function linearFrameView(frame: AnyFrame): SceneLinearFrame {
+  return {
+    width: frame.width,
+    height: frame.height,
+    channels: frame.channels,
+    dataType: frame.dataType,
+    layout: 'linear',
+    transfer: 'linear',
+    primaries: frame.colorSpace ?? 'srgb',
+    source: frame.source,
+    data: frame.data,
+  };
+}
+
+function sampleLinearPixels(frame: SceneLinearFrame, target = 15000) {
+  const pixels = frame.width * frame.height;
+  const stride = Math.max(1, Math.floor(pixels / target));
+  const indices: number[] = [];
+  const values: number[] = [];
+  for (let px = 0; px < pixels; px += stride) {
+    const o = px * 3;
+    const r = frame.data[o] as number, g = frame.data[o + 1] as number, b = frame.data[o + 2] as number;
+    if (![r, g, b].every((v) => Number.isFinite(v) && v > 1e-4 && v < 0.95)) continue;
+    indices.push(px);
+    values.push(r, g, b);
+  }
+  return { indices, values };
+}
+
+function median(values: number[]): number {
+  if (!values.length) return 0;
+  const s = [...values].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+async function runColorContract(path: string, opts: { exposure?: boolean; p3?: boolean } = {}) {
+  const resp = await fetch(`/testdata/${path}`);
+  if (!resp.ok) throw new Error(`fetch failed ${resp.status} for ${path}`);
+  const blob = await resp.blob();
+  const raw = await FlashRaw.open(blob);
+  const out: Record<string, any> = { path, version: IMAGING_CONTRACT_VERSION, ok: false };
+  try {
+    // 1. As-shot scene-linear output + contract + display bridge (no 8-bit stage on the linear path).
+    const asShot = await raw.decode({ output: 'linear-rgb' });
+    try {
+      const linear = linearFrameView(asShot);
+      assertSceneLinearFrame(linear);
+      const stats = linearStats(linear, 200000);
+      const bridge = sceneLinearToDisplaySrgb8(linear);
+      out.resolution = resolutionContract(raw.frameInfo, asShot);
+      out.buffer = { channels: 3, dataType: 'f32', transfer: 'linear', primaries: asShot.colorSpace, source: asShot.source, orientation: asShot.orientation, width: asShot.width, height: asShot.height, bytesPerPixel: 12, bytes: asShot.data.byteLength };
+      out.asShot = {
+        stats,
+        meanLinearRGB: meanLinearRGB(asShot.data, 3),
+        warnings: sanitize(asShot.warnings),
+        noEarlyClip: stats.max > 1 && stats.over1Frac > 0,
+      };
+
+      // 2. SDR display path: the decoder's own rgba8 (tone: linear) vs our linear->sRGB8 bridge.
+      const rgbaLinear = await raw.decode({ output: 'rgba8', tone: 'linear' });
+      try {
+        out.sdrBridge = {
+          decoderRgba8Linear: frameSummary(rgbaLinear),
+          bridgeVsDecoder: compareSrgb8(bridge.data, rgbaLinear.data),
+          bridgeBytes: bridge.data.byteLength,
+          decoderBytes: rgbaLinear.data.byteLength,
+          sameDimensions: bridge.width === rgbaLinear.width && bridge.height === rgbaLinear.height,
+          note: 'bridge performs the sRGB transfer only; the decoder path is the SDR comparator',
+        };
+      } finally {
+        rgbaLinear.free?.();
+      }
+
+      // 3. WB / camera matrix ordering. WhiteBalanceMultipliers are documented as camera-RGB
+      // multipliers, so a 2x red multiplier must act before the 3x3 camera matrix.
+      out.whiteBalanceOrder = { tested: false };
+      const matrix = resolveCameraMatrix(asShot.colorMatrices ?? raw.frameInfo?.colorMatrices);
+      out.cameraMatrix = { found: !!matrix, values: matrix ? matrix.map((v) => Number(v.toFixed(6))) : null, invertible: matrix ? !!invert3x3(matrix) : null };
+      out.cameraMatrices = (asShot.colorMatrices?.color ?? []).map((c: any, i: number) => ({ index: i, illuminant: c?.illuminant ?? null, temperature: c?.temperature ?? null }));
+      if (matrix) {
+        const neutral = await raw.decode({ output: 'linear-rgb', whiteBalanceMultipliers: [1, 1, 1] });
+        try {
+          const neutralFrame = linearFrameView(neutral);
+          const sample = sampleLinearPixels(neutralFrame, 12000);
+          const baseVals = sample.values;
+          const neutralMean = meanLinearRGB(neutral.data, 3);
+          neutral.free?.();
+          const variant = await raw.decode({ output: 'linear-rgb', whiteBalanceMultipliers: [2, 1, 1] });
+          try {
+            // DNG files may carry one matrix per calibration illuminant; evaluate all of them
+            // so the order test is not pinned to color[0] (e.g. Ricoh GR III ships A + D65).
+            const allMatrices = (asShot.colorMatrices?.color ?? []).map((c: any, i: number) => ({
+              label: `color[${i}]${c?.illuminant ? `@${c.illuminant}` : ''}`,
+              values: (Array.isArray(c?.values) ? c.values : []).flat().map(Number),
+            })).filter((c) => c.values.length === 9);
+            const matrixVariants = allMatrices.length ? allMatrices : [{ label: 'colorMatrix', values: matrix }];
+            const candidates: { name: string; T: number[] | null }[] = [];
+            for (const variantMatrix of matrixVariants) {
+              const mv = variantMatrix.values;
+              const inv = invert3x3(mv);
+              candidates.push(
+                { name: `${variantMatrix.label}: colorMatrix`, T: mv },
+                { name: `${variantMatrix.label}: inverse(colorMatrix)`, T: inv },
+                { name: `${variantMatrix.label}: xyzToSrgb * inverse(colorMatrix)`, T: inv ? matMul3(XYZ_D65_TO_LINEAR_SRGB, inv) : null },
+                { name: `${variantMatrix.label}: inverse(xyzToSrgb * colorMatrix)`, T: inv ? invert3x3(matMul3(XYZ_D65_TO_LINEAR_SRGB, mv)) : null },
+              );
+            }
+            const gbChanged: number[] = [];
+            for (let si = 0; si < sample.indices.length; si++) {
+              const o = sample.indices[si] * 3;
+              const nv = [baseVals[si * 3], baseVals[si * 3 + 1], baseVals[si * 3 + 2]];
+              const actual = [variant.data[o] as number, variant.data[o + 1] as number, variant.data[o + 2] as number];
+              gbChanged.push(Math.max(Math.abs(actual[1] - nv[1]), Math.abs(actual[2] - nv[2])));
+            }
+            const models = candidates.filter((c) => c.T).map((cand) => {
+              const T = cand.T!;
+              const Tinv = invert3x3(T);
+              const residuals: number[] = [];
+              const cosines: number[] = [];
+              let predictedOverOne = 0;
+              if (Tinv) {
+                for (let si = 0; si < sample.indices.length; si++) {
+                  const o = sample.indices[si] * 3;
+                  const nv = [baseVals[si * 3], baseVals[si * 3 + 1], baseVals[si * 3 + 2]];
+                  const cam = matVec3(Tinv, nv);
+                  const pred = matVec3(T, [cam[0] * 2, cam[1], cam[2]]);
+                  const actual = [variant.data[o] as number, variant.data[o + 1] as number, variant.data[o + 2] as number];
+                  let dot = 0, na = 0, np = 0;
+                  for (let c = 0; c < 3; c++) {
+                    residuals.push(Math.abs(pred[c] - actual[c]));
+                    if (pred[c] > 1) predictedOverOne++;
+                    const pd = pred[c] - nv[c];
+                    const ad = actual[c] - nv[c];
+                    dot += pd * ad;
+                    na += ad * ad;
+                    np += pd * pd;
+                  }
+                  if (na > 1e-12 && np > 1e-12) cosines.push(dot / Math.sqrt(na * np));
+                }
+              }
+              residuals.sort((a, b) => a - b);
+              cosines.sort((a, b) => a - b);
+              const p99 = residuals.length ? residuals[Math.min(residuals.length - 1, Math.floor(residuals.length * 0.99))] : Infinity;
+              const medianCosine = cosines.length ? cosines[Math.floor(cosines.length / 2)] : null;
+              return {
+                model: cand.name,
+                invertible: !!Tinv,
+                residualP99: Number.isFinite(p99) ? Number(p99.toExponential(3)) : null,
+                residualMax: residuals.length ? Number(residuals[residuals.length - 1].toExponential(3)) : null,
+                medianCosine: medianCosine === null ? null : Number(medianCosine.toFixed(5)),
+                overOneSamplesPredicted: predictedOverOne,
+              };
+            });
+            const usable = models.filter((m) => m.invertible && m.residualP99 !== null) as any[];
+            usable.sort((a, b) => a.residualP99 - b.residualP99);
+            const best = usable[0] ?? null;
+            const gbFrac = gbChanged.filter((d) => d > 0.002).length / Math.max(1, gbChanged.length);
+            const postResiduals: number[] = [];
+            for (let si = 0; si < sample.indices.length; si++) {
+              const o = sample.indices[si] * 3;
+              const nv = [baseVals[si * 3], baseVals[si * 3 + 1], baseVals[si * 3 + 2]];
+              const actual = [variant.data[o] as number, variant.data[o + 1] as number, variant.data[o + 2] as number];
+              postResiduals.push(Math.abs(2 * nv[0] - actual[0]), Math.abs(nv[1] - actual[1]), Math.abs(nv[2] - actual[2]));
+            }
+            postResiduals.sort((a, b) => a - b);
+            const postP99 = postResiduals[Math.min(postResiduals.length - 1, Math.floor(postResiduals.length * 0.99))];
+            const postResidualP99 = Number.isFinite(postP99) ? Number(postP99.toExponential(3)) : null;
+            const exactUnderBest = !!best && best.residualP99 !== null && best.residualP99 < 1e-3;
+            const postMatrixRejected = postP99 > 1e-3;
+            out.whiteBalanceOrder = {
+              tested: true,
+              hypothesis: 'if the multipliers act on camera RGB before the camera matrix, doubling red must also move green/blue through the matrix cross-terms',
+              samples: sample.indices.length,
+              prediction: 'out_variant = T * diag(2,1,1) * T^-1 * out_neutral, for each candidate interpretation T of colorMatrices.color[0]',
+              candidateModels: models,
+              bestModel: best?.model ?? null,
+              bestResidualP99: best?.residualP99 ?? null,
+              bestMedianCosine: best?.medianCosine ?? null,
+              greenBlueChangedFrac: Number(gbFrac.toFixed(4)),
+              neutralMeanRGB: neutralMean,
+              variantMeanRGB: meanLinearRGB(variant.data, 3),
+              postMatrixResidualP99: postResidualP99,
+              postMatrixRejected,
+              orderEvidence: exactUnderBest ? 'matrix-exact' : postMatrixRejected && gbFrac > 0.5 ? 'cross-term-response' : null,
+              preMatrix: postMatrixRejected && (exactUnderBest || gbFrac > 0.5),
+              postMatrixOnly: !exactUnderBest && postP99 <= 1e-3 && gbFrac === 0,
+              matrixOrientationConsistent: !!best && best.medianCosine !== null && best.medianCosine > 0.98,
+              matrixExactUnderBestModel: exactUnderBest,
+            };
+          } finally {
+            variant.free?.();
+          }
+        } catch (e: any) {
+          out.whiteBalanceOrder = { tested: true, error: `${e?.name}: ${String(e?.message ?? e)}` };
+        }
+      }
+
+      // 4. Exposure is applied after the colour conversion and must not clamp linear output.
+      if (opts.exposure) {
+        const samples = sampleLinearPixels(linear, 8000);
+        const ratios: { plus: number[][]; minus: number[][] } = { plus: [[], [], []], minus: [[], [], []] };
+        const plus = await raw.decode({ output: 'linear-rgb', exposure: 1 });
+        try {
+          for (const dir of ['plus'] as const) {
+            for (let si = 0; si < samples.indices.length; si++) {
+              const o = samples.indices[si] * 3;
+              for (let c = 0; c < 3; c++) {
+                const base = samples.values[si * 3 + c];
+                if (base > 1e-3) ratios[dir][c].push((plus.data[o + c] as number) / base);
+              }
+            }
+          }
+          out.exposure = {
+            plus1EV: {
+              stats: linearStats(linearFrameView(plus), 80000),
+              medianChannelRatio: ratios.plus.map((r) => Number(median(r).toFixed(5))),
+              clippedAtOneFrac: linearStats(linearFrameView(plus), 80000).atOneFrac,
+            },
+          };
+        } finally {
+          plus.free?.();
+        }
+        const minus = await raw.decode({ output: 'linear-rgb', exposure: -1 });
+        try {
+          for (let si = 0; si < samples.indices.length; si++) {
+            const o = samples.indices[si] * 3;
+            for (let c = 0; c < 3; c++) {
+              const base = samples.values[si * 3 + c];
+              if (base > 1e-3) ratios.minus[c].push((minus.data[o + c] as number) / base);
+            }
+          }
+          out.exposure.minus1EV = { stats: linearStats(linearFrameView(minus), 80000), medianChannelRatio: ratios.minus.map((r) => Number(median(r).toFixed(5))) };
+        } finally {
+          minus.free?.();
+        }
+        const plus2 = await raw.decode({ output: 'linear-rgb', exposure: 2 });
+        try {
+          const stats2 = linearStats(linearFrameView(plus2), 120000);
+          out.exposure.plus2EV = {
+            stats: stats2,
+            preservesOverOne: stats2.max > 1 && stats2.over1Frac > 0,
+            clippedAtOneFrac: stats2.atOneFrac,
+          };
+        } finally {
+          plus2.free?.();
+        }
+      }
+
+      // 5. Working primaries are selectable; linear output keeps primaries and unbounded values.
+      if (opts.p3) {
+        try {
+          const p3 = await raw.decode({ output: 'linear-rgb', colorSpace: 'display-p3' });
+          try {
+            out.workingSpace = {
+              p3: { colorSpace: p3.colorSpace, stats: linearStats(linearFrameView(p3), 80000), meanLinearRGB: meanLinearRGB(p3.data, 3) },
+              srgb: { colorSpace: asShot.colorSpace, stats, meanLinearRGB: out.asShot.meanLinearRGB },
+              requestedP3Honored: p3.colorSpace === 'display-p3',
+            };
+          } finally {
+            p3.free?.();
+          }
+        } catch (e: any) {
+          out.workingSpace = { error: `${e?.name}: ${String(e?.message ?? e)}` };
+        }
+      }
+
+      // 6. Decoded size/orientation contract.
+      out.resolutionCheck = {
+        decodedDimensionsMatchCrop: out.resolution.displayWidth === (raw.frameInfo?.crop?.width ?? -1) && out.resolution.displayHeight === (raw.frameInfo?.crop?.height ?? -1),
+        orientationApplied: out.resolution.orientationApplied,
+        fileOrientation: raw.frameInfo?.orientation ?? null,
+        sourceIsSensor: asShot.source === 'sensor',
+        channelsRGB: asShot.channels === 3,
+      };
+      const exposureOk = !opts.exposure || (out.exposure?.plus2EV?.preservesOverOne === true && out.exposure.plus2EV.clippedAtOneFrac < 1e-3);
+      out.ok = !!out.sdrBridge?.bridgeVsDecoder && out.sdrBridge.bridgeVsDecoder.maxCode <= 2
+        && out.resolutionCheck.orientationApplied && out.resolutionCheck.sourceIsSensor
+        && (!out.whiteBalanceOrder.tested || (out.whiteBalanceOrder.preMatrix === true && (out.whiteBalanceOrder.matrixExactUnderBestModel !== true || out.whiteBalanceOrder.matrixOrientationConsistent === true)))
+        && exposureOk;
+      return sanitize(out);
+    } finally {
+      asShot.free?.();
+    }
+  } finally {
+    try { raw.close(); } catch {}
+  }
+}
+
+async function probeFailure(path: string, opts: { openLimits?: any; decode?: Record<string, any>; policy?: 'recover' | 'strict' } = {}) {
+  const resp = await fetch(`/testdata/${path}`);
+  if (!resp.ok) return { path, ok: false, fetchStatus: resp.status };
+  const blob = await resp.blob();
+  const before = heap();
+  const out: Record<string, any> = { path, bytes: blob.size, openLimits: opts.openLimits ?? null, decodeOptions: opts.decode ?? null, policy: opts.policy ?? null };
+  let raw: any = null;
+  try {
+    raw = await FlashRaw.open(blob, opts.openLimits ? { limits: opts.openLimits } : undefined);
+    out.opened = true;
+    const frame = await raw.decode(opts.decode ?? { output: 'linear-rgb' });
+    try {
+      out.decoded = true;
+      out.frame = frameSummary(frame);
+      out.incomplete = frame.incomplete;
+      out.warnings = sanitize(frame.warnings);
+    } finally {
+      try { frame.free?.(); } catch {}
+    }
+  } catch (e: any) {
+    out.error = { name: e?.name ?? 'Error', kind: e?.kind ?? null, code: e?.code ?? null, message: String(e?.message ?? e) };
+    out.corrupt = e?.corrupt ? sanitize(e.corrupt) : null;
+  } finally {
+    try { raw?.close?.(); } catch {}
+    const after = heap();
+    out.heap = { beforeMB: before === null ? null : Number((before / 1048576).toFixed(1)), afterMB: after === null ? null : Number((after / 1048576).toFixed(1)) };
+  }
+  out.released = !raw || raw.closed !== false;
+  return sanitize(out);
+}
+
+async function repeatOpenDecode(path: string, iterations = 4) {
+  const resp = await fetch(`/testdata/${path}`);
+  const blob = await resp.blob();
+  const series: any[] = [];
+  for (let i = 0; i < iterations; i++) {
+    const gc = (globalThis as any).gc as undefined | (() => void);
+    try { gc?.(); } catch {}
+    const before = heap();
+    let raw: any = null;
+    let frame: any = null;
+    try {
+      raw = await FlashRaw.open(blob);
+      frame = await raw.decode({ output: 'linear-rgb', sampleType: 'f16' });
+      const entered = heap();
+      series.push({ i, enteredMB: entered === null ? null : Number((entered / 1048576).toFixed(1)), outputMB: Number((frame.outputBytes / 1048576).toFixed(1)) });
+    } finally {
+      try { frame?.free?.(); } catch {}
+      try { raw?.close?.(); } catch {}
+    }
+    await new Promise((r) => setTimeout(r, 120));
+    const gcAfter = (globalThis as any).gc as undefined | (() => void);
+    try { gcAfter?.(); } catch {}
+    const settled = heap();
+    series.push({ i, settledMB: settled === null ? null : Number((settled / 1048576).toFixed(1)), beforeMB: before === null ? null : Number((before / 1048576).toFixed(1)), gc: !!gcAfter });
+  }
+  const settled = series.filter((s) => s.settledMB !== undefined).map((s) => s.settledMB);
+  const entered = series.filter((s) => s.enteredMB !== undefined).map((s) => s.enteredMB);
+  return {
+    path,
+    iterations,
+    series,
+    settledGrowthMB: settled.length > 1 ? Number((settled[settled.length - 1] - settled[0]).toFixed(1)) : null,
+    enteredGrowthMB: entered.length > 1 ? Number((entered[entered.length - 1] - entered[0]).toFixed(1)) : null,
+    allClosed: true,
+    note: 'FlashRaw free()/close() called in finally on every iteration; WASM linear memory is process-wide and does not shrink, so the JS heap is the reported figure.',
+  };
+}
+
+async function runCancelProbe(path: string, cancelAfterMs = 120) {
+  const resp = await fetch(`/testdata/${path}`);
+  const blob = await resp.blob();
+  const before = heap();
+  const out: Record<string, any> = { path, cancelAfterMs, stagesCompleted: 0 };
+  let raw: any = null;
+  let frame: any = null;
+  const abort = new AbortController();
+  let timer = 0;
+  try {
+    raw = await FlashRaw.open(blob);
+    // The cancel request is issued while the first decode is in flight; the signal is checked
+    // cooperatively at the next stage boundary, then every resource is released in finally.
+    timer = window.setTimeout(() => abort.abort(), Math.max(0, cancelAfterMs));
+    frame = await raw.decode({ output: 'linear-rgb' });
+    out.stagesCompleted = 1;
+    frame.free?.();
+    frame = null;
+    await new Promise((r) => setTimeout(r, 0));
+    if (abort.signal.aborted) throw new DOMException('cancelled between decode stages', 'AbortError');
+    frame = await raw.decode({ output: 'linear-rgb', sampleType: 'f16' });
+    out.stagesCompleted = 2;
+    await new Promise((r) => setTimeout(r, 0));
+    if (abort.signal.aborted) throw new DOMException('cancelled between decode stages', 'AbortError');
+    out.completed = true;
+  } catch (e: any) {
+    out.cancelled = e?.name === 'AbortError';
+    out.error = `${e?.name}: ${String(e?.message ?? e)}`;
+  } finally {
+    window.clearTimeout(timer);
+    try { frame?.free?.(); } catch {}
+    try { raw?.close?.(); } catch {}
+    await new Promise((r) => setTimeout(r, 150));
+    const gc = (globalThis as any).gc as undefined | (() => void);
+    try { gc?.(); } catch {}
+    const after = heap();
+    out.heap = { beforeMB: before === null ? null : Number((before / 1048576).toFixed(1)), afterMB: after === null ? null : Number((after / 1048576).toFixed(1)), gc: !!gc };
+    out.released = !raw || raw.closed !== false;
+    out.note = 'FlashRaw cannot interrupt a decode in flight; cancellation is cooperative between stages and still releases the frame and the file.';
+  }
+  return out;
 }
 
 async function probeUnsupported(path: string) {
@@ -618,6 +1154,7 @@ async function capabilities() {
   const probe = document.createElement('canvas').getContext('webgl2');
   const gl = probe as WebGL2RenderingContext | null;
   const info = {
+    contractVersion: IMAGING_CONTRACT_VERSION,
     build: sanitize(build),
     userAgent: navigator.userAgent,
     platform: (navigator as any).userAgentData?.platform ?? null,
@@ -700,6 +1237,11 @@ async function runLibRaw(path: string, maxImageWidth = 1024) {
   capabilities,
   runFile,
   runLibRaw,
+  runColorContract,
+  probeFailure,
+  repeatOpenDecode,
+  runCancelProbe,
   probeUnsupported,
+  contractVersion: IMAGING_CONTRACT_VERSION,
   ready: ensureInit().then(() => true, (e) => { throw e; }),
 };

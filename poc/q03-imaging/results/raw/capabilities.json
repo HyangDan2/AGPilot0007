@@ -1,4 +1,5 @@
 {
+  "contractVersion": "q03-contract/1.0.0",
   "build": {
     "gpu": false,
     "gpuAvailable": false,
@@ -16,7 +17,7 @@
     "threadsReason": "the page is not cross-origin isolated, so SharedArrayBuffer is unavailable (serve it with COOP: same-origin and COEP: require-corp)",
     "gpuReason": null,
     "jpegxlMode": "auto",
-    "initMs": 55.90000009536743,
+    "initMs": 43.10000038146973,
     "jpegxlReason": null
   },
   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
@@ -31,6 +32,6 @@
   "webgl2MaxRenderbuffer": 8192,
   "webgl2Vendor": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
   "heapLimitMB": 4192,
-  "totalHeapUsedMB": 3.4,
+  "totalHeapUsedMB": 3.6,
   "crossOriginIsolatedRequiredForThreads": true
 }

@@ -45,9 +45,13 @@
 | raw.pixls.us 샘플 | 공개 RAW 샘플 데이터베이스 | 로컬 측정 입력. `testdata/`는 Git 제외, 저장소에 원본 미포함 |
 | Playwright Chromium | Apache-2.0 등 | 로컬 측정 브라우저. 배포물 아님 |
 
-## 6. 제품 도입 시 체크리스트
+## 6. CP1.1 고지 파일 (IMG-11)
 
-- [ ] `THIRD_PARTY_NOTICES`에 flashraw(MIT/Apache), mediabunny(MPL-2.0) 고지 추가
+- PoC용 고지 문서 `poc/q03-imaging/THIRD_PARTY_NOTICES.md`를 작성했다. FlashRaw(MIT/Apache, WASM 6종), Mediabunny(MPL-2.0, 미수정 번들 시 소스 위치 안내), LibRaw-Wasm 제품 번들 제외(LGPL-2.1/CDDL), raw.pixls.us 샘플(CC0, 저장소 재배포 안 함), ffmpeg/Playwright(도구 전용)를 명시했다. 제품 편입 시 앱의 기존 `THIRD_PARTY_NOTICES.md`(빌드에서 `.txt`로 포함)에 병합한다.
+
+## 7. 제품 도입 시 체크리스트
+
+- [ ] `THIRD_PARTY_NOTICES`에 flashraw(MIT/Apache), mediabunny(MPL-2.0) 고지 추가(PoC 초안: `poc/q03-imaging/THIRD_PARTY_NOTICES.md`)
 - [ ] libraw-wasm 제거(권장) 또는 LGPL 준수 방식 법무 검토
 - [ ] 사용하지 않는 flashraw WASM 변형(jxl/gpu/threads) 번들 제외 검토 (배포 크기 27.8MB → 대폭 감소)
 - [ ] 고지 파일을 정적 배포물과 PWA 캐시에 포함

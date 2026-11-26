@@ -1,4 +1,5 @@
 node_modules
 dist
 testdata
+results/video/out/
 results/video/out_*

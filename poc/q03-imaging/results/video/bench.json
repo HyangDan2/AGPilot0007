@@ -4,40 +4,40 @@
     "mode": "decode-draw",
     "ok": true,
     "frames": 180,
-    "wallMs": 835.4,
-    "fps": 215.47,
+    "wallMs": 673.2,
+    "fps": 267.38,
     "perFrameMs": {
       "median": 0.1,
       "p95": 0.3,
-      "max": 3.1
+      "max": 3
     },
-    "peakHeapDeltaMB": 1.6
+    "peakHeapDeltaMB": 4.7
   },
   {
     "key": "h264_aac_720p",
     "mode": "decode-grade",
     "ok": true,
     "frames": 180,
-    "wallMs": 3259.2,
-    "fps": 55.23,
+    "wallMs": 682.8,
+    "fps": 263.62,
     "perFrameMs": {
       "median": 0.1,
-      "p95": 0.3,
-      "max": 4.5
+      "p95": 0.2,
+      "max": 1.3
     },
-    "peakHeapDeltaMB": 3
+    "peakHeapDeltaMB": 2.9
   },
   {
     "key": "h264_aac_1080p",
     "mode": "decode-draw",
     "ok": true,
     "frames": 300,
-    "wallMs": 2901.6,
-    "fps": 103.39,
+    "wallMs": 1499.7,
+    "fps": 200.04,
     "perFrameMs": {
-      "median": 0.2,
-      "p95": 1,
-      "max": 66.4
+      "median": 0.1,
+      "p95": 0.4,
+      "max": 2.4
     },
     "peakHeapDeltaMB": 10.5
   },
@@ -46,97 +46,209 @@
     "mode": "decode-grade",
     "ok": true,
     "frames": 300,
-    "wallMs": 6076.4,
-    "fps": 49.37,
+    "wallMs": 2250,
+    "fps": 133.33,
     "perFrameMs": {
       "median": 0.1,
-      "p95": 0.3,
-      "max": 1.2
+      "p95": 0.2,
+      "max": 1.4
     },
-    "peakHeapDeltaMB": 10.3
+    "peakHeapDeltaMB": 2.6
   },
   {
     "key": "vp9_opus_720p",
     "mode": "decode-draw",
     "ok": true,
     "frames": 180,
-    "wallMs": 1341.9,
-    "fps": 134.14,
+    "wallMs": 357.4,
+    "fps": 503.64,
     "perFrameMs": {
-      "median": 0.2,
-      "p95": 0.5,
-      "max": 7.2
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 4.8
+    },
+    "peakHeapDeltaMB": 1.7
+  },
+  {
+    "key": "vp9_opus_720p",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 180,
+    "wallMs": 576.8,
+    "fps": 312.07,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.2
+    },
+    "peakHeapDeltaMB": 8.4
+  },
+  {
+    "key": "hevc_aac_360p",
+    "mode": "decode-draw",
+    "ok": true,
+    "frames": 90,
+    "wallMs": 62.3,
+    "fps": 1444.62,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.2
+    },
+    "peakHeapDeltaMB": 0
+  },
+  {
+    "key": "hevc_aac_360p",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 90,
+    "wallMs": 183.5,
+    "fps": 490.46,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.2
+    },
+    "peakHeapDeltaMB": 1
+  },
+  {
+    "key": "av1_opus_360p",
+    "mode": "decode-draw",
+    "ok": true,
+    "frames": 120,
+    "wallMs": 38,
+    "fps": 3157.89,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 1.7
+    },
+    "peakHeapDeltaMB": 0
+  },
+  {
+    "key": "av1_opus_360p",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 120,
+    "wallMs": 57.9,
+    "fps": 2072.54,
+    "perFrameMs": {
+      "median": 0,
+      "p95": 0.1,
+      "max": 0.7
+    },
+    "peakHeapDeltaMB": 2.5
+  },
+  {
+    "key": "h264_silent_720p",
+    "mode": "decode-draw",
+    "ok": true,
+    "frames": 180,
+    "wallMs": 379.9,
+    "fps": 473.81,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.3
+    },
+    "peakHeapDeltaMB": 1.9
+  },
+  {
+    "key": "h264_silent_720p",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 180,
+    "wallMs": 612.7,
+    "fps": 293.78,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.2
     },
     "peakHeapDeltaMB": 2.4
   },
   {
-    "key": "vp9_opus_720p",
-    "mode": "decode-grade",
+    "key": "h264_portrait",
+    "mode": "decode-draw",
     "ok": true,
-    "frames": 180,
-    "wallMs": 1086.7,
-    "fps": 165.64,
+    "frames": 120,
+    "wallMs": 275.7,
+    "fps": 435.26,
     "perFrameMs": {
       "median": 0.1,
-      "p95": 0.3,
-      "max": 1.3
+      "p95": 0.2,
+      "max": 0.4
+    },
+    "peakHeapDeltaMB": 1.5
+  },
+  {
+    "key": "h264_portrait",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 120,
+    "wallMs": 413.9,
+    "fps": 289.93,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.3
     },
     "peakHeapDeltaMB": 2
   },
   {
-    "key": "hevc_aac_360p",
+    "key": "h264_rot90",
     "mode": "decode-draw",
     "ok": true,
-    "frames": 90,
-    "wallMs": 108.5,
-    "fps": 829.49,
+    "frames": 180,
+    "wallMs": 442.8,
+    "fps": 406.5,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.3,
+      "max": 1
+    },
+    "peakHeapDeltaMB": 0
+  },
+  {
+    "key": "h264_rot90",
+    "mode": "decode-grade",
+    "ok": true,
+    "frames": 180,
+    "wallMs": 591.9,
+    "fps": 304.11,
     "perFrameMs": {
       "median": 0.1,
       "p95": 0.2,
-      "max": 5.4
+      "max": 0.2
+    },
+    "peakHeapDeltaMB": 2.5
+  },
+  {
+    "key": "h264_vfr",
+    "mode": "decode-draw",
+    "ok": true,
+    "frames": 126,
+    "wallMs": 100.5,
+    "fps": 1253.73,
+    "perFrameMs": {
+      "median": 0.1,
+      "p95": 0.2,
+      "max": 0.4
     },
     "peakHeapDeltaMB": 0.7
   },
   {
-    "key": "hevc_aac_360p",
+    "key": "h264_vfr",
     "mode": "decode-grade",
     "ok": true,
-    "frames": 90,
-    "wallMs": 1433.3,
-    "fps": 62.79,
+    "frames": 126,
+    "wallMs": 198.1,
+    "fps": 636.04,
     "perFrameMs": {
       "median": 0.1,
-      "p95": 0.3,
-      "max": 0.9
+      "p95": 0.2,
+      "max": 0.2
     },
     "peakHeapDeltaMB": 1.2
-  },
-  {
-    "key": "av1_opus_360p",
-    "mode": "decode-draw",
-    "ok": true,
-    "frames": 120,
-    "wallMs": 94.7,
-    "fps": 1267.16,
-    "perFrameMs": {
-      "median": 0.1,
-      "p95": 0.3,
-      "max": 11.8
-    },
-    "peakHeapDeltaMB": 0.7
-  },
-  {
-    "key": "av1_opus_360p",
-    "mode": "decode-grade",
-    "ok": true,
-    "frames": 120,
-    "wallMs": 75.2,
-    "fps": 1595.74,
-    "perFrameMs": {
-      "median": 0,
-      "p95": 0.2,
-      "max": 1.1
-    },
-    "peakHeapDeltaMB": 0.9
   }
 ]

@@ -1,9 +1,10 @@
 import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, open } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
+import { randomBytes } from 'node:crypto';
 
 const CHROME = '/Users/jaehyukshim/Library/Caches/ms-playwright/chromium-1254/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
@@ -37,6 +38,31 @@ function waitPort(port, timeoutMs = 60000) {
   });
 }
 
+async function makeCorruptFixtures() {
+  const dir = path.join(ROOT, 'testdata', 'corrupt');
+  await mkdir(dir, { recursive: true });
+  const cuts = [
+    { src: 'cr3/IMG_4243.CR3', dst: 'truncated.CR3', keep: 0.9 },
+    { src: 'raf/DSCF0268.RAF', dst: 'truncated.RAF', keep: 0.9 },
+    { src: 'dng/R0000357.DNG', dst: 'truncated.DNG', keep: 0.995 },
+  ];
+  for (const cut of cuts) {
+    const srcPath = path.join(ROOT, 'testdata', cut.src);
+    const dstPath = path.join(dir, cut.dst);
+    if (!existsSync(srcPath)) continue;
+    const buf = await readFile(srcPath);
+    const keep = Math.floor(buf.length * cut.keep);
+    await writeFile(dstPath, buf.subarray(0, keep));
+    console.log(`corrupt fixture ${cut.dst}: ${keep}/${buf.length} bytes`);
+  }
+  const randomPath = path.join(dir, 'random.CR3');
+  if (!existsSync(randomPath)) {
+    const fh = await open(randomPath, 'w');
+    await fh.write(randomBytes(1024 * 1024));
+    await fh.close();
+  }
+}
+
 async function saveDataURL(dir, name, dataUrl) {
   const comma = dataUrl.indexOf(',');
   const b64 = dataUrl.slice(comma + 1);
@@ -49,6 +75,7 @@ async function main() {
   if (!existsSync(CHROME)) throw new Error(`chromium not found: ${CHROME}`);
   await mkdir(OUT, { recursive: true });
   await mkdir(path.join(OUT, 'images'), { recursive: true });
+  await makeCorruptFixtures();
 
   const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
     cwd: ROOT,
@@ -63,7 +90,7 @@ async function main() {
     browser = await chromium.launch({
       executablePath: CHROME,
       headless: true,
-      args: ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'],
+      args: ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader', '--js-flags=--expose-gc'],
     });
     const page = await browser.newPage();
     page.setDefaultTimeout(600000);
@@ -84,7 +111,7 @@ async function main() {
     const only = process.env.RAW_FILES?.split(',').filter(Boolean);
     const files = only?.length ? FILES.filter((f) => only.includes(f.key)) : FILES;
     const summary = [];
-    for (const file of files) {
+    for (const file of process.env.RAW_SKIP_MAIN ? [] : files) {
       const t0 = Date.now();
       console.log(`=== ${file.key} (${file.path}) ===`);
       const result = await page.evaluate(
@@ -143,7 +170,81 @@ async function main() {
       });
       console.log(`done ${file.key} in ${result.totalWallSeconds}s`);
     }
-    await writeFile(path.join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
+    // IMG-01: colour pipeline contract (scene-linear vs SDR, camera matrix + WB order, exposure, primaries)
+    const deepKeys = new Set(['cr3_canon_r6m3', 'raf_fuji_xt4']);
+    const contracts = [];
+    for (const file of process.env.RAW_SKIP_CONTRACT ? [] : files) {
+      console.log(`=== color contract ${file.key} ===`);
+      const c = await page.evaluate(
+        ([p, o]) => window.__poc.runColorContract(p, o),
+        [file.path, { exposure: deepKeys.has(file.key), p3: deepKeys.has(file.key) }],
+      );
+      await writeFile(path.join(OUT, `color_contract_${file.key}.json`), JSON.stringify(c, null, 2));
+      contracts.push({ key: file.key, ...c });
+      const s = summary.find((x) => x.key === file.key);
+      if (s) {
+        s.colorContract = {
+          ok: c.ok,
+          bridgeMaxCode: c.sdrBridge?.bridgeVsDecoder?.maxCode ?? null,
+          bridgeMeanAbsCode: c.sdrBridge?.bridgeVsDecoder?.meanAbsCode ?? null,
+          bridgeDifferingFrac: c.sdrBridge?.bridgeVsDecoder?.differingFrac ?? null,
+          wbOrderPreMatrix: c.whiteBalanceOrder?.preMatrix ?? null,
+          wbOrderResidualP99: c.whiteBalanceOrder?.residual?.p99 ?? null,
+          wbOrderGreenBlueChangedFrac: c.whiteBalanceOrder?.greenBlueChangedFrac ?? null,
+          linearOver1Frac: c.asShot?.stats?.over1Frac ?? null,
+          linearMax: c.asShot?.stats?.max ?? null,
+          atOneFrac: c.asShot?.stats?.atOneFrac ?? null,
+          exposurePlus1ChannelRatio: c.exposure?.plus1EV?.medianChannelRatio ?? null,
+          exposureMinus1ChannelRatio: c.exposure?.minus1EV?.medianChannelRatio ?? null,
+          workingSpaceHonored: c.workingSpace?.requestedP3Honored ?? null,
+          resolution: c.resolution ?? null,
+        };
+      }
+      console.log(`contract ${file.key}: ok=${c.ok} bridgeMax=${c.sdrBridge?.bridgeVsDecoder?.maxCode} wbPreMatrix=${c.whiteBalanceOrder?.preMatrix}`);
+    }
+    if (contracts.length) await writeFile(path.join(OUT, 'color_contract.json'), JSON.stringify(contracts, null, 2));
+
+    // IMG-06: corrupt/unsupported/limit handling and resource release on failure paths.
+    const robustness = [];
+    const failureProbes = process.env.RAW_SKIP_ROBUSTNESS ? [] : [
+      { label: 'jpeg-as-raw', path: 'notraw.jpg', opts: {} },
+      { label: 'truncated-cr3-strict', path: 'corrupt/truncated.CR3', opts: { decode: { output: 'rgba8', corruptionPolicy: 'strict' } } },
+      { label: 'truncated-cr3-recover', path: 'corrupt/truncated.CR3', opts: { decode: { output: 'rgba8', corruptionPolicy: 'recover' } } },
+      { label: 'truncated-raf-strict', path: 'corrupt/truncated.RAF', opts: { decode: { output: 'rgba8', corruptionPolicy: 'strict' } } },
+      { label: 'truncated-raf-recover', path: 'corrupt/truncated.RAF', opts: { decode: { output: 'rgba8', corruptionPolicy: 'recover' } } },
+      { label: 'truncated-dng-strict', path: 'corrupt/truncated.DNG', opts: { decode: { output: 'rgba8', corruptionPolicy: 'strict' } } },
+      { label: 'truncated-dng-recover', path: 'corrupt/truncated.DNG', opts: { decode: { output: 'rgba8', corruptionPolicy: 'recover' } } },
+      { label: 'random-bytes', path: 'corrupt/random.CR3', opts: {} },
+      { label: 'max-dimension-limit', path: 'cr3/IMG_4243.CR3', opts: { openLimits: { maxDimension: 1000 } } },
+      { label: 'max-samples-limit', path: 'cr3/IMG_4243.CR3', opts: { openLimits: { maxSamples: 2_000_000 } } },
+    ];
+    for (const probe of failureProbes) {
+      console.log(`=== robustness ${probe.label} ===`);
+      const r = await page.evaluate(([p, o]) => window.__poc.probeFailure(p, o), [probe.path, probe.opts]);
+      robustness.push({ label: probe.label, ...r });
+    }
+    if (robustness.length) await writeFile(path.join(OUT, 'robustness.json'), JSON.stringify(robustness, null, 2));
+
+    // IMG-06: repeated open/decode and cooperative cancellation release resources.
+    if (!process.env.RAW_SKIP_RELEASE) {
+      // Reload first so the heap baseline is not polluted by earlier decodes.
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForFunction(() => !!window.__poc);
+      await page.evaluate(() => window.__poc.ready);
+      const release = [];
+      const releaseFiles = files.filter((f) => ['cr3_canon_r6m3', 'arw_sony_a7m3', 'raf_fuji_xt4'].includes(f.key));
+      for (const file of (releaseFiles.length ? releaseFiles : files.slice(0, 1))) {
+        console.log(`=== release ${file.key} ===`);
+        const r = await page.evaluate((p) => window.__poc.repeatOpenDecode(p, 4), file.path);
+        release.push({ key: file.key, ...r });
+      }
+      const cancel = await page.evaluate((p) => window.__poc.runCancelProbe(p, 0), 'cr3/IMG_4243.CR3');
+      release.push({ key: 'cancel_cr3', ...cancel });
+      if (release.length) await writeFile(path.join(OUT, 'release.json'), JSON.stringify(release, null, 2));
+    }
+
+    if (summary.length) await writeFile(path.join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
+    else console.log('summary.json kept (main phase skipped)');
     console.log('RAW PoC complete');
   } finally {
     await browser?.close();

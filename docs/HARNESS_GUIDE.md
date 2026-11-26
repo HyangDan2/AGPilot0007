@@ -161,7 +161,10 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 ## Q03 Imaging PoC (비배포 실험)
 
 - `poc/q03-imaging/`는 Phase 1 Q03(RAW/Video) 기술 검증용 독립 정적 PoC다. 제품 `src/`·`public/`·`dist/`·GitHub Pages 배포 경로에 포함하지 않는다.
-- 실행: `cd poc/q03-imaging && npm ci`, 입력 fixture는 `bash scripts/fetch-raw-samples.sh`(RAW)와 `bash scripts/make-fixtures.sh`(ffmpeg 합성 비디오). `testdata/`, `node_modules/`, `dist/`와 트랜스코드 출력 `results/video/out_*`는 Git 제외다.
+- 실행: `cd poc/q03-imaging && npm ci`, 입력 fixture는 `bash scripts/fetch-raw-samples.sh`(RAW, canonical URL + `scripts/raw-samples.sha256` 검증, `Q03_TESTDATA`로 대상 경로 변경)와 `bash scripts/make-fixtures.sh`(ffmpeg 합성 비디오: 5종 기본 + silent/portrait/rot90/VFR/45s). `testdata/`, `node_modules/`, `dist/`와 트랜스코드 출력 `results/video/out_*`는 Git 제외다.
 - 측정: `node scripts/run-raw.mjs`, `node scripts/run-video.mjs` 뒤 `build-summary.mjs`/`summarize-raw.mjs`/`summarize-video.mjs`로 표를 만든다. 드라이버 실행 중에는 파일을 수정하지 않는다(Vite 재시작으로 측정이 중단된다).
+- RAW 단계 스위치: `RAW_SKIP_MAIN`, `RAW_SKIP_CONTRACT`, `RAW_SKIP_ROBUSTNESS`, `RAW_SKIP_RELEASE`, `RAW_FILES=cr3_canon_r6m3`, `RAW_LIBRAW=0`. 단계별 실행은 기존 결과 JSON을 덮어쓰지 않는다.
+- Video 스위치: `VIDEO_FILES`, `VIDEO_SKIP_BENCH`, `VIDEO_SKIP_BUDGET`, `VIDEO_SKIP_CANCEL`, `VIDEO_SKIP_LONG`. 자동화에서는 `page.exposeFunction('__q03Sink')`로 Node fs 스트림을 제공해 제품 경로의 Base64 메모리 버퍼 없이 출력 파일을 만든다. 취소 검증은 앱 내부 abort(`abortAfterMs`)와 외부 `cancelRun()` 두 경로를 모두 실행한다.
+- Assertion: `node scripts/check-raw.mjs`(RAW 114개), `node scripts/run-video.mjs` 자체 assertion. 실패 시 exit 1, 결과는 `results/raw/assertions.json`, `results/video/assertions.json`.
 - 원칙: 이 PoC에서 확인하지 않은 포맷·코덱·기기(iOS Safari 포함)를 지원으로 표시하지 않는다. 내장 JPEG 프리뷰를 RAW 현상 결과로 쓰지 않는다. 수치는 headless 소프트웨어 GL·WASM 1스레드 기준이다.
 - 문서: `docs/phase1/RAW_POC.md`, `VIDEO_POC.md`, `Q03_SUPPORT_MATRIX.md`, `Q03_LICENSE_REVIEW.md`. 측정 원시값은 `poc/q03-imaging/results/`에 JSON/표로 보존한다.

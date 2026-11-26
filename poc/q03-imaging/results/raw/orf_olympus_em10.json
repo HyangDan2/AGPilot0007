@@ -4,8 +4,8 @@
   "fileBytes": 15258356,
   "detectFormat": "ORF",
   "supportsFile": true,
-  "openMs": 66.9,
-  "parseMs": 4.5,
+  "openMs": 1037.8,
+  "parseMs": 97.59999990463257,
   "format": "ORF",
   "binary": "simd",
   "capabilityFlags": {
@@ -271,16 +271,16 @@
         "output": "raw-u16"
       },
       "ok": true,
-      "wallMsMedian": 370.6,
+      "wallMsMedian": 3623.6,
       "wallMsAll": [
-        370.6
+        3623.6
       ],
-      "totalMs": 371.90000009536743,
+      "totalMs": 3680.499999523163,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 212.40000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 317.59999990463257
       },
-      "copyMs": 3,
+      "copyMs": 22.300000190734863,
       "outputMB": 30.7275390625,
       "peakHeapDeltaMB": 30.7,
       "frame": null,
@@ -367,12 +367,12 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 212.40000009536743
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 317.59999990463257
           },
-          "totalMs": 371.90000009536743,
-          "copyMs": 3,
-          "wallMs": 370.59999990463257
+          "totalMs": 3680.499999523163,
+          "copyMs": 22.300000190734863,
+          "wallMs": 3623.3999996185303
         },
         "inputBytes": 15258356,
         "outputBytes": 32220160,
@@ -402,16 +402,16 @@
         "output": "raw-f32"
       },
       "ok": true,
-      "wallMsMedian": 454.1,
+      "wallMsMedian": 3268,
       "wallMsAll": [
-        454.1
+        3268
       ],
-      "totalMs": 452.5,
+      "totalMs": 3150.0999999046326,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 156.10000038146973
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 383.09999990463257
       },
-      "copyMs": 6.099999904632568,
+      "copyMs": 136.09999990463257,
       "outputMB": 61.455078125,
       "peakHeapDeltaMB": 61.5,
       "frame": null,
@@ -498,12 +498,12 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 156.10000038146973
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 383.09999990463257
           },
-          "totalMs": 452.5,
-          "copyMs": 6.099999904632568,
-          "wallMs": 454.09999990463257
+          "totalMs": 3150.0999999046326,
+          "copyMs": 136.09999990463257,
+          "wallMs": 3267.8999996185303
         },
         "inputBytes": 15258356,
         "outputBytes": 64440320,
@@ -533,19 +533,19 @@
         "output": "normalized"
       },
       "ok": true,
-      "wallMsMedian": 231.7,
+      "wallMsMedian": 785.3,
       "wallMsAll": [
-        231.7
+        785.3
       ],
-      "totalMs": 229.7000002861023,
+      "totalMs": 477.8999996185303,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 155.59999990463257,
-        "postprocess": 69.10000038146973
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 248.30000019073486,
+        "postprocess": 101.09999990463257
       },
-      "copyMs": 6.299999713897705,
+      "copyMs": 397.1000003814697,
       "outputMB": 61.455078125,
-      "peakHeapDeltaMB": 61.5,
+      "peakHeapDeltaMB": 0,
       "frame": null,
       "summary": {
         "width": 4640,
@@ -630,13 +630,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 155.59999990463257,
-            "postprocess": 69.10000038146973
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 248.30000019073486,
+            "postprocess": 101.09999990463257
           },
-          "totalMs": 229.7000002861023,
-          "copyMs": 6.299999713897705,
-          "wallMs": 231.69999980926514
+          "totalMs": 477.8999996185303,
+          "copyMs": 397.1000003814697,
+          "wallMs": 784.7000002861023
         },
         "inputBytes": 15258356,
         "outputBytes": 64440320,
@@ -666,21 +666,21 @@
         "output": "linear-rgb"
       },
       "ok": true,
-      "wallMsMedian": 396.6,
+      "wallMsMedian": 653.7,
       "wallMsAll": [
-        387.3,
-        396.6,
-        845.7
+        513.8,
+        653.7,
+        4092.9
       ],
-      "totalMs": 361.80000019073486,
+      "totalMs": 470.80000019073486,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 172.09999990463257,
-        "postprocess": 184.30000019073486
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 209.19999980926514,
+        "postprocess": 163.10000038146973
       },
-      "copyMs": 29.700000286102295,
+      "copyMs": 279.7999997138977,
       "outputMB": 182.25,
-      "peakHeapDeltaMB": 156.7,
+      "peakHeapDeltaMB": 361.2,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -755,13 +755,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 172.09999990463257,
-            "postprocess": 184.30000019073486
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 209.19999980926514,
+            "postprocess": 163.10000038146973
           },
-          "totalMs": 361.80000019073486,
-          "copyMs": 29.700000286102295,
-          "wallMs": 387.30000019073486
+          "totalMs": 470.80000019073486,
+          "copyMs": 279.7999997138977,
+          "wallMs": 653.4000000953674
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -797,17 +797,17 @@
         "sampleType": "f16"
       },
       "ok": true,
-      "wallMsMedian": 433.6,
+      "wallMsMedian": 1077.4,
       "wallMsAll": [
-        433.6
+        1077.4
       ],
-      "totalMs": 422.2000002861023,
+      "totalMs": 1143.3000001907349,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 208.59999990463257,
-        "postprocess": 207.09999990463257
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 236.80000019073486,
+        "postprocess": 791.7000002861023
       },
-      "copyMs": 15.700000286102295,
+      "copyMs": 28.800000190734863,
       "outputMB": 91.125,
       "peakHeapDeltaMB": 91.2,
       "frame": null,
@@ -884,13 +884,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 208.59999990463257,
-            "postprocess": 207.09999990463257
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 236.80000019073486,
+            "postprocess": 791.7000002861023
           },
-          "totalMs": 422.2000002861023,
-          "copyMs": 15.700000286102295,
-          "wallMs": 433.6000003814697
+          "totalMs": 1143.3000001907349,
+          "copyMs": 28.800000190734863,
+          "wallMs": 1077.3000001907349
         },
         "inputBytes": 15258356,
         "outputBytes": 95551488,
@@ -910,19 +910,19 @@
         "output": "linear-rgb16"
       },
       "ok": true,
-      "wallMsMedian": 455,
+      "wallMsMedian": 465.3,
       "wallMsAll": [
-        455
+        465.3
       ],
-      "totalMs": 432.30000019073486,
+      "totalMs": 519.4000000953674,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 196.10000038146973,
-        "postprocess": 230.69999980926514
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 190.59999990463257,
+        "postprocess": 230.40000009536743
       },
-      "copyMs": 26.299999713897705,
+      "copyMs": 43.10000038146973,
       "outputMB": 91.125,
-      "peakHeapDeltaMB": 55.3,
+      "peakHeapDeltaMB": 67.4,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -997,13 +997,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 196.10000038146973,
-            "postprocess": 230.69999980926514
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 190.59999990463257,
+            "postprocess": 230.40000009536743
           },
-          "totalMs": 432.30000019073486,
-          "copyMs": 26.299999713897705,
-          "wallMs": 455
+          "totalMs": 519.4000000953674,
+          "copyMs": 43.10000038146973,
+          "wallMs": 465.2000002861023
         },
         "inputBytes": 15258356,
         "outputBytes": 95551488,
@@ -1033,21 +1033,21 @@
         "output": "rgba8"
       },
       "ok": true,
-      "wallMsMedian": 486.2,
+      "wallMsMedian": 532.5,
       "wallMsAll": [
-        481.9,
-        486.2,
-        654.3
+        490.1,
+        532.5,
+        552.8
       ],
-      "totalMs": 475.7999997138977,
+      "totalMs": 572.8000001907349,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 157.19999980926514,
-        "postprocess": 313.40000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 158.90000009536743,
+        "postprocess": 315.40000009536743
       },
-      "copyMs": 14.800000190734863,
+      "copyMs": 14.599999904632568,
       "outputMB": 60.75,
-      "peakHeapDeltaMB": 94.3,
+      "peakHeapDeltaMB": 155.1,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -1122,13 +1122,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 157.19999980926514,
-            "postprocess": 313.40000009536743
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 158.90000009536743,
+            "postprocess": 315.40000009536743
           },
-          "totalMs": 475.7999997138977,
-          "copyMs": 14.800000190734863,
-          "wallMs": 486.19999980926514
+          "totalMs": 572.8000001907349,
+          "copyMs": 14.599999904632568,
+          "wallMs": 490.09999990463257
         },
         "inputBytes": 15258356,
         "outputBytes": 63700992,
@@ -1158,17 +1158,17 @@
         "output": "rgb16"
       },
       "ok": true,
-      "wallMsMedian": 597.1,
+      "wallMsMedian": 934.7,
       "wallMsAll": [
-        597.1
+        934.7
       ],
-      "totalMs": 583.2999997138977,
+      "totalMs": 1016.4999995231628,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 158.59999990463257,
-        "postprocess": 418.2999997138977
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 163.59999990463257,
+        "postprocess": 753.6999998092651
       },
-      "copyMs": 18.09999990463257,
+      "copyMs": 15.400000095367432,
       "outputMB": 91.125,
       "peakHeapDeltaMB": 30.4,
       "frame": null,
@@ -1245,13 +1245,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 158.59999990463257,
-            "postprocess": 418.2999997138977
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 163.59999990463257,
+            "postprocess": 753.6999998092651
           },
-          "totalMs": 583.2999997138977,
-          "copyMs": 18.09999990463257,
-          "wallMs": 597.0999999046326
+          "totalMs": 1016.4999995231628,
+          "copyMs": 15.400000095367432,
+          "wallMs": 934.7000002861023
         },
         "inputBytes": 15258356,
         "outputBytes": 95551488,
@@ -1284,19 +1284,19 @@
         "demosaic": "bilinear"
       },
       "ok": true,
-      "wallMsMedian": 630.2,
+      "wallMsMedian": 3827.2,
       "wallMsAll": [
-        630.2
+        3827.2
       ],
-      "totalMs": 530.2000002861023,
+      "totalMs": 3801.2999997138977,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 159.30000019073486,
-        "postprocess": 365.90000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 466,
+        "postprocess": 3102.3999996185303
       },
-      "copyMs": 104,
+      "copyMs": 102.89999961853027,
       "outputMB": 182.25,
-      "peakHeapDeltaMB": 151.1,
+      "peakHeapDeltaMB": 150.7,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -1371,13 +1371,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 159.30000019073486,
-            "postprocess": 365.90000009536743
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 466,
+            "postprocess": 3102.3999996185303
           },
-          "totalMs": 530.2000002861023,
-          "copyMs": 104,
-          "wallMs": 630.1999998092651
+          "totalMs": 3801.2999997138977,
+          "copyMs": 102.89999961853027,
+          "wallMs": 3826.9000000953674
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -1422,17 +1422,17 @@
         "demosaic": "half-size"
       },
       "ok": true,
-      "wallMsMedian": 340.8,
+      "wallMsMedian": 900.3,
       "wallMsAll": [
-        340.8
+        900.3
       ],
-      "totalMs": 332.2999997138977,
+      "totalMs": 877.4000000953674,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 179.39999961853027,
-        "postprocess": 136.2999997138977
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 307.69999980926514,
+        "postprocess": 141.7000002861023
       },
-      "copyMs": 11.299999713897705,
+      "copyMs": 99.60000038146973,
       "outputMB": 45.5625,
       "peakHeapDeltaMB": 45.6,
       "frame": null,
@@ -1509,13 +1509,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 179.39999961853027,
-            "postprocess": 136.2999997138977
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 307.69999980926514,
+            "postprocess": 141.7000002861023
           },
-          "totalMs": 332.2999997138977,
-          "copyMs": 11.299999713897705,
-          "wallMs": 340.69999980926514
+          "totalMs": 877.4000000953674,
+          "copyMs": 99.60000038146973,
+          "wallMs": 900.3000001907349
         },
         "inputBytes": 15258356,
         "outputBytes": 47775744,
@@ -1548,19 +1548,19 @@
         "demosaic": "edge-aware"
       },
       "ok": true,
-      "wallMsMedian": 2271,
+      "wallMsMedian": 4209.7,
       "wallMsAll": [
-        2271
+        4209.7
       ],
-      "totalMs": 2240.2999997138977,
+      "totalMs": 3948.9000000953674,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 178.59999990463257,
-        "postprocess": 2055.5
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 195,
+        "postprocess": 3649.699999809265
       },
-      "copyMs": 34.69999980926514,
+      "copyMs": 326.59999990463257,
       "outputMB": 182.25,
-      "peakHeapDeltaMB": 135.6,
+      "peakHeapDeltaMB": 135.4,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -1635,13 +1635,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 178.59999990463257,
-            "postprocess": 2055.5
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 195,
+            "postprocess": 3649.699999809265
           },
-          "totalMs": 2240.2999997138977,
-          "copyMs": 34.69999980926514,
-          "wallMs": 2270.8999996185303
+          "totalMs": 3948.9000000953674,
+          "copyMs": 326.59999990463257,
+          "wallMs": 4209.699999809265
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -1686,17 +1686,17 @@
         "demosaic": "ahd"
       },
       "ok": true,
-      "wallMsMedian": 1260.5,
+      "wallMsMedian": 12295.7,
       "wallMsAll": [
-        1260.5
+        12295.7
       ],
-      "totalMs": 1191,
+      "totalMs": 10103.199999809265,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 200.09999990463257,
-        "postprocess": 970.9000000953674
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 373.19999980926514,
+        "postprocess": 9194.599999904633
       },
-      "copyMs": 72.60000038146973,
+      "copyMs": 2093.7000002861023,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -1773,13 +1773,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 200.09999990463257,
-            "postprocess": 970.9000000953674
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 373.19999980926514,
+            "postprocess": 9194.599999904633
           },
-          "totalMs": 1191,
-          "copyMs": 72.60000038146973,
-          "wallMs": 1260.2000002861023
+          "totalMs": 10103.199999809265,
+          "copyMs": 2093.7000002861023,
+          "wallMs": 12290.700000286102
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -1824,17 +1824,17 @@
         "demosaic": "ppg"
       },
       "ok": true,
-      "wallMsMedian": 993.7,
+      "wallMsMedian": 10537.2,
       "wallMsAll": [
-        993.7
+        10537.2
       ],
-      "totalMs": 886.8000001907349,
+      "totalMs": 10217.39999961853,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 164.90000009536743,
-        "postprocess": 708.4000000953674
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 378.40000009536743,
+        "postprocess": 9369.599999904633
       },
-      "copyMs": 108.69999980926514,
+      "copyMs": 314,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -1911,13 +1911,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 164.90000009536743,
-            "postprocess": 708.4000000953674
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 378.40000009536743,
+            "postprocess": 9369.599999904633
           },
-          "totalMs": 886.8000001907349,
-          "copyMs": 108.69999980926514,
-          "wallMs": 993.6999998092651
+          "totalMs": 10217.39999961853,
+          "copyMs": 314,
+          "wallMs": 10535.199999809265
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -1962,19 +1962,19 @@
         "demosaic": "rcd"
       },
       "ok": true,
-      "wallMsMedian": 621.9,
+      "wallMsMedian": 6392.2,
       "wallMsAll": [
-        621.9
+        6392.2
       ],
-      "totalMs": 604.9000000953674,
+      "totalMs": 5752.5,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 163.5,
-        "postprocess": 426.40000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 488.09999990463257,
+        "postprocess": 4551.300000190735
       },
-      "copyMs": 20.300000190734863,
+      "copyMs": 627.0999999046326,
       "outputMB": 182.25,
-      "peakHeapDeltaMB": 150.6,
+      "peakHeapDeltaMB": 150.3,
       "frame": null,
       "summary": {
         "width": 4608,
@@ -2049,13 +2049,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 163.5,
-            "postprocess": 426.40000009536743
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 488.09999990463257,
+            "postprocess": 4551.300000190735
           },
-          "totalMs": 604.9000000953674,
-          "copyMs": 20.300000190734863,
-          "wallMs": 621.6999998092651
+          "totalMs": 5752.5,
+          "copyMs": 627.0999999046326,
+          "wallMs": 6390.400000095367
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -2102,17 +2102,17 @@
         "highlights": "neutral"
       },
       "ok": true,
-      "wallMsMedian": 531,
+      "wallMsMedian": 3867.5,
       "wallMsAll": [
-        531
+        3867.5
       ],
-      "totalMs": 350.40000009536743,
+      "totalMs": 3756,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 159.80000019073486,
-        "postprocess": 185.40000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 482,
+        "postprocess": 2747.6000003814697
       },
-      "copyMs": 184.80000019073486,
+      "copyMs": 131.2000002861023,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -2189,13 +2189,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 159.80000019073486,
-            "postprocess": 185.40000009536743
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 482,
+            "postprocess": 2747.6000003814697
           },
-          "totalMs": 350.40000009536743,
-          "copyMs": 184.80000019073486,
-          "wallMs": 531
+          "totalMs": 3756,
+          "copyMs": 131.2000002861023,
+          "wallMs": 3863.0999999046326
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -2240,17 +2240,17 @@
         "highlights": "blend"
       },
       "ok": true,
-      "wallMsMedian": 591.8,
+      "wallMsMedian": 5670.7,
       "wallMsAll": [
-        591.8
+        5670.7
       ],
-      "totalMs": 510.90000009536743,
+      "totalMs": 4248.799999713898,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 184,
-        "postprocess": 308.2000002861023
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 356.5,
+        "postprocess": 2776.199999809265
       },
-      "copyMs": 83.90000009536743,
+      "copyMs": 1215.3000001907349,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -2327,13 +2327,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 184,
-            "postprocess": 308.2000002861023
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 356.5,
+            "postprocess": 2776.199999809265
           },
-          "totalMs": 510.90000009536743,
-          "copyMs": 83.90000009536743,
-          "wallMs": 591.7000002861023
+          "totalMs": 4248.799999713898,
+          "copyMs": 1215.3000001907349,
+          "wallMs": 5663.700000286102
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -2378,166 +2378,17 @@
         "highlights": "reconstruct"
       },
       "ok": true,
-      "wallMsMedian": 714.9,
+      "wallMsMedian": 4582.7,
       "wallMsAll": [
-        714.9
+        4582.7
       ],
-      "totalMs": 667.1000003814697,
+      "totalMs": 4383.099999904633,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 182.30000019073486,
-        "postprocess": 372.40000009536743
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 355.7999997138977,
+        "postprocess": 2183.800000190735
       },
-      "copyMs": 50.90000009536743,
-      "outputMB": 182.25,
-      "peakHeapDeltaMB": 151.5,
-      "frame": null,
-      "summary": {
-        "width": 4608,
-        "height": 3456,
-        "channels": 3,
-        "output": "linear-rgb",
-        "dataType": "f32",
-        "bitsPerSample": 12,
-        "cfa": null,
-        "layout": "linear",
-        "activeArea": {
-          "height": 3456,
-          "width": 4608,
-          "x": 0,
-          "y": 0
-        },
-        "crop": {
-          "height": 3456,
-          "width": 4608,
-          "x": 0,
-          "y": 0
-        },
-        "origin": {
-          "x": 0,
-          "y": 0
-        },
-        "blackLevel": {
-          "cols": 1,
-          "mean": 254,
-          "rows": 1,
-          "samples": 1,
-          "values": [
-            254
-          ]
-        },
-        "whiteLevel": [
-          4095
-        ],
-        "whiteBalance": [
-          1.984375,
-          1,
-          1.7265625,
-          1
-        ],
-        "whiteBalanceApplied": false,
-        "colorMatrices": {
-          "analogBalance": [],
-          "calibration": [],
-          "color": [
-            {
-              "illuminant": 21,
-              "rows": 3,
-              "temperature": 6500,
-              "values": "[depth-limit]"
-            }
-          ],
-          "forward": [],
-          "source": "camera-db"
-        },
-        "orientation": 1,
-        "backend": {
-          "decode": "CPU WASM SIMD128 x1 thread",
-          "gpuAdapter": null,
-          "kind": "cpu",
-          "postprocess": "CPU x1",
-          "requested": "auto",
-          "simd": "WASM SIMD128",
-          "threads": 1,
-          "fallbackReason": null,
-          "binary": "simd",
-          "jpegxl": false
-        },
-        "timings": {
-          "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 182.30000019073486,
-            "postprocess": 372.40000009536743
-          },
-          "totalMs": 667.1000003814697,
-          "copyMs": 50.90000009536743,
-          "wallMs": 714.7999997138977
-        },
-        "inputBytes": 15258356,
-        "outputBytes": 191102976,
-        "opcodes": [],
-        "incomplete": false,
-        "warnings": [],
-        "source": "sensor",
-        "colorSpace": "srgb",
-        "hasIccProfile": true
-      },
-      "linearStats": {
-        "count": 408340,
-        "min": 0.00287788501009345,
-        "max": 0.610008696715037,
-        "mean": 0.0978799733787285,
-        "p01": 0.009866425767540932,
-        "p50": 0.09905614703893661,
-        "p99": 0.16353073219458264,
-        "clippedGreatherThan1": 0,
-        "zeroFrac": 0
-      },
-      "dataRef": null,
-      "diffVsClip": {
-        "samples": 47775744,
-        "mae": 0,
-        "rmse": 0,
-        "maxAbs": 0,
-        "over001": 0,
-        "over005": 0,
-        "display8": {
-          "differingFrac": 0,
-          "meanAbsCode": 0,
-          "p99Code": 0,
-          "maxCode": 0
-        }
-      }
-    },
-    "clip": {
-      "label": "clip",
-      "ok": true,
-      "wallMsMedian": 396.6,
-      "options": {
-        "output": "linear-rgb"
-      },
-      "note": "default clip = linear_rgb_f32 baseline"
-    }
-  },
-  "whiteBalance": {
-    "daylight": {
-      "label": "daylight",
-      "options": {
-        "output": "linear-rgb",
-        "whiteBalance": "daylight"
-      },
-      "ok": true,
-      "wallMsMedian": 536.8,
-      "wallMsAll": [
-        536.8
-      ],
-      "totalMs": 496.19999980926514,
-      "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 208.59999990463257,
-        "postprocess": 274.2999997138977
-      },
-      "copyMs": 44.59999990463257,
+      "copyMs": 157,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -2614,13 +2465,162 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 208.59999990463257,
-            "postprocess": 274.2999997138977
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 355.7999997138977,
+            "postprocess": 2183.800000190735
           },
-          "totalMs": 496.19999980926514,
-          "copyMs": 44.59999990463257,
-          "wallMs": 536.8000001907349
+          "totalMs": 4383.099999904633,
+          "copyMs": 157,
+          "wallMs": 4581.199999809265
+        },
+        "inputBytes": 15258356,
+        "outputBytes": 191102976,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 408340,
+        "min": 0.00287788501009345,
+        "max": 0.610008696715037,
+        "mean": 0.0978799733787285,
+        "p01": 0.009866425767540932,
+        "p50": 0.09905614703893661,
+        "p99": 0.16353073219458264,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsClip": {
+        "samples": 47775744,
+        "mae": 0,
+        "rmse": 0,
+        "maxAbs": 0,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "p99Code": 0,
+          "maxCode": 0
+        }
+      }
+    },
+    "clip": {
+      "label": "clip",
+      "ok": true,
+      "wallMsMedian": 653.7,
+      "options": {
+        "output": "linear-rgb"
+      },
+      "note": "default clip = linear_rgb_f32 baseline"
+    }
+  },
+  "whiteBalance": {
+    "daylight": {
+      "label": "daylight",
+      "options": {
+        "output": "linear-rgb",
+        "whiteBalance": "daylight"
+      },
+      "ok": true,
+      "wallMsMedian": 9081,
+      "wallMsAll": [
+        9081
+      ],
+      "totalMs": 7312.599999904633,
+      "stages": {
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 1546.6999998092651,
+        "postprocess": 4180.099999904633
+      },
+      "copyMs": 1627.0999999046326,
+      "outputMB": 182.25,
+      "peakHeapDeltaMB": 182.3,
+      "frame": null,
+      "summary": {
+        "width": 4608,
+        "height": 3456,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 12,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 3456,
+          "width": 4608,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 3456,
+          "width": 4608,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 1,
+          "mean": 254,
+          "rows": 1,
+          "samples": 1,
+          "values": [
+            254
+          ]
+        },
+        "whiteLevel": [
+          4095
+        ],
+        "whiteBalance": [
+          1.984375,
+          1,
+          1.7265625,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 1546.6999998092651,
+            "postprocess": 4180.099999904633
+          },
+          "totalMs": 7312.599999904633,
+          "copyMs": 1627.0999999046326,
+          "wallMs": 9076
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -2670,17 +2670,17 @@
         "whiteBalance": "auto"
       },
       "ok": true,
-      "wallMsMedian": 577.5,
+      "wallMsMedian": 9241.6,
       "wallMsAll": [
-        577.5
+        9241.6
       ],
-      "totalMs": 533.5999999046326,
+      "totalMs": 8555,
       "stages": {
-        "containerParse": 4.5,
-        "entropyDecode": 196.80000019073486,
-        "postprocess": 247
+        "containerParse": 97.59999990463257,
+        "entropyDecode": 1380.5999999046326,
+        "postprocess": 5276.800000190735
       },
-      "copyMs": 47.59999990463257,
+      "copyMs": 608.5,
       "outputMB": 182.25,
       "peakHeapDeltaMB": 182.3,
       "frame": null,
@@ -2757,13 +2757,13 @@
         },
         "timings": {
           "stages": {
-            "containerParse": 4.5,
-            "entropyDecode": 196.80000019073486,
-            "postprocess": 247
+            "containerParse": 97.59999990463257,
+            "entropyDecode": 1380.5999999046326,
+            "postprocess": 5276.800000190735
           },
-          "totalMs": 533.5999999046326,
-          "copyMs": 47.59999990463257,
-          "wallMs": 577.3000001907349
+          "totalMs": 8555,
+          "copyMs": 608.5,
+          "wallMs": 9229.60000038147
         },
         "inputBytes": 15258356,
         "outputBytes": 191102976,
@@ -2809,7 +2809,7 @@
     "as-shot": {
       "label": "as-shot",
       "ok": true,
-      "wallMsMedian": 396.6,
+      "wallMsMedian": 653.7,
       "meanLinearRGB": [
         0.09658,
         0.09437,
@@ -2819,15 +2819,88 @@
   },
   "region": {
     "ok": true,
-    "region": {
-      "x": 1720,
-      "y": 1336,
-      "w": 1200,
-      "h": 800
+    "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+    "crop": {
+      "height": 3456,
+      "width": 4608,
+      "x": 8,
+      "y": 8
     },
-    "wallMs": 723.7,
-    "totalMs": 665.5,
-    "outputMB": 3.66
+    "decode": [
+      {
+        "label": "centre",
+        "ok": true,
+        "region": {
+          "x": 1712,
+          "y": 1336,
+          "w": 1200,
+          "h": 800
+        },
+        "wallMs": 1060.4,
+        "totalMs": 1080.7999997138977,
+        "outputMB": 3.66,
+        "vsFull": {
+          "width": 1200,
+          "height": 800,
+          "offsetInFull": {
+            "x": 1704,
+            "y": 1328
+          },
+          "all": {
+            "samples": 3840000,
+            "differingFrac": 0.002214583333333333,
+            "meanAbsCode": 4.045625587958607,
+            "p99Code": 26,
+            "maxCode": 84
+          },
+          "interior8pxExcluded": {
+            "samples": 3713024,
+            "differingFrac": 0,
+            "meanAbsCode": 0,
+            "p99Code": 0,
+            "maxCode": 0
+          },
+          "exactMatchInside": true
+        }
+      },
+      {
+        "label": "corner",
+        "ok": true,
+        "region": {
+          "x": 165,
+          "y": 219,
+          "w": 1200,
+          "h": 800
+        },
+        "wallMs": 888.7,
+        "totalMs": 824.8000001907349,
+        "outputMB": 3.66,
+        "vsFull": {
+          "width": 1200,
+          "height": 800,
+          "offsetInFull": {
+            "x": 157,
+            "y": 211
+          },
+          "all": {
+            "samples": 3840000,
+            "differingFrac": 0.0017583333333333333,
+            "meanAbsCode": 3.5112559241706163,
+            "p99Code": 26,
+            "maxCode": 98
+          },
+          "interior8pxExcluded": {
+            "samples": 3713024,
+            "differingFrac": 0,
+            "meanAbsCode": 0,
+            "p99Code": 0,
+            "maxCode": 0
+          },
+          "exactMatchInside": true
+        }
+      }
+    ],
+    "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
   },
   "precision": {
     "f16VsF32": {
@@ -2863,9 +2936,238 @@
     "linearRgb16Bytes": 95551488,
     "displayReadyRgb16Bytes": 95551488
   },
+  "precisionAfterAdjustments": {
+    "exposure+1": {
+      "full": {
+        "samples": 47775744,
+        "mae": 0.00003402725607320847,
+        "rmse": 0.00004503147321759684,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.00878225988484868,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      },
+      "highlightBand": {
+        "samples": 29546,
+        "mae": 0.00015484078521292122,
+        "rmse": 0.00018922027337748616,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.012455154674067557,
+          "meanAbsCode": 1
+        }
+      },
+      "overOneBand": {
+        "samples": 8052,
+        "mae": 0.0002426332315282921,
+        "rmse": 0.0002799453210124537,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0
+        }
+      },
+      "wallMs": {
+        "f32": 6077.8,
+        "f16": 1053.4
+      },
+      "outputMB": {
+        "f32": 182.3,
+        "f16": 91.1
+      }
+    },
+    "exposure+2": {
+      "full": {
+        "samples": 47775744,
+        "mae": 0.00006805451206536244,
+        "rmse": 0.00009006294643516687,
+        "maxAbs": 0.0009765625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.013218318483957048,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      },
+      "highlightBand": {
+        "samples": 2072662,
+        "mae": 0.00012906949266637592,
+        "rmse": 0.0001539970559114888,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0.014477034846974567,
+          "meanAbsCode": 1
+        }
+      },
+      "overOneBand": {
+        "samples": 101252,
+        "mae": 0.0002624271383441121,
+        "rmse": 0.0003125118747040463,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0
+        }
+      },
+      "wallMs": {
+        "f32": 4047.5,
+        "f16": 1495.6
+      },
+      "outputMB": {
+        "f32": 182.3,
+        "f16": 91.1
+      }
+    },
+    "whiteBalance-daylight": {
+      "full": {
+        "samples": 47775744,
+        "mae": 0.000019179999328418845,
+        "rmse": 0.00002550469737791211,
+        "maxAbs": 0.0004839897155761719,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.007051821108217593,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      },
+      "highlightBand": {
+        "samples": 888,
+        "mae": 0.0001256849180470716,
+        "rmse": 0.00014748268620009617,
+        "maxAbs": 0.0004839897155761719,
+        "display8": {
+          "differingFrac": 0.013513513513513514,
+          "meanAbsCode": 1
+        }
+      },
+      "overOneBand": {
+        "samples": 25,
+        "mae": 0.00027088165283203127,
+        "rmse": 0.0003005784792718461,
+        "maxAbs": 0.0004839897155761719,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0
+        }
+      },
+      "wallMs": {
+        "f32": 2553,
+        "f16": 504.4
+      },
+      "outputMB": {
+        "f32": 182.3,
+        "f16": 91.1
+      }
+    },
+    "highlights-blend": {
+      "full": {
+        "samples": 47775744,
+        "mae": 0.000017013628106878762,
+        "rmse": 0.000022515736608844928,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006465728717903378,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      },
+      "highlightBand": {
+        "samples": 36,
+        "mae": 0.000110626220703125,
+        "rmse": 0.00012571771679545794,
+        "maxAbs": 0.00023996829986572266,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0
+        }
+      },
+      "overOneBand": {
+        "samples": 1,
+        "mae": 0.0001461505889892578,
+        "rmse": 0.0001461505889892578,
+        "maxAbs": 0.0001461505889892578,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0
+        }
+      },
+      "wallMs": {
+        "f32": 3105,
+        "f16": 648
+      },
+      "outputMB": {
+        "f32": 182.3,
+        "f16": 91.1
+      }
+    }
+  },
   "notes": [
     "All decode outputs released (frames dropped, raw.close() called)."
   ],
+  "colorContract": {
+    "version": "q03-contract/1.0.0",
+    "accepted": true,
+    "resolution": {
+      "fileWidth": 4640,
+      "fileHeight": 3472,
+      "activeArea": {
+        "height": 3472,
+        "width": 4640,
+        "x": 0,
+        "y": 0
+      },
+      "crop": {
+        "height": 3456,
+        "width": 4608,
+        "x": 8,
+        "y": 8
+      },
+      "displayWidth": 4608,
+      "displayHeight": 3456,
+      "orientationApplied": true,
+      "sensorBufferSize": null
+    },
+    "buffer": {
+      "channels": 3,
+      "dataType": "f32",
+      "transfer": "linear",
+      "primaries": "srgb",
+      "source": "sensor",
+      "orientation": 1,
+      "bytes": 191102976
+    },
+    "linearStats": {
+      "samples": 100159,
+      "max": 0.69718,
+      "p999": 0.40142,
+      "mean": 0.09649,
+      "over1Frac": 0,
+      "over2Frac": 0,
+      "atOneFrac": 0,
+      "zeroFrac": 0,
+      "nonFinite": 0,
+      "halfSaturated": 0
+    },
+    "noEarlyClip": {
+      "over1ValuesPreserved": false,
+      "atOneFrac": 0,
+      "note": "atOneFrac counts samples sitting exactly at 1.0; a linear buffer with >1 values cannot have been clipped to 8-bit"
+    },
+    "embeddedPreviewSeparate": true
+  },
   "previewDescriptor": {
     "mimeType": "image/jpeg",
     "width": 3200,
@@ -2891,8 +3193,8 @@
     }
   },
   "libraw": {
-    "openMs": 147.9,
-    "imageMs": 1603.6,
+    "openMs": 3267,
+    "imageMs": 4166.2,
     "ok": true,
     "width": 4640,
     "height": 3472,
@@ -2908,5 +3210,5 @@
       "fileBytes": 183262
     }
   },
-  "totalWallSeconds": 50.1
+  "totalWallSeconds": 393.8
 }

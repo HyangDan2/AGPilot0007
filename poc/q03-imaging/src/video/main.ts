@@ -8,12 +8,14 @@ import {
   Mp4OutputFormat,
   WebMOutputFormat,
   BufferTarget,
+  StreamTarget,
   CanvasSource,
   EncodedAudioPacketSource,
   Quality,
   getEncodableVideoCodecs,
   getEncodableAudioCodecs,
 } from 'mediabunny';
+import { estimateEncodedBytes } from '../shared/imagingContract';
 
 const logEl = () => document.getElementById('log') as HTMLDivElement;
 function log(msg: string) {
@@ -22,6 +24,10 @@ function log(msg: string) {
 }
 
 const heap = () => (performance as any).memory?.usedJSHeapSize ?? null;
+const heapMB = () => {
+  const h = heap();
+  return h === null ? null : Number((h / 1048576).toFixed(1));
+};
 
 function toDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,6 +52,20 @@ async function downscaleToJPEG(source: CanvasImageSource, srcW: number, srcH: nu
   return { url, width: w, height: h, sourceWidth: srcW, sourceHeight: srcH };
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + CHUNK, bytes.length))) as any);
+  }
+  return btoa(bin);
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ---------------------------------------------------------------- WebGL2 LUT pass
 
 const LUT_SIZE = 33;
@@ -58,7 +78,6 @@ function buildWarmFilmLut(size: number): Uint8Array {
       for (let r = 0; r < size; r++) {
         const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
         const enc = (v: number) => (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
-        // Gentle filmic S-curve + warm shift, applied in linear light
         const curve = (x: number) => {
           const y = x + 0.08 * Math.sin(Math.PI * Math.min(1, Math.max(0, x))) * (0.5 - Math.abs(x - 0.5));
           return Math.min(1, Math.max(0, y));
@@ -231,6 +250,8 @@ async function capabilities() {
       VideoFrame: has('VideoFrame'),
       AudioData: has('AudioData'),
       ImageDecoder: has('ImageDecoder'),
+      showSaveFilePicker: has('showSaveFilePicker'),
+      FileSystemWritableFileStream: has('FileSystemWritableFileStream'),
     },
     userAgent: navigator.userAgent,
     platform: (navigator as any).userAgentData?.platform ?? null,
@@ -253,6 +274,7 @@ async function capabilities() {
     webgl2: false,
     webgl2MaxTexture: null as any,
     webgl2Renderer: null as any,
+    outputTargets: null as any,
   };
   for (const cfg of VIDEO_PROBES) out.probes.videoDecode.push(await probeSupport('video-decode', cfg));
   for (const cfg of AUDIO_PROBES) out.probes.audioDecode.push(await probeSupport('audio-decode', cfg));
@@ -285,10 +307,164 @@ async function capabilities() {
     out.webgl2Renderer = ext ? gl.getParameter((ext as any).UNMASKED_RENDERER_WEBGL) : null;
     gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
+  out.outputTargets = detectOutputTargets();
   return out;
 }
 
-// ---------------------------------------------------------------- analysis
+// ---------------------------------------------------------------- output target detection (IMG-02)
+
+function detectOutputTargets() {
+  const picker = typeof (globalThis as any).showSaveFilePicker === 'function';
+  const harness = typeof (globalThis as any).__q03Sink === 'function';
+  const ua = (navigator as any).userActivation;
+  const userActivation = ua ? { isActive: !!ua.isActive, hasBeenActive: !!ua.hasBeenActive } : null;
+  const canOpenPicker = picker && isSecureContext && userActivation?.isActive !== false;
+  return {
+    showSaveFilePicker: picker,
+    fileSystemWritableFileStream: typeof (globalThis as any).FileSystemWritableFileStream === 'function',
+    harnessSink: harness,
+    secureContext: isSecureContext,
+    userActivation,
+    requiresUserGesture: true,
+    canOpenPickerNow: canOpenPicker,
+    defaultMode: harness ? 'harness-stream' : canOpenPicker ? 'file-picker' : 'buffer',
+    note: 'the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead',
+  };
+}
+
+class MemoryBudgetError extends Error {
+  code = 'MemoryBudgetExceeded';
+  constructor(message: string, readonly detail: Record<string, any>) {
+    super(message);
+    this.name = 'MemoryBudgetError';
+  }
+}
+
+class OutputTargetError extends Error {
+  code = 'OutputTargetUnavailable';
+  constructor(message: string, readonly detail: Record<string, any>) {
+    super(message);
+    this.name = 'OutputTargetError';
+  }
+}
+
+function memoryBudgetMB(requested?: number) {
+  const limit = (performance as any).memory?.jsHeapSizeLimit as number | undefined;
+  const fallback = limit ? Math.min(512, Math.floor((limit / 1048576) * 0.3)) : 256;
+  const budget = requested && requested > 0 ? requested : fallback;
+  return { budgetMB: budget, heapLimitMB: limit ? Math.round(limit / 1048576) : null };
+}
+
+// ---------------------------------------------------------------- codec / profile selection (IMG-04)
+
+interface EncoderChoice {
+  container: 'mp4' | 'webm';
+  codec: 'avc' | 'hevc' | 'vp9' | 'av1' | 'vp8';
+  codecString: string;
+  width: number;
+  height: number;
+  bitrate: number;
+  framerate: number;
+  level: string;
+  profile: string | null;
+  bpp: number;
+  candidates: any[];
+}
+
+const H264_LEVELS = [
+  { name: '3.0', hex: '1e', maxFS: 1620, maxMBPS: 40500, maxBR: 10_000_000 },
+  { name: '3.1', hex: '1f', maxFS: 3600, maxMBPS: 108000, maxBR: 14_000_000 },
+  { name: '3.2', hex: '20', maxFS: 5120, maxMBPS: 216000, maxBR: 20_000_000 },
+  { name: '4.0', hex: '28', maxFS: 8192, maxMBPS: 245760, maxBR: 20_000_000 },
+  { name: '4.1', hex: '29', maxFS: 8192, maxMBPS: 245760, maxBR: 50_000_000 },
+  { name: '4.2', hex: '2a', maxFS: 8704, maxMBPS: 522240, maxBR: 50_000_000 },
+  { name: '5.0', hex: '32', maxFS: 22080, maxMBPS: 589824, maxBR: 135_000_000 },
+  { name: '5.1', hex: '33', maxFS: 36864, maxMBPS: 983040, maxBR: 240_000_000 },
+  { name: '5.2', hex: '34', maxFS: 36864, maxMBPS: 2073600, maxBR: 240_000_000 },
+  { name: '6.0', hex: '3c', maxFS: 139264, maxMBPS: 4177920, maxBR: 240_000_000 },
+  { name: '6.1', hex: '3d', maxFS: 139264, maxMBPS: 8355840, maxBR: 480_000_000 },
+  { name: '6.2', hex: '3e', maxFS: 139264, maxMBPS: 16711680, maxBR: 800_000_000 },
+];
+
+function h264Level(width: number, height: number, fps: number, bitrate: number) {
+  const mbW = Math.ceil(width / 16);
+  const mbH = Math.ceil(height / 16);
+  const fs = mbW * mbH;
+  const mbps = fs * fps;
+  const level = H264_LEVELS.find((l) => l.maxFS >= fs && l.maxMBPS >= mbps && l.maxBR >= bitrate) ?? H264_LEVELS[H264_LEVELS.length - 1];
+  return { ...level, fs, mbps };
+}
+
+function vp9Level(width: number, height: number, fps: number) {
+  const lumaRate = width * height * fps;
+  if (lumaRate <= 27_648_000) return { level: '31', name: '3.1' };
+  if (lumaRate <= 62_208_000) return { level: '40', name: '4.0' };
+  if (lumaRate <= 124_416_000) return { level: '50', name: '5.0' };
+  if (lumaRate <= 248_832_000) return { level: '51', name: '5.1' };
+  return { level: '60', name: '6.0' };
+}
+
+function av1Level(width: number, height: number, fps: number) {
+  const lumaRate = width * height * fps;
+  if (lumaRate <= 22_118_400) return { idx: '05', name: '3.1' };
+  if (lumaRate <= 66_355_200) return { idx: '08', name: '4.0' };
+  if (lumaRate <= 132_710_400) return { idx: '09', name: '4.1' };
+  if (lumaRate <= 265_420_800) return { idx: '12', name: '5.0' };
+  return { idx: '13', name: '5.1' };
+}
+
+function bitrateFor(codec: string, width: number, height: number, fps: number) {
+  const bpp = (codec === 'avc' ? 0.10 : codec === 'hevc' ? 0.07 : codec === 'vp9' ? 0.07 : codec === 'vp8' ? 0.09 : 0.06);
+  return Math.max(1_000_000, Math.min(40_000_000, Math.round(width * height * fps * bpp)));
+}
+
+async function chooseEncoder(container: 'mp4' | 'webm', width: number, height: number, fps: number): Promise<EncoderChoice | null> {
+  const encodable = await getEncodableVideoCodecs();
+  const preferred: EncoderChoice['codec'][] = container === 'mp4' ? ['avc', 'hevc', 'av1', 'vp9'] : ['vp9', 'av1', 'vp8'];
+  const candidates: any[] = [];
+  for (const codec of preferred) {
+    if (!encodable.includes(codec)) { candidates.push({ codec, skipped: 'not in getEncodableVideoCodecs()' }); continue; }
+    const bitrate = bitrateFor(codec, width, height, fps);
+    const strings: { codecString: string; profile: string | null; level: string }[] = [];
+    if (codec === 'avc') {
+      const level = h264Level(width, height, fps, bitrate);
+      const profiles = [
+        { id: '64', name: 'high' }, { id: '4d', name: 'main' }, { id: '42', name: 'baseline' },
+      ];
+      for (const p of profiles) strings.push({ codecString: `avc1.${p.id}00${level.hex}`, profile: p.name, level: level.name });
+    } else if (codec === 'vp9') {
+      const l = vp9Level(width, height, fps);
+      strings.push({ codecString: `vp09.00.${l.level}.08`, profile: 'profile0', level: l.name });
+    } else if (codec === 'av1') {
+      const l = av1Level(width, height, fps);
+      strings.push({ codecString: `av01.0.${l.idx}M.08`, profile: 'main', level: l.name });
+    } else if (codec === 'vp8') {
+      strings.push({ codecString: 'vp8', profile: null, level: 'n/a' });
+    } else {
+      const hl = h264Level(width, height, fps, bitrate);
+      const hevcLevels: Record<string, string> = { '3.0': '90', '3.1': '93', '4.0': '120', '4.1': '123', '5.0': '150', '5.1': '153', '5.2': '156', '6.0': '180', '6.1': '183', '6.2': '186' };
+      const l = hevcLevels[hl.name] ?? '153';
+      strings.push({ codecString: `hvc1.1.6.L${l}.B0`, profile: 'main', level: hl.name });
+    }
+    for (const s of strings) {
+      let supported = false;
+      let error: string | null = null;
+      try {
+        const res = await (VideoEncoder as any).isConfigSupported({ codec: s.codecString, width, height, bitrate, framerate: fps });
+        supported = res?.supported === true;
+      } catch (e: any) {
+        error = `${e?.name}: ${String(e?.message ?? e)}`;
+      }
+      candidates.push({ codec, ...s, bitrate, supported, error });
+      if (supported) {
+        return { container, codec, codecString: s.codecString, width, height, bitrate, framerate: fps, level: s.level, profile: s.profile, bpp: bitrate / (width * height * fps), candidates };
+      }
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- input helpers
 
 async function openInput(path: string) {
   const resp = await fetch(`/testdata/${path}`);
@@ -308,6 +484,7 @@ async function analyze(path: string) {
     if (videoTrack) {
       const decoderConfig = await videoTrack.getDecoderConfig();
       const stats = await videoTrack.computePacketStats();
+      const timing = await inspectTiming(videoTrack, 120);
       out.video = {
         codec: videoTrack.codec,
         codecString: await videoTrack.getCodecParameterString(),
@@ -320,6 +497,7 @@ async function analyze(path: string) {
         duration: await videoTrack.computeDuration(),
         decoderConfig: decoderConfig ? { codec: decoderConfig.codec, codedWidth: decoderConfig.codedWidth, codedHeight: decoderConfig.codedHeight } : null,
         packetStats: { packetCount: stats.packetCount, averagePacketRate: Number(stats.averagePacketRate?.toFixed(3)), averageBitrate: Math.round(stats.averageBitrate ?? 0) },
+        timing,
       };
     } else {
       out.video = null;
@@ -344,6 +522,35 @@ async function analyze(path: string) {
     (input as any).dispose?.();
     out.inputBytes = blob.size;
   }
+}
+
+async function inspectTiming(videoTrack: any, maxPackets = 120) {
+  const sink = new EncodedPacketSink(videoTrack);
+  const timestamps: number[] = [];
+  const durations: number[] = [];
+  for await (const packet of sink.packets(undefined, undefined)) {
+    timestamps.push(packet.timestamp);
+    durations.push(packet.duration);
+    if (timestamps.length >= maxPackets) break;
+  }
+  const sortedDur = [...durations].sort((a, b) => a - b);
+  const minDur = sortedDur[0] ?? 0;
+  const maxDur = sortedDur[sortedDur.length - 1] ?? 0;
+  // packets arrive in decode order; B-frames make raw timestamps non-monotonic
+  const ordered = [...timestamps].sort((a, b) => a - b);
+  const deltas: number[] = [];
+  for (let i = 1; i < ordered.length; i++) deltas.push(Number((ordered[i] - ordered[i - 1]).toFixed(6)));
+  const mean = deltas.length ? deltas.reduce((a, b) => a + b, 0) / deltas.length : 0;
+  const variance = deltas.length ? deltas.reduce((a, b) => a + (b - mean) ** 2, 0) / deltas.length : 0;
+  return {
+    sampledPackets: timestamps.length,
+    firstTimestamps: timestamps.slice(0, 8),
+    durationsMinMs: Number((minDur * 1000).toFixed(3)),
+    durationsMaxMs: Number((maxDur * 1000).toFixed(3)),
+    uniqueDurations: new Set(durations.map((d) => d.toFixed(4))).size,
+    deltaStdMs: Number((Math.sqrt(variance) * 1000).toFixed(3)),
+    variableFrameRate: (maxDur - minDur) > 0.001 || Math.sqrt(variance) > 0.001,
+  };
 }
 
 // ---------------------------------------------------------------- benches / transcode
@@ -388,13 +595,16 @@ async function bench(path: string, mode: 'decode-draw' | 'decode-grade', maxSeco
     const wallStart = performance.now();
     for await (const sample of sink.samples(0, maxSeconds === Infinity ? undefined : maxSeconds)) {
       const t0 = performance.now();
-      if (drawCanvas && drawCtx) sample.draw(drawCtx, 0, 0, drawCanvas.width, drawCanvas.height);
-      else if (pipeline) {
-        const src = sample.toCanvasImageSource();
-        pipeline.render(src);
-        pipeline.gl.finish();
+      try {
+        if (drawCanvas && drawCtx) sample.draw(drawCtx, 0, 0, drawCanvas.width, drawCanvas.height);
+        else if (pipeline) {
+          const src = sample.toCanvasImageSource();
+          pipeline.render(src);
+          pipeline.gl.finish();
+        }
+      } finally {
+        sample.close();
       }
-      sample.close();
       frameTimes.push(performance.now() - t0);
       frames++;
       const h = heap();
@@ -426,43 +636,112 @@ async function bench(path: string, mode: 'decode-draw' | 'decode-grade', maxSeco
   }
 }
 
-async function pickCodec(container: 'mp4' | 'webm', width: number, height: number) {
-  const encodable = await getEncodableVideoCodecs();
-  const preferred = container === 'mp4' ? ['avc', 'av1', 'vp9'] : ['vp9', 'av1', 'vp8'];
-  for (const codec of preferred) {
-    if (!encodable.includes(codec)) continue;
-    try {
-      const res = await (VideoEncoder as any).isConfigSupported({
-        codec: codec === 'avc' ? 'avc1.42001f' : codec === 'vp9' ? 'vp09.00.10.08' : codec === 'av1' ? 'av01.0.04M.08' : 'vp8',
-        width, height, bitrate: 3_000_000, framerate: 30,
-      });
-      if (res?.supported) return codec;
-    } catch {}
+const activeRuns = new Map<string, AbortController>();
+
+function cancelRun(runId: string) {
+  const ac = activeRuns.get(runId);
+  if (!ac) return false;
+  ac.abort();
+  return true;
+}
+
+function abortError() {
+  return new DOMException('transcode cancelled', 'AbortError');
+}
+
+function checkAbort(signal: AbortSignal) {
+  if (signal.aborted) throw abortError();
+}
+
+interface SnapshotResult {
+  timestamp: number;
+  frameIndex: number;
+  renderedBeforeCapture: boolean;
+  sameFrame: boolean;
+  pixelDiff: { samples: number; differingFrac: number; meanAbsCode: number; maxCode: number } | null;
+  originalGrid: number[];
+  gradedGrid: number[];
+  original: any;
+  graded: any;
+}
+
+function snapshotGrid(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const grid: number[] = [];
+  for (let gy = 0; gy < 3; gy++) {
+    for (let gx = 0; gx < 3; gx++) {
+      const x = Math.min(width - 1, Math.max(0, Math.round(((gx + 0.5) / 3) * width)));
+      const y = Math.min(height - 1, Math.max(0, Math.round(((gy + 0.5) / 3) * height)));
+      const d = ctx.getImageData(x, y, 1, 1).data;
+      grid.push(d[0], d[1], d[2]);
+    }
   }
-  return null;
+  return grid;
+}
+
+function compareSnapshots(originalCtx: CanvasRenderingContext2D, gradedCtx: CanvasRenderingContext2D, width: number, height: number) {
+  const a = originalCtx.getImageData(0, 0, width, height).data;
+  const b = gradedCtx.getImageData(0, 0, width, height).data;
+  let differing = 0, sum = 0, max = 0, samples = 0;
+  for (let y = 0; y < height; y += 8) {
+    for (let x = 0; x < width; x += 8) {
+      const i = (y * width + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        const d = Math.abs(a[i + c] - b[i + c]);
+        samples++;
+        if (d > 0) { differing++; sum += d; if (d > max) max = d; }
+      }
+    }
+  }
+  return { samples, differingFrac: differing / samples, meanAbsCode: differing ? sum / differing : 0, maxCode: max };
+}
+
+interface TranscodeOptions {
+  strength?: number;
+  maxSeconds?: number;
+  snapshotAt?: number;
+  runId?: string;
+  target?: 'auto' | 'harness' | 'buffer' | 'file';
+  memoryBudgetMB?: number;
+  outputName?: string;
+  abortAfterMs?: number;
+  includeOutputBase64?: boolean;
+  key?: string;
 }
 
 interface TranscodeResult {
   ok: boolean;
+  aborted?: boolean;
   error?: string;
   container?: string;
   videoCodec?: string | null;
+  encoder?: EncoderChoice | null;
   frames?: number;
   audioPacketsCopied?: number;
+  audioHash?: string | null;
   timing?: { wallMs: number; perFrameMs: { median: number; p95: number; max: number }; encodeAwaitMs: { median: number; p95: number; max: number }; fps: number };
   peakHeapDeltaMB?: number | null;
-  output?: { bytes: number; duration: number; mimeType: string; videoCodec: string | null; audioCodec: string | null; firstVideoTimestamp: number | null; firstAudioTimestamp: number | null; avStartOffsetMs: number | null; videoTrackDuration: number | null; audioTrackDuration: number | null; avEndDeltaMs: number | null; outputVideoPacketCount: number | null; outputAudioPacketCount: number | null };
+  heapSeries?: any[];
+  heapSlopeMBPerMinute?: number | null;
+  targetInfo?: any;
+  outputFile?: string;
+  output?: any;
   images?: Record<string, any>;
+  snapshot?: SnapshotResult | null;
+  assertions?: any;
   outputBase64?: string;
   quality?: any;
+  inputInfo?: any;
+  memory?: any;
 }
 
-async function transcode(path: string, opts: { strength?: number; maxSeconds?: number; snapshotAt?: number } = {}): Promise<TranscodeResult> {
+async function transcode(path: string, opts: TranscodeOptions = {}): Promise<TranscodeResult> {
   const { input } = await openInput(path);
   const res: TranscodeResult = { ok: false };
   let pipeline: GlLutPipeline | null = null;
+  let orientedCanvas: HTMLCanvasElement | null = null;
   const frameTimes: number[] = [];
   const encodeTimes: number[] = [];
+  const heapSeries: any[] = [];
   const before = heap();
   let peak = before;
   const timer = setInterval(() => {
@@ -470,84 +749,239 @@ async function transcode(path: string, opts: { strength?: number; maxSeconds?: n
     if (h !== null) peak = Math.max(peak ?? 0, h);
   }, 20);
   let output: Output | null = null;
+  let videoSource: CanvasSource | null = null;
+  let audioSource: EncodedAudioPacketSource | null = null;
+  const runId = opts.runId ?? `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const ac = new AbortController();
+  activeRuns.set(runId, ac);
+  let abortTimer = 0;
+  if (opts.abortAfterMs) abortTimer = window.setTimeout(() => ac.abort(), opts.abortAfterMs);
+  const budget = memoryBudgetMB(opts.memoryBudgetMB);
+  res.memory = budget;
   try {
     const videoTrack = await input.getPrimaryVideoTrack();
     if (!videoTrack) throw new Error('no video track');
     if (!(await videoTrack.canDecode())) throw new Error('video track cannot be decoded by this browser');
     const audioTrack = await input.getPrimaryAudioTrack();
-    const container = path.endsWith('.webm') ? 'webm' : 'mp4';
+    const format = await input.getFormat();
+    const container: 'mp4' | 'webm' = format.mimeType?.includes('webm') ? 'webm' : 'mp4';
     res.container = container;
-    const codec = await pickCodec(container, videoTrack.codedWidth, videoTrack.codedHeight);
-    if (!codec) throw new Error(`no encodable ${container} video codec`);
-    res.videoCodec = codec;
-
-    pipeline = new GlLutPipeline(videoTrack.displayWidth, videoTrack.displayHeight, opts.strength ?? 0.85);
-    const format = container === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat();
-    output = new Output({ format, target: new BufferTarget() });
-    const videoSource = new CanvasSource(pipeline.canvas, { codec, quality: new Quality('high'), keyFrameInterval: 2 });
+    const timing = await inspectTiming(videoTrack, 120);
     const fpsStats = await videoTrack.computePacketStats(60);
-    const frameRate = fpsStats?.averagePacketRate && Number.isFinite(fpsStats.averagePacketRate) ? Math.max(1, Math.round(fpsStats.averagePacketRate)) : 30;
-    output.addVideoTrack(videoSource, { frameRate });
-    let audioSource: EncodedAudioPacketSource | null = null;
+    const rawRate = fpsStats?.averagePacketRate && Number.isFinite(fpsStats.averagePacketRate) ? fpsStats.averagePacketRate : 30;
+    const fps = Math.max(1, Math.round(rawRate));
+    const rotation = await videoTrack.getRotation();
+    const width = videoTrack.displayWidth;
+    const height = videoTrack.displayHeight;
+    res.inputInfo = {
+      codec: videoTrack.codec,
+      codedWidth: videoTrack.codedWidth,
+      codedHeight: videoTrack.codedHeight,
+      displayWidth: width,
+      displayHeight: height,
+      rotation,
+      averagePacketRate: Number(rawRate.toFixed(3)),
+      vfr: timing.variableFrameRate,
+      timing,
+      audio: audioTrack ? { codec: audioTrack.codec, canDecode: await audioTrack.canDecode(), sampleRate: audioTrack.sampleRate, channels: audioTrack.numberOfChannels } : null,
+      format: { name: format.name, mimeType: format.mimeType },
+    };
+
+    const encoder = await chooseEncoder(container, width, height, fps);
+    if (!encoder) throw new Error(`no encodable ${container} video codec for ${width}x${height}@${fps}`);
+    res.encoder = encoder;
+    res.videoCodec = encoder.codec;
+
+    const duration = await input.computeDuration();
+    const estimateBytes = estimateEncodedBytes(encoder.bitrate, opts.maxSeconds ? Math.min(opts.maxSeconds, duration) : duration, audioTrack ? 192_000 : 0);
+    const frameBytes = width * height * 4 * 3;
+    const estimateMB = Number(((estimateBytes + frameBytes) / 1048576).toFixed(1));
+
+    // Target selection: no whole-file Base64 in any product path.
+    const detected = detectOutputTargets();
+    const requested = opts.target ?? 'auto';
+    let mode: 'harness-stream' | 'buffer' | 'file-picker' | 'unsupported' = 'buffer';
+    if (requested === 'harness' || (requested === 'auto' && detected.harnessSink)) mode = 'harness-stream';
+    else if (requested === 'file') mode = detected.showSaveFilePicker ? 'file-picker' : 'unsupported';
+    else mode = 'buffer';
+    res.targetInfo = { requested, mode, detected, estimateMB, budgetMB: budget.budgetMB, chunks: 0, bytes: 0, backpressureWrites: 0 };
+
+    if (mode === 'unsupported') {
+      const reason = !detected.showSaveFilePicker
+        ? 'File System Access API is not available'
+        : !detected.secureContext
+          ? 'a secure context is required'
+          : 'an active user gesture is required';
+      throw new OutputTargetError(`file picker unavailable: ${reason}`, { mode, detected });
+    }
+    if (mode === 'buffer' && estimateMB > budget.budgetMB) {
+      throw new MemoryBudgetError(`estimated output ${estimateMB}MB exceeds the ${budget.budgetMB}MB memory budget`, { estimateMB, budgetMB: budget.budgetMB, hint: 'use a streaming target or shorten the export' });
+    }
+
+    let outputFile: string | undefined;
+    let target: any;
+    if (mode === 'harness-stream') {
+      const safeName = (opts.outputName ?? `out_${opts.key ?? 'video'}`).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      outputFile = `out/${safeName}.${container}`;
+      const sink = (globalThis as any).__q03Sink as (b64: string, pos: number, file: string) => Promise<void>;
+      let bytes = 0;
+      let chunks = 0;
+      let writes = 0;
+      target = new StreamTarget(new WritableStream({
+        write: async (chunk) => {
+          await sink(bytesToBase64(chunk.data), chunk.position, outputFile!);
+          bytes += chunk.data.byteLength;
+          chunks++;
+          writes++;
+          res.targetInfo.bytes = bytes;
+          res.targetInfo.chunks = chunks;
+          res.targetInfo.backpressureWrites = writes;
+        },
+      }), { chunked: true, chunkSize: 1 << 20 });
+    } else if (mode === 'file-picker') {
+      const picker = (globalThis as any).showSaveFilePicker;
+      let handle: any;
+      try {
+        handle = await picker({ suggestedName: `${opts.outputName ?? 'export'}.${container}` });
+      } catch (e: any) {
+        // Direct-save capability is only real once the picker returns a handle; a dismissed or
+        // automation-blocked picker must degrade to an explicit target error, not a crash.
+        throw new OutputTargetError(`file picker dismissed at runtime: ${e?.name ?? 'Error'}: ${String(e?.message ?? e)}`, { mode, detected, pickerError: e?.name ?? null });
+      }
+      const writable = await handle.createWritable();
+      target = new StreamTarget(writable, { chunked: true, chunkSize: 1 << 20 });
+      res.outputFile = handle.name;
+    } else {
+      target = new BufferTarget();
+    }
+    res.outputFile = outputFile ?? res.outputFile;
+
+    pipeline = new GlLutPipeline(width, height, opts.strength ?? 0.85);
+    const outFormat = container === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat();
+    output = new Output({ format: outFormat, target });
+    videoSource = new CanvasSource(pipeline.canvas, { codec: encoder.codec, quality: new Quality('high'), keyFrameInterval: 2 });
+    const videoMetadata: Record<string, any> = {};
+    if (!timing.variableFrameRate) videoMetadata.frameRate = fps;
+    output.addVideoTrack(videoSource, videoMetadata);
     if (audioTrack && audioTrack.codec) {
-      audioSource = new EncodedAudioPacketSource(audioTrack.codec);
+      audioSource = new EncodedAudioPacketSource(audioTrack.codec as any);
       output.addAudioTrack(audioSource);
     }
     await output.start();
+    checkAbort(ac.signal);
 
-    // Audio: encoded-packet passthrough (no re-encode), preserving original timestamps for A/V sync.
+    // Audio: encoded-packet passthrough, preserving timestamps and packet bytes.
     let audioPackets = 0;
     if (audioTrack && audioSource) {
       const audioSink = new EncodedPacketSink(audioTrack);
-      const first = await audioSink.getFirstPacket();
+      const audioHashParts: Uint8Array[] = [];
+      let hashBytes = 0;
       const decoderConfig = await audioTrack.getDecoderConfig();
       const audioStart = performance.now();
-      for await (const packet of audioSink.packets(first ?? undefined)) {
+      for await (const packet of audioSink.packets()) {
         if (opts.maxSeconds && packet.timestamp > opts.maxSeconds) break;
+        checkAbort(ac.signal);
         await audioSource.add(packet, audioPackets === 0 && decoderConfig ? { decoderConfig: decoderConfig as any } : undefined);
         audioPackets++;
+        if (hashBytes < 8 * 1024 * 1024) {
+          audioHashParts.push(packet.data.slice());
+          hashBytes += packet.data.byteLength;
+        }
       }
       res.audioPacketsCopied = audioPackets;
       (res as any).audioCopyMs = Number((performance.now() - audioStart).toFixed(1));
+      const total = audioHashParts.reduce((n, p) => n + p.byteLength, 0);
+      const merged = new Uint8Array(total);
+      let off = 0;
+      for (const p of audioHashParts) { merged.set(p, off); off += p.byteLength; }
+      res.audioHash = await sha256Hex(merged);
     }
 
     const sink = new VideoSampleSink(videoTrack);
     const snapshotAt = opts.snapshotAt ?? 1.0;
     const images: Record<string, any> = {};
-    let savedSnapshot = false;
-    const snapW = Math.min(1024, videoTrack.displayWidth);
+    let snapshot: SnapshotResult | null = null;
+    const snapW = Math.min(1024, width);
+    const needsOrientation = rotation !== 0 && rotation !== undefined;
+    if (needsOrientation) {
+      orientedCanvas = document.createElement('canvas');
+      orientedCanvas.width = width;
+      orientedCanvas.height = height;
+    }
+    const orientCtx = orientedCanvas?.getContext('2d', { willReadFrequently: true }) ?? null;
     let frames = 0;
     const wallStart = performance.now();
-    for await (const sample of sink.samples(0, opts.maxSeconds === Infinity || opts.maxSeconds === undefined ? undefined : opts.maxSeconds)) {
-      const t0 = performance.now();
-      const src = sample.toCanvasImageSource();
-      if (!savedSnapshot && sample.timestamp >= snapshotAt) {
-        savedSnapshot = true;
-        const snapCanvas = document.createElement('canvas');
-        snapCanvas.width = videoTrack.displayWidth;
-        snapCanvas.height = videoTrack.displayHeight;
-        const ctx = snapCanvas.getContext('2d')!;
-        sample.draw(ctx, 0, 0, snapCanvas.width, snapCanvas.height);
-        images.original = await downscaleToJPEG(snapCanvas, snapCanvas.width, snapCanvas.height, snapW, 0.85);
-        images.graded = await downscaleToJPEG(pipeline.canvas, pipeline.canvas.width, pipeline.canvas.height, snapW, 0.85);
-        snapCanvas.width = 1; snapCanvas.height = 1;
+    for await (const sample of sink.samples(0, opts.maxSeconds)) {
+      try {
+        checkAbort(ac.signal);
+        const t0 = performance.now();
+        let src: CanvasImageSource;
+        if (orientCtx && orientedCanvas && (sample.rotation !== 0 || sample.flip)) {
+          sample.draw(orientCtx, 0, 0, orientedCanvas.width, orientedCanvas.height);
+          src = orientedCanvas;
+        } else {
+          src = sample.toCanvasImageSource();
+        }
+        pipeline.render(src);
+        pipeline.gl.finish();
+        if (!snapshot && sample.timestamp >= snapshotAt) {
+          const snapCanvas = document.createElement('canvas');
+          snapCanvas.width = width;
+          snapCanvas.height = height;
+          const snapCtx = snapCanvas.getContext('2d', { willReadFrequently: true })!;
+          sample.draw(snapCtx, 0, 0, width, height);
+          // The graded pixels come from the same render that is about to be encoded. A WebGL
+          // canvas cannot hand out a 2d context, so copy it into one for the pixel comparison.
+          const gradedCanvas = document.createElement('canvas');
+          gradedCanvas.width = width;
+          gradedCanvas.height = height;
+          const gradedCtx = gradedCanvas.getContext('2d', { willReadFrequently: true })!;
+          gradedCtx.drawImage(pipeline.canvas, 0, 0);
+          snapshot = {
+            timestamp: sample.timestamp,
+            frameIndex: frames,
+            renderedBeforeCapture: true,
+            sameFrame: true,
+            pixelDiff: compareSnapshots(snapCtx, gradedCtx, width, height),
+            originalGrid: snapshotGrid(snapCtx, width, height),
+            gradedGrid: snapshotGrid(gradedCtx, width, height),
+            original: await downscaleToJPEG(snapCanvas, width, height, snapW, 0.85),
+            graded: await downscaleToJPEG(gradedCanvas, width, height, snapW, 0.85),
+          };
+          images.original = snapshot.original;
+          images.graded = snapshot.graded;
+          snapCanvas.width = 1; snapCanvas.height = 1;
+          gradedCanvas.width = 1; gradedCanvas.height = 1;
+        }
+        const encodeStart = performance.now();
+        await videoSource.add(sample.timestamp, sample.duration);
+        encodeTimes.push(performance.now() - encodeStart);
+        frameTimes.push(performance.now() - t0);
+        frames++;
+        if (frames % 30 === 0) {
+          const h = heapMB();
+          heapSeries.push({ frame: frames, heapMB: h });
+          if (before !== null && heap() !== null && (heap()! - before) > budget.budgetMB * 1048576) {
+            throw new MemoryBudgetError(`heap grew beyond the ${budget.budgetMB}MB budget at frame ${frames}`, { budgetMB: budget.budgetMB, frame: frames, heapMB: h });
+          }
+          await new Promise((r) => setTimeout(r, 0));
+        } else if (frames % 5 === 0) {
+          await new Promise((r) => setTimeout(r, 0));
+        }
+        const h = heap();
+        if (h !== null) peak = Math.max(peak ?? 0, h);
+      } finally {
+        sample.close();
       }
-      pipeline.render(src);
-      const encodeStart = performance.now();
-      await videoSource.add(sample.timestamp, sample.duration);
-      encodeTimes.push(performance.now() - encodeStart);
-      sample.close();
-      frameTimes.push(performance.now() - t0);
-      frames++;
-      const h = heap();
-      if (h !== null) peak = Math.max(peak ?? 0, h);
     }
     const wall = performance.now() - wallStart;
+    checkAbort(ac.signal);
+    if (!frameTimes.length) throw new Error('no frames decoded');
     await output.finalize();
-    const buffer = (output.target as BufferTarget).buffer!;
-    const blob = new Blob([buffer], { type: await output.getMimeType() });
+    const targetBytes = mode === 'harness-stream' ? res.targetInfo.bytes : mode === 'buffer' ? (output.target as BufferTarget).buffer!.byteLength : null;
     res.images = images;
     res.frames = frames;
+    res.snapshot = snapshot;
     res.timing = {
       wallMs: Number(wall.toFixed(1)),
       fps: Number((frames / (wall / 1000)).toFixed(2)),
@@ -562,25 +996,112 @@ async function transcode(path: string, opts: { strength?: number; maxSeconds?: n
         max: Number([...encodeTimes].sort((a, b) => a - b)[encodeTimes.length - 1].toFixed(2)),
       },
     };
+    res.targetInfo.bytes = targetBytes ?? res.targetInfo.bytes;
+    res.output = {
+      file: res.outputFile ?? null,
+      bytes: targetBytes,
+      mimeType: await output.getMimeType(),
+      duration: duration,
+    };
+    if (mode === 'buffer') {
+      const buffer = (output.target as BufferTarget).buffer!;
+      const blob = new Blob([buffer], { type: res.output.mimeType });
+      const verify = await verifyBlob(blob, path, { frames, maxSeconds: opts.maxSeconds, expectedWidth: width, expectedHeight: height, vfr: timing.variableFrameRate });
+      res.assertions = verify.assertions;
+      res.output.verified = verify.info;
+      if (opts.includeOutputBase64) {
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        res.outputBase64 = bytesToBase64(bytes);
+      }
+    }
+    res.heapSeries = heapSeries;
+    res.heapSlopeMBPerMinute = heapSlope(heapSeries, res.timing.fps);
+    res.ok = true;
+    return res;
+  } catch (e: any) {
+    const aborted = e?.name === 'AbortError' || ac.signal.aborted;
+    res.aborted = aborted;
+    res.error = `${e?.name ?? 'Error'}: ${String(e?.message ?? e)}`;
+    if (e instanceof MemoryBudgetError) (res as any).memoryBudgetDetail = e.detail;
+    if (e instanceof OutputTargetError) (res as any).targetDetail = e.detail;
+    try { if (output && output.state !== 'finalized' && output.state !== 'canceled') await output.cancel(); } catch {}
+    return res;
+  } finally {
+    if (abortTimer) window.clearTimeout(abortTimer);
+    activeRuns.delete(runId);
+    clearInterval(timer);
+    try { videoSource?.close(); } catch {}
+    try { audioSource?.close(); } catch {}
+    const h = heap();
+    if (h !== null) peak = Math.max(peak ?? 0, h);
+    res.peakHeapDeltaMB = before !== null && peak !== null ? Number(((peak - before) / 1048576).toFixed(1)) : null;
+    pipeline?.destroy();
+    if (orientedCanvas) { orientedCanvas.width = 1; orientedCanvas.height = 1; }
+    try { (input as any).dispose?.(); } catch {}
+  }
+}
 
-    // Verify the produced file by reading it back with mediabunny.
-    const verifyInput = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+function heapSlope(series: any[], fps: number) {
+  const pts = series.filter((p) => p.heapMB !== null);
+  if (pts.length < 3 || !fps) return null;
+  const n = pts.length;
+  const meanX = pts.reduce((a, p) => a + p.frame, 0) / n;
+  const meanY = pts.reduce((a, p) => a + p.heapMB, 0) / n;
+  let num = 0, den = 0;
+  for (const p of pts) {
+    num += (p.frame - meanX) * (p.heapMB - meanY);
+    den += (p.frame - meanX) ** 2;
+  }
+  if (den === 0) return null;
+  const perFrame = num / den;
+  return Number((perFrame * fps * 60).toFixed(2));
+}
+
+// ---------------------------------------------------------------- output verification (IMG-08)
+
+async function collectPacketHash(track: any, maxTimestamp?: number) {
+  const sink = new EncodedPacketSink(track);
+  const parts: Uint8Array[] = [];
+  let bytes = 0, packets = 0;
+  for await (const packet of sink.packets()) {
+    if (maxTimestamp !== undefined && packet.timestamp > maxTimestamp) break;
+    if (bytes < 16 * 1024 * 1024) {
+      parts.push(packet.data.slice());
+      bytes += packet.data.byteLength;
+    }
+    packets++;
+  }
+  const merged = new Uint8Array(bytes);
+  let off = 0;
+  for (const p of parts) { merged.set(p, off); off += p.byteLength; }
+  return { packets, bytes, hash: await sha256Hex(merged) };
+}
+
+async function verifyBlob(blob: Blob, inputPath: string, expect: { frames: number; maxSeconds?: number; expectedWidth?: number; expectedHeight?: number; vfr?: boolean }, opts: { decodeFrames?: boolean } = {}) {
+  const verifyInput = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+  const checks: any[] = [];
+  const info: Record<string, any> = {};
+  try {
     const vTrack = await verifyInput.getPrimaryVideoTrack();
     const aTrack = await verifyInput.getPrimaryAudioTrack();
-    const vSink = vTrack ? new EncodedPacketSink(vTrack) : null;
-    const aSink = aTrack ? new EncodedPacketSink(aTrack) : null;
-    const vFirst = vSink ? await vSink.getFirstPacket() : null;
-    const aFirst = aSink ? await aSink.getFirstPacket() : null;
+    const vFirst = vTrack ? await new EncodedPacketSink(vTrack).getFirstPacket() : null;
+    const aFirst = aTrack ? await new EncodedPacketSink(aTrack).getFirstPacket() : null;
     const vStats = vTrack ? await vTrack.computePacketStats() : null;
     const aStats = aTrack ? await aTrack.computePacketStats() : null;
     const vDuration = vTrack ? await vTrack.computeDuration() : null;
     const aDuration = aTrack ? await aTrack.computeDuration() : null;
-    res.output = {
-      bytes: blob.size,
-      duration: await verifyInput.computeDuration(),
+    const totalDuration = await verifyInput.computeDuration();
+    info.output = {
       mimeType: blob.type,
+      bytes: blob.size,
+      duration: totalDuration,
       videoCodec: vTrack ? await vTrack.getCodecParameterString() : null,
       audioCodec: aTrack ? await aTrack.getCodecParameterString() : null,
+      codedWidth: vTrack?.codedWidth ?? null,
+      codedHeight: vTrack?.codedHeight ?? null,
+      displayWidth: vTrack?.displayWidth ?? null,
+      displayHeight: vTrack?.displayHeight ?? null,
+      rotation: vTrack ? await vTrack.getRotation() : null,
       firstVideoTimestamp: vFirst ? vFirst.timestamp : null,
       firstAudioTimestamp: aFirst ? aFirst.timestamp : null,
       avStartOffsetMs: vFirst && aFirst ? Number(((aFirst.timestamp - vFirst.timestamp) * 1000).toFixed(2)) : null,
@@ -589,29 +1110,106 @@ async function transcode(path: string, opts: { strength?: number; maxSeconds?: n
       avEndDeltaMs: vDuration !== null && aDuration !== null ? Number(((aDuration - vDuration) * 1000).toFixed(2)) : null,
       outputVideoPacketCount: vStats?.packetCount ?? null,
       outputAudioPacketCount: aStats?.packetCount ?? null,
+      variableFrameRate: vStats ? await inspectTiming(vTrack, 120) : null,
     };
-    try { (verifyInput as any).dispose?.(); } catch {}
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    let bin = '';
-    const CHUNK = 0x8000;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, Math.min(i + CHUNK, bytes.length))) as any);
+    if (expect.expectedWidth && expect.expectedHeight) {
+      checks.push({ name: 'display dimensions', expected: `${expect.expectedWidth}x${expect.expectedHeight}`, actual: `${info.output.displayWidth}x${info.output.displayHeight}`, pass: info.output.displayWidth === expect.expectedWidth && info.output.displayHeight === expect.expectedHeight });
     }
-    res.outputBase64 = btoa(bin);
-    res.ok = true;
-    return res;
-  } catch (e: any) {
-    res.error = `${e?.name ?? 'Error'}: ${String(e?.message ?? e)}`;
-    try { await output?.cancel(); } catch {}
-    return res;
+    checks.push({ name: 'video packet count == encoded frames', expected: expect.frames, actual: info.output.outputVideoPacketCount, pass: info.output.outputVideoPacketCount === expect.frames });
+    // Input baseline: passthrough must preserve the input's own A/V offsets and audio bytes.
+    let inputAv: { avStartOffsetMs: number | null; avEndDeltaMs: number | null } | null = null;
+    let inputHash: { packets: number; bytes: number; hash: string } | null = null;
+    let outHash: { packets: number; bytes: number; hash: string } | null = null;
+    if (aTrack) {
+      outHash = await collectPacketHash(aTrack, expect.maxSeconds);
+      const { input } = await openInput(inputPath);
+      try {
+        const inTrack = await input.getPrimaryAudioTrack();
+        const inV = await input.getPrimaryVideoTrack();
+        if (inTrack) {
+          inputHash = await collectPacketHash(inTrack, expect.maxSeconds);
+          info.audio = { input: inputHash, output: outHash, hashMatch: inputHash.hash === outHash.hash && inputHash.packets === outHash.packets };
+        }
+        if (inV && inTrack) {
+          const inVFirst = await new EncodedPacketSink(inV).getFirstPacket();
+          const inAFirst = await new EncodedPacketSink(inTrack).getFirstPacket();
+          const inVDuration = await inV.computeDuration();
+          const inADuration = await inTrack.computeDuration();
+          inputAv = {
+            avStartOffsetMs: inVFirst && inAFirst ? Number(((inAFirst.timestamp - inVFirst.timestamp) * 1000).toFixed(2)) : null,
+            avEndDeltaMs: inVDuration !== null && inADuration !== null ? Number(((inADuration - inVDuration) * 1000).toFixed(2)) : null,
+          };
+          info.inputAv = { ...inputAv, videoTrackDuration: inVDuration, audioTrackDuration: inADuration };
+        }
+      } finally {
+        (input as any).dispose?.();
+      }
+    }
+    if (info.output.avStartOffsetMs !== null) {
+      if (inputAv?.avStartOffsetMs !== null && inputAv?.avStartOffsetMs !== undefined) {
+        checks.push({ name: 'A/V start offset preserved from input (<=1ms)', expected: inputAv.avStartOffsetMs, actual: info.output.avStartOffsetMs, pass: Math.abs(info.output.avStartOffsetMs - inputAv.avStartOffsetMs) <= 1 });
+      } else {
+        checks.push({ name: 'A/V start offset <= 25ms', expected: '|offset| <= 25', actual: info.output.avStartOffsetMs, pass: Math.abs(info.output.avStartOffsetMs) <= 25 });
+      }
+    }
+    if (info.output.avEndDeltaMs !== null) {
+      if (!expect.maxSeconds && inputAv?.avEndDeltaMs !== null && inputAv?.avEndDeltaMs !== undefined) {
+        checks.push({ name: 'A/V end delta preserved from input (<=5ms)', expected: inputAv.avEndDeltaMs, actual: info.output.avEndDeltaMs, pass: Math.abs(info.output.avEndDeltaMs - inputAv.avEndDeltaMs) <= 5 });
+      } else if (!expect.maxSeconds) {
+        checks.push({ name: 'A/V end delta <= 10ms', expected: '|delta| <= 10', actual: info.output.avEndDeltaMs, pass: Math.abs(info.output.avEndDeltaMs) <= 10 });
+      }
+    }
+    if (outHash) {
+      checks.push({ name: 'audio packet hash matches input (passthrough)', expected: inputHash?.hash ?? null, actual: outHash.hash, pass: !!inputHash && info.audio?.hashMatch === true });
+    }
+
+    const decodeFrames = opts.decodeFrames ?? (expect.frames <= 420);
+    if (decodeFrames && vTrack && (await vTrack.canDecode())) {
+      const sink = new VideoSampleSink(vTrack);
+      let decoded = 0;
+      let last = -Infinity;
+      let monotonic = true;
+      for await (const sample of sink.samples()) {
+        try {
+          if (sample.timestamp < last - 1e-6) monotonic = false;
+          last = sample.timestamp;
+          decoded++;
+        } finally {
+          sample.close();
+        }
+      }
+      info.decodedFrames = decoded;
+      checks.push({ name: 'decoded frame count == packet count', expected: info.output.outputVideoPacketCount, actual: decoded, pass: decoded === info.output.outputVideoPacketCount });
+      checks.push({ name: 'output decode without error + monotonic timestamps', expected: 'true', actual: String(monotonic), pass: monotonic });
+    } else if (vTrack && (await vTrack.canDecode())) {
+      // Sparse check for long exports: first and last samples only.
+      const sink = new VideoSampleSink(vTrack);
+      const first = await sink.getSample(0);
+      const last = await sink.getSample(Math.max(0, totalDuration - 0.001));
+      let ok = !!first;
+      try { first?.close(); } catch {}
+      try { last?.close(); } catch {}
+      if (!last) ok = false;
+      checks.push({ name: 'first/last frame decodes (long export)', expected: 'true', actual: String(ok), pass: ok });
+    }
+    const pass = checks.every((c) => c.pass !== false);
+    return { info, assertions: { pass, checks } };
   } finally {
-    clearInterval(timer);
-    const h = heap();
-    if (h !== null) peak = Math.max(peak ?? 0, h);
-    res.peakHeapDeltaMB = before !== null && peak !== null ? Number(((peak - before) / 1048576).toFixed(1)) : null;
-    pipeline?.destroy();
-    try { (input as any).dispose?.(); } catch {}
+    try { (verifyInput as any).dispose?.(); } catch {}
   }
+}
+
+async function verifyOutput(outputPath: string, inputPath: string, expect: { frames: number; maxSeconds?: number; expectedWidth?: number; expectedHeight?: number }) {
+  const url = outputPath.startsWith('results/') ? `/${outputPath}` : `/testdata/${outputPath}`;
+  const resp = await fetch(url);
+  if (!resp.ok) return { ok: false, error: `fetch ${resp.status} for ${url}` };
+  const blob = await resp.blob();
+  const result = await verifyBlob(blob, inputPath, expect);
+  return { ok: result.assertions.pass, ...result };
+}
+
+async function verifyOutputFile(outputPath: string, inputPath: string, expect: { frames: number; maxSeconds?: number; expectedWidth?: number; expectedHeight?: number }) {
+  return verifyOutput(outputPath, inputPath, expect);
 }
 
 async function snapshotFrames(path: string, timestamps: number[]) {
@@ -623,17 +1221,62 @@ async function snapshotFrames(path: string, timestamps: number[]) {
     const canvas = document.createElement('canvas');
     canvas.width = track.displayWidth;
     canvas.height = track.displayHeight;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
     const sink = new VideoSampleSink(track);
     for (const ts of timestamps) {
       const sample = await sink.getSample(ts);
       if (!sample) continue;
-      sample.draw(ctx, 0, 0, canvas.width, canvas.height);
-      imgs[`t${ts}`] = await downscaleToJPEG(canvas, canvas.width, canvas.height, 1024, 0.85);
-      sample.close();
+      try {
+        sample.draw(ctx, 0, 0, canvas.width, canvas.height);
+        imgs[`t${ts}`] = { ...(await downscaleToJPEG(canvas, canvas.width, canvas.height, 1024, 0.85)), grid: snapshotGrid(ctx, canvas.width, canvas.height), timestamp: sample.timestamp };
+      } finally {
+        sample.close();
+      }
     }
     canvas.width = 1; canvas.height = 1;
     return { ok: true, images: imgs };
+  } finally {
+    try { (input as any).dispose?.(); } catch {}
+  }
+}
+
+async function verifySnapshot(path: string, timestamp: number, originalGrid: number[], gradedGrid: number[]) {
+  const { input } = await openInput(path);
+  try {
+    const track = await input.getPrimaryVideoTrack();
+    if (!track || !(await track.canDecode())) return { ok: false, error: 'video not decodable' };
+    const canvas = document.createElement('canvas');
+    canvas.width = track.displayWidth;
+    canvas.height = track.displayHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    const sink = new VideoSampleSink(track);
+    const sample = await sink.getSample(timestamp);
+    if (!sample) return { ok: false, error: 'no sample at timestamp' };
+    try {
+      sample.draw(ctx, 0, 0, canvas.width, canvas.height);
+      const grid = snapshotGrid(ctx, canvas.width, canvas.height);
+      const compare = (a: number[], b: number[]) => {
+        let max = 0;
+        for (let i = 0; i < a.length; i++) max = Math.max(max, Math.abs(a[i] - b[i]));
+        return max;
+      };
+      const originalMaxDiff = compare(grid, originalGrid);
+      const gradedMaxDiff = compare(grid, gradedGrid);
+      return {
+        ok: originalMaxDiff === 0,
+        timestamp: sample.timestamp,
+        independentOriginalMaxCodeDiff: originalMaxDiff,
+        gradedDiffFromIndependentDecode: gradedMaxDiff,
+        originalGrid,
+        independentGrid: grid,
+        gradedGrid,
+        sameFrameVerified: originalMaxDiff === 0,
+        gradingApplied: gradedMaxDiff > 0,
+      };
+    } finally {
+      sample.close();
+      canvas.width = 1; canvas.height = 1;
+    }
   } finally {
     try { (input as any).dispose?.(); } catch {}
   }
@@ -644,7 +1287,10 @@ async function snapshotFrames(path: string, timestamps: number[]) {
   analyze,
   bench,
   transcode,
+  verifyOutput: verifyOutputFile,
+  verifySnapshot,
   snapshotFrames,
+  cancelRun,
   ready: Promise.resolve(true),
 };
 log('video PoC ready');

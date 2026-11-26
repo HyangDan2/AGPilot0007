@@ -1,0 +1,182 @@
+[
+  {
+    "key": "cr3_canon_r6m3",
+    "path": "cr3/IMG_4243.CR3",
+    "iterations": 4,
+    "series": [
+      {
+        "i": 0,
+        "enteredMB": 74.1,
+        "outputMB": 71.2
+      },
+      {
+        "i": 0,
+        "settledMB": 74.1,
+        "beforeMB": 2.8,
+        "gc": true
+      },
+      {
+        "i": 1,
+        "enteredMB": 159.5,
+        "outputMB": 71.2
+      },
+      {
+        "i": 1,
+        "settledMB": 74.1,
+        "beforeMB": 74.1,
+        "gc": true
+      },
+      {
+        "i": 2,
+        "enteredMB": 159.4,
+        "outputMB": 71.2
+      },
+      {
+        "i": 2,
+        "settledMB": 74.1,
+        "beforeMB": 74.1,
+        "gc": true
+      },
+      {
+        "i": 3,
+        "enteredMB": 159.6,
+        "outputMB": 71.2
+      },
+      {
+        "i": 3,
+        "settledMB": 74.1,
+        "beforeMB": 74.1,
+        "gc": true
+      }
+    ],
+    "settledGrowthMB": 0,
+    "enteredGrowthMB": 85.5,
+    "allClosed": true,
+    "note": "FlashRaw free()/close() called in finally on every iteration; WASM linear memory is process-wide and does not shrink, so the JS heap is the reported figure."
+  },
+  {
+    "key": "raf_fuji_xt4",
+    "path": "raf/DSCF0268.RAF",
+    "iterations": 4,
+    "series": [
+      {
+        "i": 0,
+        "enteredMB": 177.3,
+        "outputMB": 148.5
+      },
+      {
+        "i": 0,
+        "settledMB": 151.5,
+        "beforeMB": 74.1,
+        "gc": true
+      },
+      {
+        "i": 1,
+        "enteredMB": 325.9,
+        "outputMB": 148.5
+      },
+      {
+        "i": 1,
+        "settledMB": 151.5,
+        "beforeMB": 151.5,
+        "gc": true
+      },
+      {
+        "i": 2,
+        "enteredMB": 325.8,
+        "outputMB": 148.5
+      },
+      {
+        "i": 2,
+        "settledMB": 151.5,
+        "beforeMB": 151.5,
+        "gc": true
+      },
+      {
+        "i": 3,
+        "enteredMB": 325.9,
+        "outputMB": 148.5
+      },
+      {
+        "i": 3,
+        "settledMB": 151.5,
+        "beforeMB": 151.5,
+        "gc": true
+      }
+    ],
+    "settledGrowthMB": 0,
+    "enteredGrowthMB": 148.6,
+    "allClosed": true,
+    "note": "FlashRaw free()/close() called in finally on every iteration; WASM linear memory is process-wide and does not shrink, so the JS heap is the reported figure."
+  },
+  {
+    "key": "arw_sony_a7m3",
+    "path": "arw/_DSC0009.ARW",
+    "iterations": 4,
+    "series": [
+      {
+        "i": 0,
+        "enteredMB": 164.8,
+        "outputMB": 137.3
+      },
+      {
+        "i": 0,
+        "settledMB": 164.7,
+        "beforeMB": 151.5,
+        "gc": true
+      },
+      {
+        "i": 1,
+        "enteredMB": 302.3,
+        "outputMB": 137.3
+      },
+      {
+        "i": 1,
+        "settledMB": 140.3,
+        "beforeMB": 164.7,
+        "gc": true
+      },
+      {
+        "i": 2,
+        "enteredMB": 302.3,
+        "outputMB": 137.3
+      },
+      {
+        "i": 2,
+        "settledMB": 140.3,
+        "beforeMB": 140.3,
+        "gc": true
+      },
+      {
+        "i": 3,
+        "enteredMB": 302.2,
+        "outputMB": 137.3
+      },
+      {
+        "i": 3,
+        "settledMB": 140.3,
+        "beforeMB": 140.3,
+        "gc": true
+      }
+    ],
+    "settledGrowthMB": -24.4,
+    "enteredGrowthMB": 137.4,
+    "allClosed": true,
+    "note": "FlashRaw free()/close() called in finally on every iteration; WASM linear memory is process-wide and does not shrink, so the JS heap is the reported figure."
+  },
+  {
+    "key": "cancel_cr3",
+    "path": "cr3/IMG_4243.CR3",
+    "cancelAfterMs": 0,
+    "stagesCompleted": 1,
+    "cancelled": true,
+    "error": "AbortError: cancelled between decode stages",
+    "heap": {
+      "beforeMB": 140.3,
+      "afterMB": 145.3,
+      "gc": true
+    },
+    "released": true,
+    "note": "FlashRaw cannot interrupt a decode in flight; cancellation is cooperative between stages and still releases the frame and the file."
+  }
+]

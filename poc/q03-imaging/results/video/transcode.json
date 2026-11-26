@@ -2,41 +2,233 @@
   {
     "key": "h264_aac_720p",
     "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
     "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.13333333333333333,
+          0.1,
+          0.16666666666666666,
+          0.23333333333333334,
+          0.2
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "width": 1280,
+      "height": 720,
+      "bitrate": 2764800,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001f",
+          "profile": "high",
+          "level": "3.1",
+          "bitrate": 2764800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
     "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 13.2,
+      "budgetMB": 512,
+      "chunks": 6,
+      "bytes": 4281046,
+      "backpressureWrites": 6
+    },
+    "outputFile": "out/out_h264_aac_720p.mp4",
     "audioPacketsCopied": 283,
-    "audioCopyMs": 4.4,
+    "audioCopyMs": 2.9,
+    "audioHash": "9980358e30716767b08351472c45c023b9e41bcff63a54b108bb149c0df69589",
     "frames": 180,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 43200,
+        "differingFrac": 0.4549537037037037,
+        "meanAbsCode": 74.1597130355144,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        69,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        190,
+        67,
+        243
+      ],
+      "original": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_aac_720p_original.jpg"
+      },
+      "graded": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_aac_720p_graded.jpg"
+      }
+    },
     "timing": {
-      "wallMs": 13546.8,
-      "fps": 13.29,
+      "wallMs": 13759.6,
+      "fps": 13.08,
       "perFrameMs": {
-        "median": 48.5,
-        "p95": 120.2,
-        "max": 3122.9
+        "median": 49.1,
+        "p95": 126.8,
+        "max": 1603.2
       },
       "encodeAwaitMs": {
-        "median": 48.3,
-        "p95": 113.8,
-        "max": 3122.4
+        "median": 48.5,
+        "p95": 110.7,
+        "max": 355.1
       }
     },
     "output": {
-      "bytes": 4281030,
-      "duration": 6,
+      "file": "out/out_h264_aac_720p.mp4",
+      "bytes": 4281046,
       "mimeType": "video/mp4; codecs=\"avc1.64001f, mp4a.40.2\"",
-      "videoCodec": "avc1.64001f",
-      "audioCodec": "mp4a.40.2",
-      "firstVideoTimestamp": 0,
-      "firstAudioTimestamp": -0.021333333333333333,
-      "avStartOffsetMs": -21.33,
-      "videoTrackDuration": 6,
-      "audioTrackDuration": 6,
-      "avEndDeltaMs": 0,
-      "outputVideoPacketCount": 180,
-      "outputAudioPacketCount": 283
+      "duration": 6
     },
-    "peakHeapDeltaMB": 24.5,
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 33.5
+      },
+      {
+        "frame": 60,
+        "heapMB": 20.3
+      },
+      {
+        "frame": 90,
+        "heapMB": 12.4
+      },
+      {
+        "frame": 120,
+        "heapMB": 19.2
+      },
+      {
+        "frame": 150,
+        "heapMB": 28.4
+      },
+      {
+        "frame": 180,
+        "heapMB": 10.9
+      }
+    ],
+    "heapSlopeMBPerMinute": -61.21,
+    "peakHeapDeltaMB": 14.6,
     "images": {
       "original": {
         "width": 1024,
@@ -53,46 +245,396 @@
         "savedAs": "images/h264_aac_720p_graded.jpg"
       }
     },
-    "outputSavedAs": "out_h264_aac_720p.mp4"
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "1280x720",
+          "actual": "1280x720",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "9980358e30716767b08351472c45c023b9e41bcff63a54b108bb149c0df69589",
+          "actual": "9980358e30716767b08351472c45c023b9e41bcff63a54b108bb149c0df69589",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "independentGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        69,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        190,
+        67,
+        243
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
   },
   {
     "key": "h264_aac_1080p",
     "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
     "container": "mp4",
-    "videoCodec": "av1",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1920,
+      "codedHeight": 1080,
+      "displayWidth": 1920,
+      "displayHeight": 1080,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.1,
+          0.13333333333333333,
+          0.16666666666666666,
+          0.2,
+          0.26666666666666666
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.640028",
+      "width": 1920,
+      "height": 1080,
+      "bitrate": 6220800,
+      "framerate": 30,
+      "level": "4.0",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.640028",
+          "profile": "high",
+          "level": "4.0",
+          "bitrate": 6220800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 33.3,
+      "budgetMB": 512,
+      "chunks": 16,
+      "bytes": 15292735,
+      "backpressureWrites": 16
+    },
+    "outputFile": "out/out_h264_aac_1080p.mp4",
     "audioPacketsCopied": 470,
-    "audioCopyMs": 5,
+    "audioCopyMs": 10.8,
+    "audioHash": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
     "frames": 300,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 97200,
+        "differingFrac": 0.4562962962962963,
+        "meanAbsCode": 73.55729166666667,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        64,
+        199,
+        227
+      ],
+      "gradedGrid": [
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        65,
+        203,
+        226
+      ],
+      "original": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1920,
+        "sourceHeight": 1080,
+        "savedAs": "images/h264_aac_1080p_original.jpg"
+      },
+      "graded": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1920,
+        "sourceHeight": 1080,
+        "savedAs": "images/h264_aac_1080p_graded.jpg"
+      }
+    },
     "timing": {
-      "wallMs": 69160.4,
-      "fps": 4.34,
+      "wallMs": 25581.3,
+      "fps": 11.73,
       "perFrameMs": {
-        "median": 163.5,
-        "p95": 530.2,
-        "max": 2406.8
+        "median": 73.8,
+        "p95": 142.2,
+        "max": 670.8
       },
       "encodeAwaitMs": {
-        "median": 160.5,
-        "p95": 529.8,
-        "max": 2406.7
+        "median": 73.4,
+        "p95": 138.8,
+        "max": 247.8
       }
     },
     "output": {
-      "bytes": 11026134,
-      "duration": 10,
-      "mimeType": "video/mp4; codecs=\"av01.0.08m.08.0.110.01.13.01.1, mp4a.40.2\"",
-      "videoCodec": "av01.0.08M.08.0.110.01.13.01.1",
-      "audioCodec": "mp4a.40.2",
-      "firstVideoTimestamp": 0,
-      "firstAudioTimestamp": -0.021333333333333333,
-      "avStartOffsetMs": -21.33,
-      "videoTrackDuration": 10,
-      "audioTrackDuration": 10,
-      "avEndDeltaMs": 0,
-      "outputVideoPacketCount": 300,
-      "outputAudioPacketCount": 470
+      "file": "out/out_h264_aac_1080p.mp4",
+      "bytes": 15292735,
+      "mimeType": "video/mp4; codecs=\"avc1.640028, mp4a.40.2\"",
+      "duration": 10
     },
-    "peakHeapDeltaMB": 42.8,
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 25.5
+      },
+      {
+        "frame": 60,
+        "heapMB": 48.6
+      },
+      {
+        "frame": 90,
+        "heapMB": 29.2
+      },
+      {
+        "frame": 120,
+        "heapMB": 31.1
+      },
+      {
+        "frame": 150,
+        "heapMB": 40.1
+      },
+      {
+        "frame": 180,
+        "heapMB": 24.1
+      },
+      {
+        "frame": 210,
+        "heapMB": 21.6
+      },
+      {
+        "frame": 240,
+        "heapMB": 31.5
+      },
+      {
+        "frame": 270,
+        "heapMB": 20.5
+      },
+      {
+        "frame": 300,
+        "heapMB": 30.3
+      }
+    ],
+    "heapSlopeMBPerMinute": -26.52,
+    "peakHeapDeltaMB": 32.2,
     "images": {
       "original": {
         "width": 1024,
@@ -109,46 +651,380 @@
         "savedAs": "images/h264_aac_1080p_graded.jpg"
       }
     },
-    "outputSavedAs": "out_h264_aac_1080p.mp4"
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "1920x1080",
+          "actual": "1920x1080",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 300,
+          "actual": 300,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
+          "actual": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 300,
+          "actual": 300,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 5,
+      "originalGrid": [
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        64,
+        199,
+        227
+      ],
+      "independentGrid": [
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        13,
+        13,
+        22,
+        147,
+        64,
+        199,
+        227
+      ],
+      "gradedGrid": [
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        13,
+        13,
+        22,
+        148,
+        65,
+        203,
+        226
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
   },
   {
     "key": "vp9_opus_720p",
     "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
     "container": "webm",
+    "inputInfo": {
+      "codec": "vp9",
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": true,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.033,
+          0.067,
+          0.1,
+          0.133,
+          0.167,
+          0.2,
+          0.233
+        ],
+        "durationsMinMs": 33,
+        "durationsMaxMs": 34,
+        "uniqueDurations": 2,
+        "deltaStdMs": 0.472,
+        "variableFrameRate": true
+      },
+      "audio": {
+        "codec": "opus",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "format": {
+        "name": "WebM",
+        "mimeType": "video/webm"
+      }
+    },
+    "encoder": {
+      "container": "webm",
+      "codec": "vp9",
+      "codecString": "vp09.00.31.08",
+      "width": 1280,
+      "height": 720,
+      "bitrate": 1935360,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "profile0",
+      "bpp": 0.07,
+      "candidates": [
+        {
+          "codec": "vp9",
+          "codecString": "vp09.00.31.08",
+          "profile": "profile0",
+          "level": "3.1",
+          "bitrate": 1935360,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
     "videoCodec": "vp9",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 12.4,
+      "budgetMB": 512,
+      "chunks": 5,
+      "bytes": 2975807,
+      "backpressureWrites": 5
+    },
+    "outputFile": "out/out_vp9_opus_720p.webm",
     "audioPacketsCopied": 301,
-    "audioCopyMs": 1.4,
+    "audioCopyMs": 2.3,
+    "audioHash": "a38c1db42d2d44bc42e5a50b7e71a8b2a2419c8d58760c89418cf144bd74222f",
     "frames": 180,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 43200,
+        "differingFrac": 0.45469907407407406,
+        "meanAbsCode": 74.17324237641908,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        186,
+        53,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        69,
+        241
+      ],
+      "gradedGrid": [
+        193,
+        53,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        240,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        240,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        188,
+        69,
+        238
+      ],
+      "original": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/vp9_opus_720p_original.jpg"
+      },
+      "graded": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/vp9_opus_720p_graded.jpg"
+      }
+    },
     "timing": {
-      "wallMs": 12078,
-      "fps": 14.9,
+      "wallMs": 6580,
+      "fps": 27.36,
       "perFrameMs": {
-        "median": 48.7,
-        "p95": 186.4,
-        "max": 575.5
+        "median": 30.1,
+        "p95": 56.9,
+        "max": 271.2
       },
       "encodeAwaitMs": {
-        "median": 48.6,
-        "p95": 177.8,
-        "max": 575.4
+        "median": 29.9,
+        "p95": 54.2,
+        "max": 194.7
       }
     },
     "output": {
-      "bytes": 2975739,
-      "duration": 6,
+      "file": "out/out_vp9_opus_720p.webm",
+      "bytes": 2975807,
       "mimeType": "video/webm; codecs=\"vp09.00.31.08.01.01.01.01.01, opus\"",
-      "videoCodec": "vp09.00.31.08.01.01.01.01.01",
-      "audioCodec": "opus",
-      "firstVideoTimestamp": 0,
-      "firstAudioTimestamp": -0.007,
-      "avStartOffsetMs": -7,
-      "videoTrackDuration": 6,
-      "audioTrackDuration": 5.994,
-      "avEndDeltaMs": -6,
-      "outputVideoPacketCount": 180,
-      "outputAudioPacketCount": 301
+      "duration": 6
     },
-    "peakHeapDeltaMB": 5.1,
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 47.6
+      },
+      {
+        "frame": 60,
+        "heapMB": 55.5
+      },
+      {
+        "frame": 90,
+        "heapMB": 13.9
+      },
+      {
+        "frame": 120,
+        "heapMB": 14.8
+      },
+      {
+        "frame": 150,
+        "heapMB": 21.5
+      },
+      {
+        "frame": 180,
+        "heapMB": 22.2
+      }
+    ],
+    "heapSlopeMBPerMinute": -356.62,
+    "peakHeapDeltaMB": 41,
     "images": {
       "original": {
         "width": 1024,
@@ -165,46 +1041,368 @@
         "savedAs": "images/vp9_opus_720p_graded.jpg"
       }
     },
-    "outputSavedAs": "out_vp9_opus_720p.webm"
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "1280x720",
+          "actual": "1280x720",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -7,
+          "actual": -7,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": -6,
+          "actual": -6,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "a38c1db42d2d44bc42e5a50b7e71a8b2a2419c8d58760c89418cf144bd74222f",
+          "actual": "a38c1db42d2d44bc42e5a50b7e71a8b2a2419c8d58760c89418cf144bd74222f",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        186,
+        53,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        69,
+        241
+      ],
+      "independentGrid": [
+        186,
+        53,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        243,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        181,
+        69,
+        241
+      ],
+      "gradedGrid": [
+        193,
+        53,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        240,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        240,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        188,
+        69,
+        238
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
   },
   {
     "key": "hevc_aac_360p",
     "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
     "container": "mp4",
+    "inputInfo": {
+      "codec": "hevc",
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 90,
+        "firstTimestamps": [
+          0,
+          0.06666666666666667,
+          0.03333333333333333,
+          0.16666666666666666,
+          0.13333333333333333,
+          0.1,
+          0.26666666666666666,
+          0.23333333333333334
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001e",
+      "width": 640,
+      "height": 360,
+      "bitrate": 1000000,
+      "framerate": 30,
+      "level": "3.0",
+      "profile": "high",
+      "bpp": 0.14467592592592593,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001e",
+          "profile": "high",
+          "level": "3.0",
+          "bitrate": 1000000,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
     "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 3.2,
+      "budgetMB": 512,
+      "chunks": 1,
+      "bytes": 630564,
+      "backpressureWrites": 1
+    },
+    "outputFile": "out/out_hevc_aac_360p.mp4",
     "audioPacketsCopied": 142,
-    "audioCopyMs": 1.3,
+    "audioCopyMs": 0.8,
+    "audioHash": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
     "frames": 90,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 10800,
+        "differingFrac": 0.45472222222222225,
+        "meanAbsCode": 71.21706373447363,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        183,
+        54,
+        0,
+        14,
+        22,
+        146,
+        181,
+        70,
+        244,
+        185,
+        54,
+        0,
+        13,
+        22,
+        148,
+        181,
+        70,
+        242,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        185,
+        70,
+        250
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        14,
+        22,
+        147,
+        188,
+        70,
+        241,
+        192,
+        54,
+        0,
+        13,
+        22,
+        149,
+        188,
+        70,
+        239,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        192,
+        70,
+        247
+      ],
+      "original": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/hevc_aac_360p_original.jpg"
+      },
+      "graded": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/hevc_aac_360p_graded.jpg"
+      }
+    },
     "timing": {
-      "wallMs": 2431.8,
-      "fps": 37.01,
+      "wallMs": 939.2,
+      "fps": 95.83,
       "perFrameMs": {
-        "median": 17.6,
-        "p95": 43.4,
-        "max": 228.3
+        "median": 7.8,
+        "p95": 17.7,
+        "max": 68
       },
       "encodeAwaitMs": {
-        "median": 17.3,
-        "p95": 42.1,
-        "max": 228.1
+        "median": 7.7,
+        "p95": 17.2,
+        "max": 44
       }
     },
     "output": {
-      "bytes": 630556,
-      "duration": 3,
+      "file": "out/out_hevc_aac_360p.mp4",
+      "bytes": 630564,
       "mimeType": "video/mp4; codecs=\"avc1.64001e, mp4a.40.2\"",
-      "videoCodec": "avc1.64001e",
-      "audioCodec": "mp4a.40.2",
-      "firstVideoTimestamp": 0,
-      "firstAudioTimestamp": -0.021333333333333333,
-      "avStartOffsetMs": -21.33,
-      "videoTrackDuration": 3,
-      "audioTrackDuration": 3,
-      "avEndDeltaMs": 0,
-      "outputVideoPacketCount": 90,
-      "outputAudioPacketCount": 142
+      "duration": 3
     },
-    "peakHeapDeltaMB": 11,
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 18.3
+      },
+      {
+        "frame": 60,
+        "heapMB": 21.1
+      },
+      {
+        "frame": 90,
+        "heapMB": 22
+      }
+    ],
+    "heapSlopeMBPerMinute": 354.57,
+    "peakHeapDeltaMB": 37.6,
     "images": {
       "original": {
         "width": 640,
@@ -221,46 +1419,372 @@
         "savedAs": "images/hevc_aac_360p_graded.jpg"
       }
     },
-    "outputSavedAs": "out_hevc_aac_360p.mp4"
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "640x360",
+          "actual": "640x360",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 90,
+          "actual": 90,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
+          "actual": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 90,
+          "actual": 90,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        183,
+        54,
+        0,
+        14,
+        22,
+        146,
+        181,
+        70,
+        244,
+        185,
+        54,
+        0,
+        13,
+        22,
+        148,
+        181,
+        70,
+        242,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        185,
+        70,
+        250
+      ],
+      "independentGrid": [
+        183,
+        54,
+        0,
+        14,
+        22,
+        146,
+        181,
+        70,
+        244,
+        185,
+        54,
+        0,
+        13,
+        22,
+        148,
+        181,
+        70,
+        242,
+        186,
+        55,
+        0,
+        13,
+        22,
+        147,
+        185,
+        70,
+        250
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        14,
+        22,
+        147,
+        188,
+        70,
+        241,
+        192,
+        54,
+        0,
+        13,
+        22,
+        149,
+        188,
+        70,
+        239,
+        193,
+        55,
+        0,
+        13,
+        22,
+        148,
+        192,
+        70,
+        247
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
   },
   {
     "key": "av1_opus_360p",
     "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
     "container": "webm",
+    "inputInfo": {
+      "codec": "av1",
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": true,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.033,
+          0.067,
+          0.1,
+          0.133,
+          0.167,
+          0.2,
+          0.233
+        ],
+        "durationsMinMs": 33,
+        "durationsMaxMs": 34,
+        "uniqueDurations": 2,
+        "deltaStdMs": 0.472,
+        "variableFrameRate": true
+      },
+      "audio": {
+        "codec": "opus",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "format": {
+        "name": "WebM",
+        "mimeType": "video/webm"
+      }
+    },
+    "encoder": {
+      "container": "webm",
+      "codec": "vp9",
+      "codecString": "vp09.00.31.08",
+      "width": 640,
+      "height": 360,
+      "bitrate": 1000000,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "profile0",
+      "bpp": 0.14467592592592593,
+      "candidates": [
+        {
+          "codec": "vp9",
+          "codecString": "vp09.00.31.08",
+          "profile": "profile0",
+          "level": "3.1",
+          "bitrate": 1000000,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
     "videoCodec": "vp9",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 3.3,
+      "budgetMB": 512,
+      "chunks": 1,
+      "bytes": 711702,
+      "backpressureWrites": 1
+    },
+    "outputFile": "out/out_av1_opus_360p.webm",
     "audioPacketsCopied": 201,
-    "audioCopyMs": 2.7,
+    "audioCopyMs": 0.6,
+    "audioHash": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
     "frames": 120,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 10800,
+        "differingFrac": 0.4551851851851852,
+        "meanAbsCode": 70.92310821806346,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        186,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        68,
+        243,
+        185,
+        53,
+        0,
+        13,
+        22,
+        147,
+        184,
+        69,
+        243,
+        185,
+        53,
+        0,
+        13,
+        21,
+        141,
+        181,
+        70,
+        255
+      ],
+      "gradedGrid": [
+        193,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        68,
+        240,
+        192,
+        53,
+        0,
+        13,
+        22,
+        148,
+        191,
+        69,
+        240,
+        192,
+        53,
+        0,
+        13,
+        21,
+        142,
+        188,
+        70,
+        252
+      ],
+      "original": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/av1_opus_360p_original.jpg"
+      },
+      "graded": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/av1_opus_360p_graded.jpg"
+      }
+    },
     "timing": {
-      "wallMs": 4632.4,
-      "fps": 25.9,
+      "wallMs": 1892.8,
+      "fps": 63.4,
       "perFrameMs": {
-        "median": 25.8,
-        "p95": 94.2,
-        "max": 328.5
+        "median": 12.3,
+        "p95": 29.6,
+        "max": 255.5
       },
       "encodeAwaitMs": {
-        "median": 25.4,
-        "p95": 94.1,
-        "max": 328.3
+        "median": 12.2,
+        "p95": 26.3,
+        "max": 255.4
       }
     },
     "output": {
-      "bytes": 711710,
-      "duration": 4,
+      "file": "out/out_av1_opus_360p.webm",
+      "bytes": 711702,
       "mimeType": "video/webm; codecs=\"vp09.00.21.08.01.01.01.01.01, opus\"",
-      "videoCodec": "vp09.00.21.08.01.01.01.01.01",
-      "audioCodec": "opus",
-      "firstVideoTimestamp": 0,
-      "firstAudioTimestamp": -0.007,
-      "avStartOffsetMs": -7,
-      "videoTrackDuration": 4,
-      "audioTrackDuration": 3.994,
-      "avEndDeltaMs": -6,
-      "outputVideoPacketCount": 120,
-      "outputAudioPacketCount": 201
+      "duration": 4
     },
-    "peakHeapDeltaMB": 4.7,
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 15.8
+      },
+      {
+        "frame": 60,
+        "heapMB": 18.1
+      },
+      {
+        "frame": 90,
+        "heapMB": 19.5
+      },
+      {
+        "frame": 120,
+        "heapMB": 19.9
+      }
+    ],
+    "heapSlopeMBPerMinute": 173.72,
+    "peakHeapDeltaMB": 7.7,
     "images": {
       "original": {
         "width": 640,
@@ -277,6 +1801,1666 @@
         "savedAs": "images/av1_opus_360p_graded.jpg"
       }
     },
-    "outputSavedAs": "out_av1_opus_360p.webm"
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "640x360",
+          "actual": "640x360",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 120,
+          "actual": 120,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -7,
+          "actual": -7,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": -6,
+          "actual": -6,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
+          "actual": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 120,
+          "actual": 120,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        186,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        68,
+        243,
+        185,
+        53,
+        0,
+        13,
+        22,
+        147,
+        184,
+        69,
+        243,
+        185,
+        53,
+        0,
+        13,
+        21,
+        141,
+        181,
+        70,
+        255
+      ],
+      "independentGrid": [
+        186,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        68,
+        243,
+        185,
+        53,
+        0,
+        13,
+        22,
+        147,
+        184,
+        69,
+        243,
+        185,
+        53,
+        0,
+        13,
+        21,
+        141,
+        181,
+        70,
+        255
+      ],
+      "gradedGrid": [
+        193,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        68,
+        240,
+        192,
+        53,
+        0,
+        13,
+        22,
+        148,
+        191,
+        69,
+        240,
+        192,
+        53,
+        0,
+        13,
+        21,
+        142,
+        188,
+        70,
+        252
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
+  },
+  {
+    "key": "h264_silent_720p",
+    "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.13333333333333333,
+          0.1,
+          0.16666666666666666,
+          0.23333333333333334,
+          0.2
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": null,
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "width": 1280,
+      "height": 720,
+      "bitrate": 2764800,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001f",
+          "profile": "high",
+          "level": "3.1",
+          "bitrate": 2764800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 13,
+      "budgetMB": 512,
+      "chunks": 5,
+      "bytes": 4183375,
+      "backpressureWrites": 5
+    },
+    "outputFile": "out/out_h264_silent_720p.mp4",
+    "frames": 180,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 43200,
+        "differingFrac": 0.4549537037037037,
+        "meanAbsCode": 74.1597130355144,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        69,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        190,
+        67,
+        243
+      ],
+      "original": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_silent_720p_original.jpg"
+      },
+      "graded": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_silent_720p_graded.jpg"
+      }
+    },
+    "timing": {
+      "wallMs": 6578.1,
+      "fps": 27.36,
+      "perFrameMs": {
+        "median": 30.7,
+        "p95": 66.1,
+        "max": 247.6
+      },
+      "encodeAwaitMs": {
+        "median": 30.3,
+        "p95": 65.6,
+        "max": 151.9
+      }
+    },
+    "output": {
+      "file": "out/out_h264_silent_720p.mp4",
+      "bytes": 4183375,
+      "mimeType": "video/mp4; codecs=\"avc1.64001f\"",
+      "duration": 6
+    },
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 13.8
+      },
+      {
+        "frame": 60,
+        "heapMB": 13.1
+      },
+      {
+        "frame": 90,
+        "heapMB": 19.4
+      },
+      {
+        "frame": 120,
+        "heapMB": 12.4
+      },
+      {
+        "frame": 150,
+        "heapMB": 19.6
+      },
+      {
+        "frame": 180,
+        "heapMB": 21.7
+      }
+    ],
+    "heapSlopeMBPerMinute": 81.3,
+    "peakHeapDeltaMB": 49.5,
+    "images": {
+      "original": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_silent_720p_original.jpg"
+      },
+      "graded": {
+        "width": 1024,
+        "height": 576,
+        "sourceWidth": 1280,
+        "sourceHeight": 720,
+        "savedAs": "images/h264_silent_720p_graded.jpg"
+      }
+    },
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "1280x720",
+          "actual": "1280x720",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "independentGrid": [
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        180,
+        69,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        181,
+        68,
+        242,
+        183,
+        54,
+        0,
+        13,
+        22,
+        147,
+        183,
+        67,
+        246
+      ],
+      "gradedGrid": [
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        187,
+        69,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        188,
+        68,
+        239,
+        190,
+        54,
+        0,
+        13,
+        22,
+        148,
+        190,
+        67,
+        243
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
+  },
+  {
+    "key": "h264_portrait",
+    "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 720,
+      "codedHeight": 1280,
+      "displayWidth": 720,
+      "displayHeight": 1280,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.1,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.2,
+          0.13333333333333333,
+          0.16666666666666666,
+          0.3
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "width": 720,
+      "height": 1280,
+      "bitrate": 2764800,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001f",
+          "profile": "high",
+          "level": "3.1",
+          "bitrate": 2764800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 12.3,
+      "budgetMB": 512,
+      "chunks": 5,
+      "bytes": 3277341,
+      "backpressureWrites": 5
+    },
+    "outputFile": "out/out_h264_portrait.mp4",
+    "audioPacketsCopied": 189,
+    "audioCopyMs": 1.2,
+    "audioHash": "5b118197a1030791fb408d59889bbb566c8aaab45208a19b11d74f9354704f12",
+    "frames": 120,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 43200,
+        "differingFrac": 0.46046296296296296,
+        "meanAbsCode": 70.54991956565453,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        70,
+        203,
+        255
+      ],
+      "gradedGrid": [
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        71,
+        207,
+        252
+      ],
+      "original": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_portrait_original.jpg"
+      },
+      "graded": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_portrait_graded.jpg"
+      }
+    },
+    "timing": {
+      "wallMs": 5453.4,
+      "fps": 22,
+      "perFrameMs": {
+        "median": 38.1,
+        "p95": 87.5,
+        "max": 229.5
+      },
+      "encodeAwaitMs": {
+        "median": 37.9,
+        "p95": 84.3,
+        "max": 217.7
+      }
+    },
+    "output": {
+      "file": "out/out_h264_portrait.mp4",
+      "bytes": 3277341,
+      "mimeType": "video/mp4; codecs=\"avc1.64001f, mp4a.40.2\"",
+      "duration": 4
+    },
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 11.6
+      },
+      {
+        "frame": 60,
+        "heapMB": 11.3
+      },
+      {
+        "frame": 90,
+        "heapMB": 14
+      },
+      {
+        "frame": 120,
+        "heapMB": 20.2
+      }
+    ],
+    "heapSlopeMBPerMinute": 125.4,
+    "peakHeapDeltaMB": 4.5,
+    "images": {
+      "original": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_portrait_original.jpg"
+      },
+      "graded": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_portrait_graded.jpg"
+      }
+    },
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "720x1280",
+          "actual": "720x1280",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 120,
+          "actual": 120,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "5b118197a1030791fb408d59889bbb566c8aaab45208a19b11d74f9354704f12",
+          "actual": "5b118197a1030791fb408d59889bbb566c8aaab45208a19b11d74f9354704f12",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 120,
+          "actual": 120,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 5,
+      "originalGrid": [
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        70,
+        203,
+        255
+      ],
+      "independentGrid": [
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        71,
+        202,
+        255,
+        74,
+        187,
+        11,
+        13,
+        22,
+        147,
+        70,
+        203,
+        255
+      ],
+      "gradedGrid": [
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        72,
+        206,
+        252,
+        75,
+        192,
+        11,
+        13,
+        22,
+        148,
+        71,
+        207,
+        252
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
+  },
+  {
+    "key": "h264_rot90",
+    "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 720,
+      "displayHeight": 1280,
+      "rotation": 270,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.13333333333333333,
+          0.1,
+          0.16666666666666666,
+          0.23333333333333334,
+          0.2
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "width": 720,
+      "height": 1280,
+      "bitrate": 2764800,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001f",
+          "profile": "high",
+          "level": "3.1",
+          "bitrate": 2764800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 13.2,
+      "budgetMB": 512,
+      "chunks": 6,
+      "bytes": 4321310,
+      "backpressureWrites": 6
+    },
+    "outputFile": "out/out_h264_rot90.mp4",
+    "audioPacketsCopied": 283,
+    "audioCopyMs": 2.2,
+    "audioHash": "bd82d14eb6590d6560638eeb98924af71ba7fe2b4abdbae39d090c25e9c8a3f4",
+    "frames": 180,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 30,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 43200,
+        "differingFrac": 0.45828703703703705,
+        "meanAbsCode": 72.67946257197697,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        255,
+        40,
+        255,
+        255,
+        39,
+        255,
+        255,
+        38,
+        255,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0
+      ],
+      "gradedGrid": [
+        40,
+        40,
+        252,
+        40,
+        39,
+        252,
+        40,
+        38,
+        252,
+        245,
+        234,
+        108,
+        245,
+        234,
+        108,
+        245,
+        234,
+        108,
+        40,
+        24,
+        0,
+        40,
+        24,
+        0,
+        40,
+        24,
+        0
+      ],
+      "original": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_rot90_original.jpg"
+      },
+      "graded": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_rot90_graded.jpg"
+      }
+    },
+    "timing": {
+      "wallMs": 13525.8,
+      "fps": 13.31,
+      "perFrameMs": {
+        "median": 64.5,
+        "p95": 146.8,
+        "max": 451.3
+      },
+      "encodeAwaitMs": {
+        "median": 63.4,
+        "p95": 142.5,
+        "max": 402.1
+      }
+    },
+    "output": {
+      "file": "out/out_h264_rot90.mp4",
+      "bytes": 4321310,
+      "mimeType": "video/mp4; codecs=\"avc1.64001f, mp4a.40.2\"",
+      "duration": 6
+    },
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 13
+      },
+      {
+        "frame": 60,
+        "heapMB": 12.9
+      },
+      {
+        "frame": 90,
+        "heapMB": 15.4
+      },
+      {
+        "frame": 120,
+        "heapMB": 21.6
+      },
+      {
+        "frame": 150,
+        "heapMB": 12.9
+      },
+      {
+        "frame": 180,
+        "heapMB": 15.2
+      }
+    ],
+    "heapSlopeMBPerMinute": 13.08,
+    "peakHeapDeltaMB": 7.7,
+    "images": {
+      "original": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_rot90_original.jpg"
+      },
+      "graded": {
+        "width": 720,
+        "height": 1280,
+        "sourceWidth": 720,
+        "sourceHeight": 1280,
+        "savedAs": "images/h264_rot90_graded.jpg"
+      }
+    },
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "720x1280",
+          "actual": "720x1280",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "bd82d14eb6590d6560638eeb98924af71ba7fe2b4abdbae39d090c25e9c8a3f4",
+          "actual": "bd82d14eb6590d6560638eeb98924af71ba7fe2b4abdbae39d090c25e9c8a3f4",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 180,
+          "actual": 180,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 215,
+      "originalGrid": [
+        255,
+        40,
+        255,
+        255,
+        39,
+        255,
+        255,
+        38,
+        255,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0
+      ],
+      "independentGrid": [
+        255,
+        40,
+        255,
+        255,
+        39,
+        255,
+        255,
+        38,
+        255,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        242,
+        233,
+        108,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0,
+        255,
+        24,
+        0
+      ],
+      "gradedGrid": [
+        40,
+        40,
+        252,
+        40,
+        39,
+        252,
+        40,
+        38,
+        252,
+        245,
+        234,
+        108,
+        245,
+        234,
+        108,
+        245,
+        234,
+        108,
+        40,
+        24,
+        0,
+        40,
+        24,
+        0,
+        40,
+        24,
+        0
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
+  },
+  {
+    "key": "h264_vfr",
+    "ok": true,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "averagePacketRate": 21.429,
+      "vfr": true,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.1,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.3333333333333333,
+          0.16666666666666666,
+          0.13333333333333333,
+          0.2
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 133.333,
+        "uniqueDurations": 2,
+        "deltaStdMs": 34.993,
+        "variableFrameRate": true
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001e",
+      "width": 640,
+      "height": 360,
+      "bitrate": 1000000,
+      "framerate": 21,
+      "level": "3.0",
+      "profile": "high",
+      "bpp": 0.20667989417989419,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001e",
+          "profile": "high",
+          "level": "3.0",
+          "bitrate": 1000000,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "harness",
+      "mode": "harness-stream",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 3.7,
+      "budgetMB": 512,
+      "chunks": 3,
+      "bytes": 1106135,
+      "backpressureWrites": 3
+    },
+    "outputFile": "out/out_h264_vfr.mp4",
+    "audioPacketsCopied": 283,
+    "audioCopyMs": 1.5,
+    "audioHash": "85a57f5256998ad0c4539ce4c21ef9adb43cf09ced502285c593989c56ac4a1b",
+    "frames": 126,
+    "snapshot": {
+      "timestamp": 1,
+      "frameIndex": 21,
+      "renderedBeforeCapture": true,
+      "sameFrame": true,
+      "pixelDiff": {
+        "samples": 10800,
+        "differingFrac": 0.3473148148148148,
+        "meanAbsCode": 86.99253532391363,
+        "maxCode": 215
+      },
+      "originalGrid": [
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        175,
+        45,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        171,
+        43,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        172,
+        45,
+        238
+      ],
+      "gradedGrid": [
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        182,
+        45,
+        235,
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        178,
+        43,
+        235,
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        179,
+        45,
+        236
+      ],
+      "original": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/h264_vfr_original.jpg"
+      },
+      "graded": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/h264_vfr_graded.jpg"
+      }
+    },
+    "timing": {
+      "wallMs": 1465.6,
+      "fps": 85.97,
+      "perFrameMs": {
+        "median": 8.7,
+        "p95": 14.4,
+        "max": 57.2
+      },
+      "encodeAwaitMs": {
+        "median": 8.6,
+        "p95": 13.4,
+        "max": 51.1
+      }
+    },
+    "output": {
+      "file": "out/out_h264_vfr.mp4",
+      "bytes": 1106135,
+      "mimeType": "video/mp4; codecs=\"avc1.64001e, mp4a.40.2\"",
+      "duration": 6
+    },
+    "heapSeries": [
+      {
+        "frame": 30,
+        "heapMB": 9.6
+      },
+      {
+        "frame": 60,
+        "heapMB": 10.5
+      },
+      {
+        "frame": 90,
+        "heapMB": 11.9
+      },
+      {
+        "frame": 120,
+        "heapMB": 12.6
+      }
+    ],
+    "heapSlopeMBPerMinute": 178.82,
+    "peakHeapDeltaMB": 6.4,
+    "images": {
+      "original": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/h264_vfr_original.jpg"
+      },
+      "graded": {
+        "width": 640,
+        "height": 360,
+        "sourceWidth": 640,
+        "sourceHeight": 360,
+        "savedAs": "images/h264_vfr_graded.jpg"
+      }
+    },
+    "outputBase64": "absent",
+    "outputVerification": {
+      "ok": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "640x360",
+          "actual": "640x360",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 126,
+          "actual": 126,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 100,
+          "actual": 100,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "85a57f5256998ad0c4539ce4c21ef9adb43cf09ced502285c593989c56ac4a1b",
+          "actual": "85a57f5256998ad0c4539ce4c21ef9adb43cf09ced502285c593989c56ac4a1b",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 126,
+          "actual": 126,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "snapshotVerification": {
+      "ok": true,
+      "timestamp": 1,
+      "independentOriginalMaxCodeDiff": 0,
+      "gradedDiffFromIndependentDecode": 7,
+      "originalGrid": [
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        175,
+        45,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        171,
+        43,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        172,
+        45,
+        238
+      ],
+      "independentGrid": [
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        175,
+        45,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        171,
+        43,
+        237,
+        173,
+        44,
+        0,
+        15,
+        14,
+        142,
+        172,
+        45,
+        238
+      ],
+      "gradedGrid": [
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        182,
+        45,
+        235,
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        178,
+        43,
+        235,
+        180,
+        44,
+        0,
+        15,
+        14,
+        143,
+        179,
+        45,
+        236
+      ],
+      "sameFrameVerified": true,
+      "gradingApplied": true
+    }
   }
 ]

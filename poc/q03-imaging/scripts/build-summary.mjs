@@ -28,6 +28,12 @@ for (const key of KEYS) {
   }
   const d = r.decode ?? {};
   const p = r.precision ?? {};
+  let cc = null;
+  try {
+    cc = JSON.parse(await readFile(path.join(OUT, `color_contract_${key}.json`), 'utf8'));
+  } catch {
+    // contract phase not run yet
+  }
   const demosaic = {};
   for (const [k, v] of Object.entries(r.demosaic ?? {})) {
     demosaic[k] = v.ok
@@ -77,6 +83,26 @@ for (const key of KEYS) {
           lin16: p.linearRgb16VsF32 ? { mae: p.linearRgb16VsF32.mae, maxAbs: p.linearRgb16VsF32.maxAbs, over001: p.linearRgb16VsF32.over001, over005: p.linearRgb16VsF32.over005, ...brief(p.linearRgb16VsF32) } : null,
         }
       : null,
+    precisionAfterAdjustments: Object.fromEntries(
+      Object.entries(r.precisionAfterAdjustments ?? {}).map(([k, v]) => [k, v?.error ? { error: v.error } : {
+        mae: v.full?.mae, maxAbs: v.full?.maxAbs,
+        display8: brief(v.full),
+        highlightBand: v.highlightBand ? { samples: v.highlightBand.samples, mae: v.highlightBand.mae, maxAbs: v.highlightBand.maxAbs, display8: v.highlightBand.display8 } : null,
+        overOneBand: v.overOneBand ? { samples: v.overOneBand.samples, mae: v.overOneBand.mae, maxAbs: v.overOneBand.maxAbs } : null,
+      }]),
+    ),
+    colorContract: cc ? {
+      ok: cc.ok,
+      bridgeMaxCode: cc.sdrBridge?.bridgeVsDecoder?.maxCode ?? null,
+      wbOrderPreMatrix: cc.whiteBalanceOrder?.preMatrix ?? null,
+      wbOrderEvidence: cc.whiteBalanceOrder?.orderEvidence ?? null,
+      wbOrderResidualP99: cc.whiteBalanceOrder?.bestResidualP99 ?? null,
+      wbBestModel: cc.whiteBalanceOrder?.bestModel ?? null,
+      exposurePlus1ChannelRatio: cc.exposure?.plus1EV?.medianChannelRatio ?? null,
+      exposureOverOnePreserved: cc.exposure?.plus2EV?.preservesOverOne ?? null,
+      workingSpaceHonored: cc.workingSpace?.requestedP3Honored ?? null,
+      resolution: cc.resolution ?? null,
+    } : null,
     clipMaxLinear: d.linear_rgb_f32?.linearStats?.max ?? null,
     clippedPixels: d.linear_rgb_f32?.linearStats?.clippedGreatherThan1 ?? null,
     demosaic,

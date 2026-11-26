@@ -25,6 +25,24 @@
       "packetCount": 120,
       "averagePacketRate": 30,
       "averageBitrate": 438244
+    },
+    "timing": {
+      "sampledPackets": 120,
+      "firstTimestamps": [
+        0,
+        0.033,
+        0.067,
+        0.1,
+        0.133,
+        0.167,
+        0.2,
+        0.233
+      ],
+      "durationsMinMs": 33,
+      "durationsMaxMs": 34,
+      "uniqueDurations": 2,
+      "deltaStdMs": 0.472,
+      "variableFrameRate": true
     }
   },
   "audio": {

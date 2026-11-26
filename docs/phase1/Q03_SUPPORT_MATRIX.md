@@ -31,7 +31,8 @@ RAW 처리 옵션 실측:
 | 디모자이크 | `auto`=bilinear(7종 모두 차이 0), `half-size`, `edge-aware`, `ahd` 동작. X-Trans `ppg`/`rcd` 거부 |
 | 하이라이트 | `clip` 기준 `neutral`/`blend`/`reconstruct` 동작. 샘플 대부분 차이 0, ARW에서 0.14~0.79% 픽셀 변화 |
 | 화이트밸런스 | `as-shot` 기본, `daylight`/`auto` 선택 가능(67~99% 픽셀 변화) |
-| 영역 디코드 | `decodeRegion({x,y,width,height})` 1200×800 rgba8 성공 |
+| 영역 디코드 | `decodeRegion({x,y,width,height})` 1200×800 rgba8 성공. 전체 디코드와 내부(경계 8px 제외) 픽셀 일치 |
+| 색 계약 (CP1.1) | 7종 모두 linear f16/f32 3ch, WB pre-matrix(matrix-exact), bridge ≤1 code, EXIF orientation 반영, 조기 클리핑/8-bit 양자화 없음 |
 | 스레드 | ⚪ COOP/COEP 없어 1스레드로 동작. 멀티스레드 경로 미검증 |
 
 ## 2. Video 디코드
@@ -45,22 +46,42 @@ RAW 처리 옵션 실측:
 | WebM / VP9 (720p) | 합성 6s | ✅ | ✅ 180f | 오디오 Opus 2ch |
 | MP4 / HEVC `hvc1.1.6.L63.90` (360p) | 합성 3s | ✅ | ✅ 90f | hvc1 태그, 오디오 AAC 1ch |
 | WebM / AV1 Main (360p) | 합성 4s | ✅ | ✅ 120f | 오디오 Opus 1ch |
+| MP4 / H.264 **무음** (720p) | 합성 6s | ✅ | ✅ 180f | 오디오 트랙 없이 먹싱·검증 |
+| MP4 / H.264 **세로** (720×1280) | 합성 4s | ✅ | ✅ 120f | coded·표시 모두 세로 |
+| MP4 / H.264 **rotation 270°** (coded 1280×720) | 합성 6s | ✅ | ✅ 180f | 표시 720×1280. 출력은 픽셀 회전(태그 없음) |
+| MP4 / H.264 **VFR** (360p, 33/133ms) | 합성 6s·126f | ✅ | ✅ 126f | 가변 간격 출력 PTS 유지 |
+| MP4 / H.264 45초 (720p, 1350f) | 합성 45s | ✅ | ✅ 1350f | 장시간 export 스트레스 |
 | VP8 / MP3 / FLAC decode | — | 🟡 | ⚪ | `isConfigSupported` 프로브만 |
-| 4K, 10-bit/HDR, VFR, 다중 오디오 | — | ⚪ | ⚪ | 미검증 |
+| 4K, 10-bit/HDR, 다중 오디오, 자막 | — | ⚪ | ⚪ | 미검증 |
+
+VFR 판별은 패킷 타임스탬프를 정렬한 뒤 간격을 계산한다(CP1.1 수정). B프레임 재정렬 때문에 디코드 순서 타임스탬프를 그대로 쓰면 CFR을 VFR로 오판했다.
 
 ### 2.2 인코드 (실제 파일 생성)
 
 | 코덱 | 프로브 | 실제 인코드 | 사용 컨테이너 | 비고 |
 |---|---|---|---|---|
-| H.264 (AVC) | ✅ `avc1.42001f` | ✅ 720p, 360p | MP4 | 1080p는 고정 L3.1 문자열 때문에 프로브 실패 → AV1 폴백 |
-| VP9 | ✅ `vp09.00.10.08` | ✅ 720p, 360p | WebM | — |
-| AV1 | ✅ `av01.0.04M.08` | ✅ 1080p | MP4 | 소프트웨어 환경 4.3fps |
+| H.264 (AVC) | ✅ | ✅ 1080p/720p/360p | MP4 | 동적 문자열: `avc1.640028`(L4.0)/`avc1.64001f`(L3.1)/`avc1.64001e`(L3.0) |
+| VP9 | ✅ `vp09.00.31.08` | ✅ 720p/360p | WebM | WebM 입력에서 선택 |
+| AV1 | ✅ `av01.0.04M.08` | ⚪ | — | CP1에서는 1080p 폴백으로 실제 인코드했으나, CP1.1 동적 선택 후 자동 경로에서 선택되지 않음 |
 | HEVC | ✅ `hvc1.1.6.L93.B0` | ⚪ | — | 프로브만, 실제 인코드 미검증 |
 | VP8 | ✅ | ⚪ | — | 프로브만 |
 | AAC / Opus 인코드 | ✅ | ⚪ | — | 이번 트랜스코드는 오디오 **패스스루**만 사용 |
 | PCM 계열 | 🟡 mediabunny 목록 | ⚪ | — | 미검증 |
 
-오디오 처리: `EncodedAudioPacketSource`로 AAC/Opus 원본 패킷을 재인코딩 없이 통과시켰다(283/470/301/142/201 패킷). 오디오 **재인코딩** 경로는 이번 PoC에서 사용하지 않았다.
+오디오 처리: `EncodedAudioPacketSource`로 AAC/Opus 원본 패킷을 재인코딩 없이 통과시켰다(AAC 283/470/142/189, Opus 301/201). 출력에서 다시 읽은 패킷 SHA-256이 입력과 일치했다. 오디오 **재인코딩** 경로는 사용하지 않았다.
+
+### 2.3 출력·메모리·취소 (CP1.1)
+
+| 항목 | 결과 |
+|---|---|
+| Streaming 출력 | ✅ `StreamTarget`(WritableStream)으로 chunk 단위 직접 쓰기. 제품 경로 Base64 없음 |
+| 파일 저장 감지 | ✅ `showSaveFilePicker`/FileSystemWritable 런타임 감지. 거부 시 `OutputTargetError` |
+| 메모리 예산 | ✅ 초과 시 시작 전 `MemoryBudgetError`(추정 25.6MB > 1MB). 예산 내 buffer는 검증 통과 |
+| 장시간(45s) | ✅ heap slope −1.58 MB/min, 20.6~31.6MB 톱니파, 증가 없음 |
+| 취소 | ✅ 내부 abort·외부 `cancelRun()` 모두 `AbortError` 후 해제, 직후 재실행 성공 |
+| A/V 검증 | ✅ 프레임/패킷 수, 시작·종료 오프셋(입력 보존), 오디오 해시, 타임스탬프 단조성 |
+| 스냅샷 | ✅ 10종 same-frame, 원본 vs 입력 독립 디코드 최대 0 code, graded LUT 적용 확인 |
+| 4K/수 분/모바일 한도 | ⚪ 미검증 |
 
 ## 3. iOS Safari (문헌 기준, 실기기 미검증)
 
