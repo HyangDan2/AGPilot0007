@@ -36,7 +36,7 @@
 - `createExportProcessor({ exportOptions, deps? })` → `{ processor, lutCacheSize, clearLutCache }`.
 - 작업 흐름: `entry.getFile()` → `decodeImageFile(file, name, signal)` → 필름별 LUT 캐시 → `prepareExportImage(...)` (진행률 0.3~0.98 매핑) → `PreparedExport`.
 - **단계별 취소 계약(APP-03)**: `signal`은 `getFile` 전후, 디코딩 후, LUT 로드 후, 인코딩 전후에 검사한다. 취소가 감지되면 `DOMException('Export cancelled during <stage>', 'AbortError')`를 던져 어느 단계에서 중단됐는지 남긴다. `decodeImageFile`은 signal을 지원하므로 디코딩 중에도 중단된다.
-  - `prepareExportImage`(WebGL 렌더 + `toBlob` 인코딩)는 기존 공용 엔진이라 signal을 받지 않는다. PoC는 렌더/인코딩 **전후**에만 취소를 관찰할 수 있다. 이 한계는 숨기지 않고 Q01 인터페이스 요구사항(CP1_1_INTERFACE_REQUIREMENTS.md)으로 넘긴다.
+  - `prepareExportImage`에는 `ExportControl { signal, onStage }`를 전달한다(Q01 SC-01). 렌더러가 render/encode 단계 경계에서 signal을 검사하고 `AbortError`를 던지므로, 취소는 배치 정산(`cancelled`)으로 이어지고 결과 objectUrl·디코딩 URL은 해제된다(`tests/q04Batch.test.ts` 취소 경로 2건).
 - **결과 수명 관리(APP-01)**: `disposePrepared(prepared)`는 `WeakSet` 기반 멱등 해제(objectUrl 1회만 revoke). `createDeliverySink(save)`는 `save(prepared, { id, filename })`을 호출하고 **성공/실패와 무관하게 finally에서 objectUrl을 해제**한다. `save`가 던지면 그대로 전파되어 Queue가 전달 실패로 정산한다.
 - 메모리:
   - 디코딩한 `image.sourceUrl`은 `finally`에서 해제,
@@ -129,7 +129,7 @@ queue runs (scale 0.5, JPEG q0.85, real WebGL export):
 ## 6. 미해결 / CP2
 
 - Export 파일명 충돌 정책(시리즈 접미사, 덮어쓰기 금지)은 기존 `triggerSafeDownload` 동작과 함께 확정 필요.
-- `prepareExportImage`(WebGL 렌더 + `toBlob` 인코딩)의 중간 취소는 공용 엔진 미지원 — Q01 인터페이스 요구사항 문서 참조.
+- `prepareExportImage` 중간 취소는 Q01 `ExportControl`(0ca7ec7)로 지원된다. 다만 렌더는 GPU 동기 구간이므로 취소는 render/encode 단계 경계에서 관측되며, 진행 중 픽셀 작업을 즉시 중단하지는 않는다.
 - 실제 iOS/Android 실기기 100장 배치 측정 미실시(합성 100-job 스트레스만 수행).
 - 배치 진행 UI는 Q01 공통 컴포넌트 확정 후 구현(현 PoC는 상태 API만 제공).
 - `retryLimit` 기본값(3)은 UX 결정 대상. Queue 상한(10)은 안전 상한일 뿐 권장값이 아니다.

@@ -128,7 +128,7 @@ PoC는 `subscribe(snapshot)`/`overallProgress`를 제공하지만 UI는 구현�
 
 | IF | CP1.1 PoC 상태 | 소유자 | 남은 의존/다음 단계 |
 | --- | --- | --- | --- |
-| IF-01 export signal/onStage | **부분/대기(WO-CP2-01)** — Q04 `batchExport`는 6번째 인자로 `{ signal }`을 전달해 render/encode 단계 경계 abort를 사용한다. 그러나 Q01 `ExportModal.tsx`는 아직 `control`/`AbortController`를 배선하지 않아 사용자 대상 취소는 미완결(CP2-01-P1-01) | Q01 | Q01 최소 취소 배선 완료 후 실제 배선을 검증하고 PR #19 본문을 갱신. Q04는 어댑터 유지만 |
+| IF-01 export signal/onStage | **Closed (2026-11-27)** — Q01 `0ca7ec7`가 `ExportModal`에 `AbortController`+`ExportControl`+`Cancel Export`를 배선했고(`tests/exportModalCancel.test.tsx`), Q04 `batchExport`는 `{ signal, onStage }`를 `prepareExportImage`에 전달해 취소를 배치 정산(`cancelled`)과 자원 해제(objectUrl)로 소비한다(`tests/q04Batch.test.ts` 취소 경로 2건) | Q01/Q04 | 종결. 후속 변경 시 양쪽 테스트 유지 |
 | IF-02 렌더/전달 분리 | **구현 완료**(PoC) — `deliver`, `renderSucceeded`/`deliveryError`, `disposePrepared`, `createDeliverySink` | Q01 (API 소유) | 공용 Export API에 동일 계약 반영, 저장 소유권 문구 확정 |
 | IF-03 active selection | **구현 완료**(PoC) — `anchor`/`active` 분리, `primarySelection` | Q01 (workspaceStore 소유) | `workspaceStore.activeId`와 선택 집합 원장 분리 통합 |
 | IF-04 EditStateHost | **어댑터 구현**(`editStateAdapter.ts`) + geometry 매핑/비저장 정책(§5.1) | Q01 | Q01 `EditStateHost` 확정 후 구조적 타입 → Q01 `EditState` import 교체. v8 저장은 Q01 기하 체크포인트 이후 |
@@ -137,7 +137,7 @@ PoC는 `subscribe(snapshot)`/`overallProgress`를 제공하지만 UI는 구현�
 
 보강 (WO-CP2-01, 2026-11-27):
 
-- **IF-01 정정:** Q01 `ExportControl` 계약은 merge(21fd6dc)로 들어왔고 Q04 어댑터는 이를 전달하지만, `ExportModal` 배선 전까지 "해소"로 표기하지 않는다. Q01 배선 병합 시 `tests/q04Batch.test.ts`에 batch adapter 취소 경로 테스트를 추가하고 PR 본문을 갱신한다. `docs/HARNESS_GUIDE.md`의 "IF-01은 SC-01로 해소" 문구도 Q01 흡수 시 "부분/대기(`ExportModal` 배선 대기)"로 정정을 요청한다(Q04는 HARNESS를 직접 수정하지 않음).
+- **IF-01 종결(2026-11-27):** Q01 `0ca7ec7`가 `ExportModal`에 `AbortController`/`ExportControl`/`Cancel Export`를 배선했고(`tests/exportModalCancel.test.tsx`, 150→151), Q04 `batchExport`는 어댑터에서 `{ signal, onStage }`를 전달하며 `tests/q04Batch.test.ts`가 abort → `cancelled` 정산, delivery 미호출, decoded/prepared objectUrl 해제를 검증한다. 이후 회귀 시 양쪽 테스트를 함께 유지한다. `docs/HARNESS_GUIDE.md`의 "IF-01은 SC-01로 해소" 문구는 이제 사실이므로 Q01 흡수 시 그대로 두어도 된다(Q04는 HARNESS를 직접 수정하지 않음).
 - **HARNESS 소유권:** `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. PR #19가 추가한 `npm test`/`test:perf`/`test:all` 행은 Q01이 흡수하며, Q04는 이후 HARNESS를 직접 수정하지 않고 이 문서와 PR 본문으로만 제안한다(CP2-01-P3-01).
 - **Recipe v8:** `geometry` 저장(v8 활성화)은 G1 이후 Q01 기하 체크포인트와 별도 PO 승인 전까지 금지한다. 어댑터는 v7 저장 정책을 유지한다.
 - **Q00 문서:** `docs/phase1/MASTER_STATUS.md`, `EXECUTION_ENVIRONMENT.md`는 Q00 소유이며 Q04는 수정하지 않는다.

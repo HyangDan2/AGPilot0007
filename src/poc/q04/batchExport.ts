@@ -1,5 +1,6 @@
 import { decodeImageFile, type DecodedImage } from '../../engine/image/decoder';
 import { prepareExportImage } from '../../engine/export/imageExporter';
+import type { ExportControl } from '../../engine/contracts/exportControl';
 import { loadCubeLut, type ParsedLut3D } from '../../engine/color/lutLoader';
 import { FILM_PROFILES } from '../../films/registry';
 import type { ExportOptions, PreparedExport } from '../../types/export';
@@ -123,6 +124,11 @@ export function createExportProcessor(options: ExportProcessorOptions): ExportPr
       const lut = await getLut(profile.lutFile);
       throwIfAborted(ctx.signal, 'loading film LUT');
 
+      let fraction = 0;
+      const control: ExportControl = {
+        signal: ctx.signal,
+        onStage: (stage) => ctx.report(0.3 + fraction * 0.68, stage),
+      };
       prepared = await deps.prepare(
         image,
         lut,
@@ -136,10 +142,10 @@ export function createExportProcessor(options: ExportProcessorOptions): ExportPr
         },
         options.exportOptions,
         (progress, stage) => {
-          const fraction = Math.min(100, Math.max(0, progress)) / 100;
+          fraction = Math.min(100, Math.max(0, progress)) / 100;
           ctx.report(0.3 + fraction * 0.68, stage);
         },
-        { signal: ctx.signal },
+        control,
       );
 
       throwIfAborted(ctx.signal, 'encoding');

@@ -12,6 +12,7 @@ import {
   isAIModuleAvailable,
   normalizeGeometry,
   normalizeMasks,
+  normalizeRecipeV8Geometry,
   renderPlanFingerprint,
   resolveRenderPlan,
   toRecipeV8,
@@ -126,6 +127,25 @@ describe('mask contract (not persisted yet)', () => {
     expect(() => validateMasks([mask, { ...mask }])).toThrow(/Invalid mask identity/);
     expect(() => validateMasks([{ ...mask, kind: 'luminance', lo: 0.8, hi: 0.2 }])).toThrow(/Invalid mask shape/);
     expect(() => validateMasks([{ ...mask, radiusX: 0 }])).toThrow(/Invalid mask shape/);
+  });
+
+  it('rejects the 17th mask, 65th stroke and 1025th stroke point while accepting the limits', () => {
+    const stroke = { points: [{ x: 0.1, y: 0.2 }], radius: 0.1, hardness: 0.5, flow: 1 };
+    const masks = (count: number) => Array.from({ length: count }, (_, i) => ({ ...mask, id: `mask-${i}` }));
+    const points = (count: number) => Array.from({ length: count }, () => ({ x: 0.5, y: 0.5 }));
+    const brush = (strokes: unknown[], strokePoints: number = 1) => ({
+      ...mask,
+      kind: 'brush',
+      strokes: strokes.map(() => ({ ...stroke, points: points(strokePoints) })),
+    });
+
+    expect(() => validateMasks(masks(17))).toThrow(/Invalid masks/);
+    expect(() => validateMasks([brush(Array.from({ length: 65 }, () => stroke))])).toThrow(/Invalid mask shape/);
+    expect(() => validateMasks([brush([stroke], 1025)])).toThrow(/Invalid mask stroke/);
+
+    expect(validateMasks(masks(16))).toBeUndefined();
+    expect(validateMasks([brush(Array.from({ length: 64 }, () => stroke))])).toBeUndefined();
+    expect(validateMasks([brush([stroke], 1024)])).toBeUndefined();
   });
 });
 
@@ -271,6 +291,33 @@ describe('recipe v8 contract', () => {
         },
       }),
     ).not.toThrow();
+  });
+
+  it('rejects flat geometry and malformed wrappers instead of dropping the transform', () => {
+    expect(() => validateRecipeV8Geometry({ rotation: 90, straighten: 5 })).toThrow(/geometry wrapper/);
+    expect(() => validateRecipeV8Geometry({})).toThrow(/geometry wrapper/);
+    expect(() => validateRecipeV8Geometry({ geometry: undefined })).toThrow(/Invalid recipe geometry/);
+    expect(() => validateRecipeV8Geometry({ geometry: null })).toThrow(/Invalid recipe geometry/);
+    expect(() => validateRecipeV8Geometry({ geometry: [{ rotation: 90 }] })).toThrow(/Invalid recipe geometry/);
+    expect(() => validateRecipeV8Geometry(null)).toThrow(/geometry wrapper/);
+    expect(() => validateRecipeV8Geometry(undefined)).toThrow(/geometry wrapper/);
+  });
+
+  it('round-trips a wrapped geometry through JSON without losing values', () => {
+    const geometry = normalizeRecipeV8Geometry({
+      geometry: {
+        rotation: 270,
+        straighten: -12.5,
+        flipHorizontal: true,
+        flipVertical: false,
+        crop: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 },
+      },
+    });
+    const restored = JSON.parse(JSON.stringify({ schemaVersion: RECIPE_SCHEMA_V8, geometry }));
+    validateRecipeV8Geometry(restored);
+    expect(restored.geometry).toEqual(geometry);
+    expect(restored.geometry.rotation).toBe(270);
+    expect(normalizeRecipeV8Geometry(restored)).toEqual(geometry);
   });
 });
 

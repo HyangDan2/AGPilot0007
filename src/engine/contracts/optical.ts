@@ -37,6 +37,12 @@ export const OPTICAL_MAX_TANGENTIAL = 0.5;
 export const OPTICAL_PERSPECTIVE_STRENGTH = 0.15;
 export const OPTICAL_MATRIX_EPSILON = 1e-8;
 
+const DISTORTION_DOMAIN_RADIUS = 1.5;
+const DISTORTION_RADIAL_SAMPLES = 256;
+const DISTORTION_JACOBIAN_EXTENT = 1.2;
+const DISTORTION_JACOBIAN_STEPS = 16;
+const DISTORTION_INVERTIBILITY_EPSILON = 1e-6;
+
 const isObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -48,6 +54,35 @@ export function determinantMat3(matrix: readonly number[]): number {
 export function isInvertibleMat3(matrix: readonly number[]): boolean {
   if (!Array.isArray(matrix) || matrix.length !== 9 || !matrix.every(Number.isFinite)) return false;
   return Math.abs(determinantMat3(matrix)) > OPTICAL_MATRIX_EPSILON;
+}
+
+/**
+ * Mirrors the Q02 runtime invertibility gate (OPTICAL_POC §12.1.1): the radial
+ * profile must increase monotonically over the image domain and the full
+ * Brown-Conrady Jacobian must stay positive when tangential terms are present.
+ */
+function isDistortionInvertible(k1: number, k2: number, k3: number, p1: number, p2: number): boolean {
+  for (let i = 0; i <= DISTORTION_RADIAL_SAMPLES; i++) {
+    const r = (i / DISTORTION_RADIAL_SAMPLES) * DISTORTION_DOMAIN_RADIUS;
+    const r2 = r * r;
+    const derivative = 1 + 3 * k1 * r2 + 5 * k2 * r2 * r2 + 7 * k3 * r2 * r2 * r2;
+    if (derivative <= DISTORTION_INVERTIBILITY_EPSILON) return false;
+  }
+  if (p1 === 0 && p2 === 0) return true;
+  for (let iy = 0; iy <= DISTORTION_JACOBIAN_STEPS; iy++) {
+    for (let ix = 0; ix <= DISTORTION_JACOBIAN_STEPS; ix++) {
+      const x = -DISTORTION_JACOBIAN_EXTENT + (2 * DISTORTION_JACOBIAN_EXTENT * ix) / DISTORTION_JACOBIAN_STEPS;
+      const y = -DISTORTION_JACOBIAN_EXTENT + (2 * DISTORTION_JACOBIAN_EXTENT * iy) / DISTORTION_JACOBIAN_STEPS;
+      const r2 = x * x + y * y;
+      const radial = 1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2;
+      const radialDerivative = k1 + 2 * k2 * r2 + 3 * k3 * r2 * r2;
+      const j00 = radial + 2 * x * x * radialDerivative + 2 * p1 * y + 6 * p2 * x;
+      const j01 = 2 * x * y * radialDerivative + 2 * p1 * x + 2 * p2 * y;
+      const j11 = radial + 2 * y * y * radialDerivative + 6 * p1 * y + 2 * p2 * x;
+      if (j00 * j11 - j01 * j01 <= DISTORTION_INVERTIBILITY_EPSILON) return false;
+    }
+  }
+  return true;
 }
 
 export function createOpticalTransform(overrides: Partial<OpticalTransform> = {}): OpticalTransform {
@@ -133,6 +168,14 @@ export function validateOpticalTransform(value: unknown): asserts value is Optic
       ) {
         throw new Error('Invalid optical distortion');
       }
+    }
+    const k1 = distortion.k1 as number;
+    const k2 = typeof distortion.k2 === 'number' ? distortion.k2 : 0;
+    const k3 = typeof distortion.k3 === 'number' ? distortion.k3 : 0;
+    const p1 = typeof distortion.p1 === 'number' ? distortion.p1 : 0;
+    const p2 = typeof distortion.p2 === 'number' ? distortion.p2 : 0;
+    if (!isDistortionInvertible(k1, k2, k3, p1, p2)) {
+      throw new Error('Optical distortion is not invertible in the image domain');
     }
   }
 

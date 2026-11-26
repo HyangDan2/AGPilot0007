@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BatchQueue, MAX_CONCURRENCY } from '../src/poc/q04/batchQueue';
 import { recommendedConcurrency } from '../src/poc/q04/resources';
-import { createDeliverySink, createExportProcessor, disposePrepared } from '../src/poc/q04/batchExport';
+import { createDeliverySink, createExportProcessor, disposePrepared, type ExportJobMeta } from '../src/poc/q04/batchExport';
 import { createEditState } from '../src/poc/q04/editState';
+import { throwIfExportAborted, type ExportControl } from '../src/engine/contracts/exportControl';
+import type { PreparedExport } from '../src/types/export';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 import { FILM_PROFILES } from '../src/films/registry';
 import type { WorkspaceEntry } from '../src/engine/image/workspace';
@@ -527,6 +529,111 @@ describe('Q04 batch export adapter', () => {
     await expect(
       handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: controller.signal, report: vi.fn() }),
     ).rejects.toMatchObject({ name: 'AbortError', message: expect.stringContaining('encoding') });
+  });
+
+  it('forwards ExportControl and settles a batch cancellation without delivering or leaking URLs', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const deliver = vi.fn();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let markStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const observed: { signal?: AbortSignal; stages: string[] } = { stages: [] };
+    const deps = makeDeps({
+      prepare: vi.fn(
+        async (
+          _image: unknown,
+          _lut: unknown,
+          _settings: unknown,
+          _options: unknown,
+          _onProgress: unknown,
+          control?: ExportControl,
+        ) => {
+          observed.signal = control?.signal;
+          observed.stages.push('render');
+          control?.onStage?.('render');
+          markStarted();
+          await gate;
+          // Mirrors Q01 imageExporter: stage boundaries abort through the shared signal.
+          throwIfExportAborted(control?.signal);
+          return prepared('never.jpg');
+        },
+      ),
+    });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    const settled: string[] = [];
+    const queue = new BatchQueue<ExportJobMeta, PreparedExport>({
+      concurrency: 1,
+      processor: handle.processor,
+      deliver,
+      onSettled: (job, outcome) => settled.push(`${job.id}:${outcome.status}`),
+    });
+
+    queue.add([{ id: 'cancel-me', meta: { entry, edit } }]);
+    await started;
+    expect(observed.stages).toEqual(['render']);
+    expect(observed.signal).toBeInstanceOf(AbortSignal);
+    expect(observed.signal!.aborted).toBe(false);
+
+    expect(queue.cancel('cancel-me')).toBe(true);
+    expect(observed.signal!.aborted).toBe(true);
+    release();
+    const snapshot = await queue.drain();
+
+    expect(snapshot.jobs[0].status).toBe('cancelled');
+    expect(snapshot.counts.cancelled).toBe(1);
+    expect(snapshot.counts.succeeded).toBe(0);
+    expect(snapshot.jobs[0].note).toBe('render');
+    expect(settled).toEqual(['cancel-me:cancelled']);
+    expect(deliver).not.toHaveBeenCalled();
+    expect(revoke).toHaveBeenCalledWith('blob:decoded-p.jpg');
+    expect(revoke).not.toHaveBeenCalledWith('blob:prepared-never.jpg');
+    queue.destroy();
+  });
+
+  it('disposes a render that finishes after the batch job was cancelled', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const deliver = vi.fn();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let markStarted: () => void = () => {};
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const deps = makeDeps({
+      prepare: vi.fn(async () => {
+        markStarted();
+        await gate;
+        return prepared('late.jpg');
+      }),
+    });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    const settled: string[] = [];
+    const queue = new BatchQueue<ExportJobMeta, PreparedExport>({
+      concurrency: 1,
+      processor: handle.processor,
+      deliver,
+      onSettled: (job, outcome) => settled.push(`${job.id}:${outcome.status}`),
+    });
+
+    queue.add([{ id: 'late', meta: { entry, edit } }]);
+    await started;
+    expect(queue.cancel('late')).toBe(true);
+    release();
+    const snapshot = await queue.drain();
+
+    expect(snapshot.jobs[0].status).toBe('cancelled');
+    expect(settled).toEqual(['late:cancelled']);
+    expect(deliver).not.toHaveBeenCalled();
+    expect(revoke).toHaveBeenCalledWith('blob:prepared-late.jpg');
+    expect(revoke).toHaveBeenCalledWith('blob:decoded-p.jpg');
+    queue.destroy();
   });
 
   it('delivers results through a sink and always releases the object URL', async () => {

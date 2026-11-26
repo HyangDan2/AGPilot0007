@@ -174,16 +174,16 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - 공통 계약은 `src/engine/contracts/`에 있다. 단계 순서 `PIPELINE_STAGES`는 source → optical → geometry → tone → look → colorLab → local → detail → composite → output이며, 모듈은 `EditModuleRegistry`에 `{id, stage, requires, contractVersion:1, role?, isActive?, resourceUsage?, execute?}`으로 등록한다.
 - `ImageBuffer`/`DecodedSource` 작업 버퍼는 `linear-srgb` float(16/32-bit)만 허용한다. Q03이 디코딩을 소유하고 `assertDecodedSource` 계약을 만족해야 한다.
 - `RenderSettings.geometry`는 계약에만 추가되었고 아직 렌더러가 적용하지 않는다. 기하 구현 전 비항등 값을 호출부에서 전달하지 않는다. Preview/Export는 `resolveRenderPlan`의 지문이 같아야 하며 비교/분할/마스크 보기 플래그는 Export에 전달하지 않는다.
-- Recipe v8은 `geometry`만 추가한 계약이며 `CURRENT_SCHEMA_VERSION`은 기하 구현 체크포인트까지 7이다. `toRecipeV8`은 순수 변환이고 `validateRecipeV8Geometry`가 가져오기 geometry를 검증한다. 마스크는 계약 타입만 있고 저장·렌더하지 않는다.
+- Recipe v8은 `geometry`만 추가한 계약이며 `CURRENT_SCHEMA_VERSION`은 기하 구현 체크포인트까지 7이다. `toRecipeV8`은 순수 변환이고 `validateRecipeV8Geometry`가 가져오기 geometry를 검증한다. v8 가져오기는 `geometry` 래퍼를 요구하며 flat `{rotation,...}`·`geometry: null/undefined`·배열은 거부한다. 마스크는 계약 타입만 있고 저장·렌더하지 않는다. 마스크 한도는 `validateMasks`가 17번째 마스크·65번째 스트로크·1025번째 포인트를 실제로 거부하는 테스트로 고정한다.
 - `ResourceScope`는 리소스를 역순으로 해제하고 해제 후 사용을 거부한다. AI는 `src/engine/contracts/ai.ts`의 Phase 2 설명자만 있으며 `CORE_AI_MODULES`는 비어 있어야 한다.
 - 설계 문서: `docs/phase1/ARCHITECTURE.md`, `ENGINE_CONTRACT.md`, `MODULE_OWNERSHIP.md`, `RECIPE_SCHEMA.md`. Q02~Q04 연동은 `docs/phase1/INTEGRATION_GUIDE.md`를 따른다.
-- 계약 검증: `npx vitest run tests/engineContracts.test.ts tests/engineContractCorrective.test.ts`, 전체 `npm test`, `npm run build`, `npm run build:beta`, `npx playwright test tests/e2e/render-parity.spec.ts`, `npx playwright test tests/e2e/geometry-contract.spec.ts --project=chromium`. 공통 파일 변경은 Q01 리뷰와 계약 테스트 갱신이 필요하다.
+- 계약 검증: `npx vitest run tests/engineContracts.test.ts tests/engineContractCorrective.test.ts`, 전체 `npm test`, `npm run build`, `npm run build:beta`, `npx playwright test tests/e2e/render-parity.spec.ts`, `npx playwright test tests/e2e/geometry-contract.spec.ts --project=chromium`. 왜곡 계수는 범위 검사 후 Q02와 같은 가역성 게이트(방사 257샘플 r≤1.5 단조성, 접선 `[-1.2,1.2]²` 17×17 Jacobian 행렬식 > 1e-6)를 통과해야 하며 CORE-05 테스트가 이를 고정한다. 공통 파일 변경은 Q01 리뷰와 계약 테스트 갱신이 필요하다.
 
 ## Phase 1 CP1.1 보완 (feature/phase1-pro-engine)
 
 - 모듈 등록 순서는 stage 우선순위 + 의존성 위상 정렬이며 역순 등록도 같은 순서다. 활성 모듈이 비활성 기능을 요구하면 계획 해석이 실패한다. 새 기능은 `renderPlan.ts`가 아니라 registry 등록으로만 활성화한다.
 - `src/engine/contracts/geometryMappings.ts`가 기하 순/역매핑의 CPU 기준이다. 적용 순서는 `GEOMETRY_TRANSFORM_ORDER`(flip → rotate → straighten → crop) 하나뿐이며, GLSL 일치는 `tests/e2e/geometry-contract.spec.ts`가 검증한다. 비항등 기하는 기하 렌더 체크포인트 전까지 호출부에서 전달하지 않는다.
-- `src/engine/contracts/optical.ts`는 Q02와 같은 NIS 호모그래피·Brown-Conrady 왜곡·원근 quad 계약이다. `src/engine/contracts/localAdjustments.ts`는 마스크 그룹 계약 전용이며 UI·저장·렌더에 연결하지 않는다.
+- `src/engine/contracts/optical.ts`는 Q02와 같은 NIS 호모그래피·Brown-Conrady 왜곡·원근 quad 계약이며, `validateOpticalTransform`이 Q02 §12.1.1 가역성 게이트(방사 단조성·접선 Jacobian)를 동일 임계값으로 적용한다. `src/engine/contracts/localAdjustments.ts`는 마스크 그룹 계약 전용이며 UI·저장·렌더에 연결하지 않는다.
 - `src/engine/contracts/resourceBudget.ts`의 `decideResourceAllocation`/`ResourceBroker`를 Batch Queue와 렌더러가 공유한다. `createRenderSession`의 `finish()`/`cancel()`은 멱등이며 grant를 한 번만 반환한다.
 - `src/engine/contracts/recipeValidation.ts`가 버전 판별·저장 키·저장 가드를 소유한다. 현재 상한은 7이며 Stable/Beta 키는 `RECIPE_STORAGE_KEYS`로 분리된다.
 - 회귀 게이트: `tests/engineContractCorrective.test.ts`(CORE-01~10), `tests/recipeCompat.test.ts`(v1~v7), `tests/e2e/render-parity.spec.ts`(실제 픽셀), `tests/e2e/geometry-contract.spec.ts`(CPU/GPU 매핑).
