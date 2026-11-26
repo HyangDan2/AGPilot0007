@@ -186,6 +186,29 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - `src/engine/contracts/recipeValidation.ts`가 버전 판별·저장 키·저장 가드를 소유한다. 현재 상한은 7이며 Stable/Beta 키는 `RECIPE_STORAGE_KEYS`로 분리된다.
 - 회귀 게이트: `tests/engineContractCorrective.test.ts`(CORE-01~10), `tests/recipeCompat.test.ts`(v1~v7), `tests/e2e/render-parity.spec.ts`(실제 픽셀), `tests/e2e/geometry-contract.spec.ts`(CPU/GPU 매핑).
 
+## E2E 실행 격리 (WO-CP2-00)
+
+- 에이전트별로 dev 서버 포트와 Playwright 출력 폴더를 분리한다. 다른 워크트리의 서버를 재사용하거나 전체 E2E를 동시에 실행하지 않는다.
+- `playwright.config.ts` 환경 변수:
+
+| 변수 | 기본값 | 역할 |
+| --- | --- | --- |
+| `E2E_PORT` | `5173` | `baseURL`과 `npm run dev -- --port <port> --strictPort`를 함께 결정 |
+| `PW_REUSE_SERVER` | 미설정(false) | `1`일 때만 기존 서버 재사용. 미설정 시 점유 포트면 즉시 실패 |
+| `PW_OUTPUT_DIR` | `.private/e2e-artifacts` | trace·스크린샷 출력 폴더 |
+| `PW_PROJECT` | 전체 | 쉼표 구분 프로젝트 선택(예: `chromium`) |
+
+| 에이전트 | 포트 | 권장 출력 폴더 |
+| --- | --- | --- |
+| Q01 | 5173 | `.private/e2e-artifacts/q01` |
+| Q02 | 5273 | `.private/e2e-artifacts/q02` |
+| Q03 | 5373 | `.private/e2e-artifacts/q03` |
+| Q04 | 5473 | `.private/e2e-artifacts/q04` |
+| Q05 | 5573 | `.private/e2e-artifacts/q05` |
+
+- 실행 예: `E2E_PORT=5173 PW_OUTPUT_DIR=.private/e2e-artifacts/q01 npx playwright test --project=chromium`.
+- 시작 전 `lsof -nP -iTCP:$E2E_PORT -sTCP:LISTEN`이 비어 있어야 한다. E2E가 만든 `docs/screenshots/*.png` 변경은 커밋하지 않고 원복한다.
+
 ## SC-01 계약 중재와 문서 소유권
 
 - `docs/HARNESS_GUIDE.md`는 **Q01 단독 소유**다. Q02/Q03/Q04는 직접 추가·수정하지 않고 목적, 최소 diff, 계약 영향, 실행 검사, 되돌릴 방법을 Q01에 요청한다. 이 절은 Q03/Q04 브랜치의 PoC 안내를 Q01이 흡수한 것이다.
