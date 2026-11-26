@@ -1,11 +1,7 @@
-import {SharpeningSettings} from '../../types/sharpening';
-import { ColorMixerSettings } from '../../types/colorMixer';
-import { ToneCurves } from '../../types/curves';
-import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
-import { AdjustmentSettings, FilmId } from '../../types/film';
 import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
+import type { RenderSettings } from '../pipeline/renderSettings';
 import { ExportOptions, PreparedExport } from '../../types/export';
 
 export type { ExportOptions, PreparedExport };
@@ -33,15 +29,11 @@ export function formatBytes(bytes: number): string {
 export async function prepareExportImage(
   image: DecodedImage,
   lut: ParsedLut3D,
-  adjustments: AdjustmentSettings,
+  settings: RenderSettings,
   options: ExportOptions,
-  onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings,
-  filmId?: FilmId,
-  curves?: ToneCurves,
-  colorMixer?: ColorMixerSettings,
-  sharpening?:SharpeningSettings
+  onProgress?: (progress: number, stage: string) => void
 ): Promise<PreparedExport> {
+  const { adjustments, camera, filmId, curves, colorMixer, sharpening } = settings;
   onProgress?.(10, 'Initializing export pipeline...');
 
   // Target dimensions preserving exact aspect ratio
@@ -154,21 +146,16 @@ export async function prepareExportImage(
 }
 
 /**
- * Backward-compatible full resolution image export function.
+ * Full resolution image export with the same shared render settings.
  */
 export async function exportFullResolutionImage(
   image: DecodedImage,
   lut: ParsedLut3D,
-  adjustments: AdjustmentSettings,
+  settings: RenderSettings,
   options: ExportOptions,
-  onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings,
-  filmId?: FilmId,
-  curves?: ToneCurves,
-  colorMixer?: ColorMixerSettings,
-  sharpening?:SharpeningSettings
+  onProgress?: (progress: number, stage: string) => void
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId, curves, colorMixer,sharpening);
+  const prepared = await prepareExportImage(image, lut, settings, options, onProgress);
   return {
     blob: prepared.blob,
     filename: prepared.filename,

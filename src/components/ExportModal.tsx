@@ -109,7 +109,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       const result = await prepareExportImage(
         image,
         lut,
-        adjustments,
+        { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening },
         {
           format,
           quality: format === 'image/jpeg' ? quality : 1.0,
@@ -117,12 +117,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         },
         (p, currentStage) => {
           setProgress({ value: p, stage: currentStage });
-        },
-        camera,
-        activeFilmId,
-        curves,
-        colorMixer,
-        sharpening
+        }
       );
 
       // Clean up previous prepared objectUrl if existing

@@ -1,9 +1,6 @@
-import {normalizeSharpening,validateSharpening} from '../types/sharpening';
-import { normalizeColorMixer, validateColorMixer } from '../types/colorMixer';
-import { normalizeCurves, CURVE_CHANNELS } from '../types/curves';
-import { normalizeCamera, isValidStampDate } from '../types/camera';
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
+import { normalizeRecipeFeatures, validateRecipeFeatures } from '../engine/pipeline/recipeFeatures';
 
 import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
@@ -51,10 +48,7 @@ function migrateRecipe(recipe: any): CustomRecipe {
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    camera: normalizeCamera(recipe.camera),
-    curves: normalizeCurves(recipe.curves),
-    sharpening:normalizeSharpening(recipe.sharpening,adjustments.sharpness),
-    colorMixer: normalizeColorMixer(recipe.colorMixer),
+    ...normalizeRecipeFeatures(recipe, adjustments),
   };
 }
 
@@ -79,17 +73,10 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
   }
 
   if (parsed.schemaVersion !== undefined && (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion < 1 || parsed.schemaVersion > CURRENT_SCHEMA_VERSION)) throw new Error('Unsupported recipe version');
-  if (parsed.camera?.dateStamp?.enabled && !isValidStampDate(parsed.camera.dateStamp.date)) throw new Error('Invalid imprint date');
   if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
   if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
     throw new Error('Unknown or incompatible preset');
   }
-  if (parsed.curves !== undefined) {
-    if (!parsed.curves || typeof parsed.curves !== 'object') throw new Error('Invalid tone curves');
-    const normalized = normalizeCurves(parsed.curves);
-    for (const channel of CURVE_CHANNELS) if (parsed.curves[channel] !== undefined && JSON.stringify(parsed.curves[channel]) !== JSON.stringify(normalized[channel])) throw new Error('Invalid tone curve points');
-  }
-  if(parsed.sharpening!==undefined)validateSharpening(parsed.sharpening);
-  if(parsed.colorMixer!==undefined)validateColorMixer(parsed.colorMixer);
+  validateRecipeFeatures(parsed);
   return migrateRecipe(parsed);
 }

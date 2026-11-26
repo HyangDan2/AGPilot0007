@@ -157,3 +157,13 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - Light/Dark 테마는 PC·태블릿 상단 Sun/Moon 버튼, 작은 화면 More 메뉴에서 전환한다. 기본은 Dark이며 hd2lab_film_studio_theme 키로 선택을 기억한다. 같은 origin의 운영/베타는 테마 선호를 공유하고 레시피 DB는 기존처럼 분리한다. 저장소 사용이 불가능하면 현재 세션에서 동작한다.
 - UI 표면/글자/테두리는 CSS 변수로 테마를 바꾸며 사진·RGB 색상 칩·셰이더·LUT·출력에는 filter나 색상 변환을 적용하지 않는다. 히스토그램은 W/R/G/B 대비를 위해 중립 암부 배경을 유지한다. 초기 HTML과 앱 진입점에서 저장 테마를 적용해 재진입 시 깜박임을 줄인다. 테마는 레시피/Undo 이력에 포함하지 않는다.
 - 관련 검사: tests/uiStore.test.ts, tests/e2e/theme-sidebars.spec.ts와 전체 회귀. PC 홈/편집 Open 일치, 레일 복구·스크롤 보존, 하단 X 부재·복구, 라이트 홈/조정/Color Lab/커브, 사진 픽셀 불변·재로드 테마 보존, 모바일 넘침을 확인한다. 베타·main 배포와 각 공개 URL 및 이전 캐시 업데이트를 별개로 확인한다. 이번 사용자 지시는 beta 검증 후 main 병합·운영 배포까지 승인한 범위다.
+
+## Phase 1 공통 파이프라인 기반 (feature/phase1-pro-engine)
+
+- Preview와 Export는 `src/engine/pipeline/renderSettings.ts`의 `RenderSettings`(필름·조정·커브·Color Lab·샤프닝·카메라)를 공통 입력으로 사용한다. 새 보정 그룹은 반드시 `RenderSettings`에 추가하고 Viewport와 `prepareExportImage(image, lut, settings, options, onProgress?)` 양쪽에 같은 객체를 전달한다. Preview 전용 플래그(마스크·드래프트·reference·visualize·비교 모드)는 `RenderRequest`에만 둔다.
+- 레시피 기능 그룹은 `src/engine/pipeline/recipeFeatures.ts`의 `RECIPE_FEATURES`에 정규화·검증 함수를 등록한다. `recipeStore`는 레지스트리만 순회하며 기능별 하드코딩을 추가하지 않는다. 현재 스키마는 7이며 새 필드를 도입하는 체크포인트에서 8로 올리고 1~7 마이그레이션을 유지한다.
+- 셰이더 기능 청크는 `src/engine/pipeline/shaderChunks.ts`의 `FRAGMENT_FEATURE_CHUNKS` 순서로 단일 프래그먼트 프로그램에 합성한다. 새 GLSL 헬퍼는 이 배열에 등록하고 기존 LUT·색 수학은 변경하지 않는다.
+- FBO/텍스처는 `src/engine/renderer/renderTarget.ts`의 `RenderTarget`으로 할당·크기 재사용·명시적 `dispose`를 관리한다. 컨텍스트 복구·비활성화·destroy 시 즉시 해제한다.
+- Preview/Export 정합성 게이트: `npx playwright test tests/e2e/render-parity.spec.ts`. 중립 파이프라인은 PNG 픽셀 차이 0~1, JPEG는 8 이하를 허용한다. 색·커브·Color Lab·고급 샤프닝·날짜/광학을 모두 포함한 설정으로 확인한다.
+- 레시피 호환 게이트: `tests/recipeCompat.test.ts`가 스키마 1~7 정규화, 레거시 sharpness 매핑, 미래 버전 거부, 기능별 오류 메시지를 확인한다.
+
