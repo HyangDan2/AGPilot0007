@@ -21,6 +21,8 @@ import {
 } from '../poc/optical/math/coordinates';
 import {
   distortNormalized,
+  isDistortionInvertible,
+  tryUndistortNormalized,
   undistortNormalized,
 } from '../poc/optical/math/distortion';
 import { estimateSkewAngle } from '../poc/optical/math/skew';
@@ -38,6 +40,7 @@ import {
   apertureTapWeights,
   blurRgbaReference,
   circleOfConfusion,
+  suggestTaps,
 } from '../poc/optical/math/focus';
 
 const rotatedGrid = (width: number, height: number, angleDeg: number): Float32Array => {
@@ -59,6 +62,36 @@ const rotatedGrid = (width: number, height: number, angleDeg: number): Float32Ar
   }
   return out;
 };
+
+const sparseLines = (width: number, height: number, angleDeg: number): Float32Array => {
+  const rad = (angleDeg * Math.PI) / 180;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  const period = 40;
+  const cx = width / 2;
+  const cy = height / 2;
+  const out = new Float32Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const yr = -s * (x - cx) + c * (y - cy);
+      const onLine = Math.abs(((yr % period) + period) % period) < 0.8;
+      out[y * width + x] = onLine ? 0.9 : 0.02;
+    }
+  }
+  return out;
+};
+
+const lowTextureNoise = (width: number, height: number, amplitude: number): Float32Array => {
+  let seed = 0x2f6e2b1;
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0xffffffff;
+  };
+  const out = new Float32Array(width * height);
+  for (let i = 0; i < out.length; i++) out[i] = 0.5 + (rand() - 0.5) * amplitude;
+  return out;
+};
+
 
 describe('homography', () => {
   it('solves the identity for unit-square correspondences', () => {
@@ -147,6 +180,33 @@ describe('lens distortion', () => {
     const back = undistortNormalized(distortNormalized(source, tangential), tangential);
     expect(Math.hypot(back.x - source.x, back.y - source.y)).toBeLessThan(1e-8);
   });
+
+  it('rejects non-invertible radial coefficients', () => {
+    const folded = { k1: -0.5 };
+    expect(isDistortionInvertible(folded)).toBe(false);
+    expect(isDistortionInvertible({ k1: 0.2 })).toBe(true);
+    expect(isDistortionInvertible({ k1: Number.NaN })).toBe(false);
+    const result = tryUndistortNormalized({ x: 0.8, y: 0.5 }, folded);
+    expect(result.ok).toBe(false);
+    expect(() => undistortNormalized({ x: 0.8, y: 0.5 }, folded)).toThrow();
+  });
+
+  it('converges with a verified residual for extreme invertible coefficients', () => {
+    const extreme = { k1: 2, k2: -0.2 };
+    expect(isDistortionInvertible(extreme)).toBe(true);
+    const points: Vec2[] = [
+      { x: 0.95, y: 0.9 },
+      { x: -0.85, y: 0.4 },
+      { x: 0.3, y: -0.97 },
+    ];
+    for (const p of points) {
+      const q = distortNormalized(p, extreme);
+      const solved = tryUndistortNormalized(q, extreme, { iterations: 64 });
+      expect(solved.ok).toBe(true);
+      expect(solved.residual).toBeLessThan(1e-6);
+      expect(Math.hypot(solved.value.x - p.x, solved.value.y - p.y)).toBeLessThan(1e-5);
+    }
+  });
 });
 
 describe('automatic skew estimation', () => {
@@ -170,6 +230,29 @@ describe('automatic skew estimation', () => {
     const height = 256;
     const result = estimateSkewAngle(rotatedGrid(width, height, 0), width, height);
     expect(Math.abs(result.angleDeg)).toBeLessThan(0.3);
+  });
+
+  it('recovers skew from a sparse set of straight lines', () => {
+    const width = 256;
+    const height = 256;
+    const result = estimateSkewAngle(sparseLines(width, height, 4), width, height);
+    expect(Math.abs(result.angleDeg - 4)).toBeLessThan(0.6);
+    expect(result.confidence).toBeGreaterThan(0.1);
+  });
+
+  it('does not claim confidence on a low-texture noisy image', () => {
+    const width = 160;
+    const height = 120;
+    const result = estimateSkewAngle(lowTextureNoise(width, height, 0.004), width, height);
+    expect(result.confidence).toBeLessThan(0.1);
+  });
+
+  it('returns zero confidence for a flat image', () => {
+    const width = 128;
+    const height = 96;
+    const result = estimateSkewAngle(new Float32Array(width * height).fill(0.4), width, height);
+    expect(result.confidence).toBe(0);
+    expect(result.angleDeg).toBe(0);
   });
 });
 
@@ -351,6 +434,77 @@ describe('masks and feathering', () => {
     const intersect = composeMaskStack([a], p, aspect, { r: 1, g: 1, b: 1 }, 1);
     expect(intersect).toBeCloseTo(1, 6);
   });
+
+  it('handles radial feather at both extremes', () => {
+    const hard: RadialMask = {
+      id: 'hard',
+      kind: 'radial',
+      enabled: true,
+      center: { x: 0.5, y: 0.5 },
+      radiusX: 0.2,
+      radiusY: 0.2,
+      rotation: 0,
+      feather: 0,
+    };
+    expect(evaluateMask(hard, { x: 0.5, y: 0.5 }, 1)).toBe(1);
+    expect(evaluateMask(hard, { x: 0.69, y: 0.5 }, 1)).toBe(1);
+    expect(evaluateMask(hard, { x: 0.71, y: 0.5 }, 1)).toBe(0);
+    const soft: RadialMask = { ...hard, feather: 1 };
+    expect(evaluateMask(soft, { x: 0.5, y: 0.5 }, 1)).toBe(1);
+    expect(evaluateMask(soft, { x: 0.6, y: 0.5 }, 1)).toBeCloseTo(0.5, 6);
+    expect(evaluateMask(soft, { x: 0.7, y: 0.5 }, 1)).toBe(0);
+  });
+
+  it('supports a single-point brush stroke', () => {
+    const mask: BrushMask = {
+      id: 'dot',
+      kind: 'brush',
+      enabled: true,
+      strokes: [{ points: [{ x: 0.5, y: 0.5 }], radius: 0.1, hardness: 1, flow: 1 }],
+    };
+    expect(evaluateMask(mask, { x: 0.5, y: 0.5 }, 1)).toBe(1);
+    expect(evaluateMask(mask, { x: 0.7, y: 0.5 }, 1)).toBe(0);
+  });
+
+  it('supports a brush stroke with more than 100 segments', () => {
+    const points: Vec2[] = [];
+    for (let i = 0; i <= 150; i++) points.push({ x: 0.2 + (0.6 * i) / 150, y: 0.5 });
+    const mask: BrushMask = {
+      id: 'long',
+      kind: 'brush',
+      enabled: true,
+      strokes: [{ points, radius: 0.02, hardness: 1, flow: 1 }],
+    };
+    expect(points.length - 1).toBeGreaterThan(100);
+    expect(evaluateMask(mask, { x: 0.5, y: 0.5 }, 1)).toBe(1);
+    expect(evaluateMask(mask, { x: 0.5, y: 0.1 }, 1)).toBe(0);
+  });
+
+  it('handles luminance and colour masks with zero feather', () => {
+    const luma: LuminanceMask = {
+      id: 'luma-hard',
+      kind: 'luminance',
+      enabled: true,
+      lo: 0.4,
+      hi: 0.6,
+      feather: 0,
+    };
+    expect(evaluateMask(luma, { x: 0.5, y: 0.5 }, 1, { r: 0.3, g: 0.3, b: 0.3 })).toBe(0);
+    expect(evaluateMask(luma, { x: 0.5, y: 0.5 }, 1, { r: 0.5, g: 0.5, b: 0.5 })).toBe(1);
+    expect(evaluateMask(luma, { x: 0.5, y: 0.5 }, 1, { r: 0.7, g: 0.7, b: 0.7 })).toBe(0);
+    const color: ColorMask = {
+      id: 'color-hard',
+      kind: 'color',
+      enabled: true,
+      color: { r: 0.8, g: 0.2, b: 0.2 },
+      hueRange: 12,
+      satRange: 0.35,
+      lumRange: 0.4,
+      feather: 0,
+    };
+    expect(evaluateMask(color, { x: 0.5, y: 0.5 }, 1, { r: 0.85, g: 0.25, b: 0.22 })).toBeGreaterThan(0.9);
+    expect(evaluateMask(color, { x: 0.5, y: 0.5 }, 1, { r: 0.2, g: 0.3, b: 0.8 })).toBe(0);
+  });
 });
 
 describe('virtual defocus and bokeh PSF', () => {
@@ -444,6 +598,21 @@ describe('virtual defocus and bokeh PSF', () => {
     expect(mid).toBeGreaterThan(0);
     expect(far).toBeGreaterThanOrEqual(mid);
     expect(far).toBeLessThanOrEqual(0.08 + 1e-12);
+  });
+
+  it('suggests a tap budget from CoC size and quality tier', () => {
+    expect(suggestTaps(0.0001, 512)).toBe(0);
+    expect(suggestTaps(0.01, 512, 'preview')).toBe(12);
+    expect(suggestTaps(0.01, 512, 'export')).toBe(24);
+    expect(suggestTaps(0.06, 512, 'preview')).toBe(32);
+    expect(suggestTaps(0.06, 512, 'export')).toBe(64);
+    let previous = 0;
+    for (const coc of [0.001, 0.005, 0.012, 0.03, 0.08]) {
+      const taps = suggestTaps(coc, 512, 'export');
+      expect(taps).toBeGreaterThanOrEqual(previous);
+      previous = taps;
+      expect(suggestTaps(coc, 512, 'preview')).toBeLessThanOrEqual(taps);
+    }
   });
 });
 

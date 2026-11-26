@@ -43,6 +43,7 @@ export function estimateSkewAngle(
 
   const magnitude = new Float32Array(width * height);
   const stride = Math.max(1, Math.floor(Math.sqrt((width * height) / 200000)));
+  let maxMagnitude = 0;
 
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
@@ -57,16 +58,22 @@ export function estimateSkewAngle(
       const br = luma[i + width + 1];
       const gx = -tl - 2 * ml - bl + tr + 2 * mr + br;
       const gy = -tl - 2 * tc - tr + bl + 2 * bc + br;
-      magnitude[i] = Math.hypot(gx, gy);
+      const value = Math.hypot(gx, gy);
+      magnitude[i] = value;
+      if (value > maxMagnitude) maxMagnitude = value;
     }
   }
+  if (!(maxMagnitude > 1e-3)) return { angleDeg: 0, confidence: 0, dominantNormalDeg: 0 };
 
   const samples: number[] = [];
   for (let y = 1; y < height - 1; y += stride) {
     for (let x = 1; x < width - 1; x += stride) samples.push(magnitude[y * width + x]);
   }
   samples.sort((a, b) => a - b);
-  const threshold = samples[Math.min(samples.length - 1, Math.floor(samples.length * edgePercentile))];
+  const percentile = samples[Math.min(samples.length - 1, Math.floor(samples.length * edgePercentile))];
+  // Sparse scenes keep most pixels below the percentile, so the threshold also
+  // tracks the strongest edge; low-contrast textures stay gated by contrast.
+  const threshold = Math.max(percentile, maxMagnitude * 0.1);
   if (!(threshold > 1e-4)) return { angleDeg: 0, confidence: 0, dominantNormalDeg: 0 };
 
   const edgeX: number[] = [];
@@ -129,7 +136,8 @@ export function estimateSkewAngle(
   if (angleDeg > 45) angleDeg -= 90;
   if (angleDeg < -45) angleDeg += 90;
 
-  const confidence = Math.min(1, Math.max(0, bestScore / Math.min(width, height)));
+  const contrast = Math.min(1, maxMagnitude / 0.5);
+  const confidence = Math.min(1, Math.max(0, (bestScore / Math.min(width, height)) * contrast));
   return {
     angleDeg,
     confidence,

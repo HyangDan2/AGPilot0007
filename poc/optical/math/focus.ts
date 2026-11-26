@@ -71,6 +71,26 @@ export function circleOfConfusion(
   return focus.maxCoc * t * t * (3 - 2 * t);
 }
 
+export type BokehQuality = 'preview' | 'export';
+
+// Tap budget policy. The circle of confusion crosses domain-equivalent pixel
+// radii at different export sizes, so the tap count is tiered by CoC size and
+// quality tier rather than by output resolution alone. Preview uses a reduced
+// budget (and may render the gather at half resolution); export is the
+// reference output. Geometry and mask coordinates are identical in both.
+export function suggestTaps(
+  maxCocShortSide: number,
+  shortSidePx: number,
+  quality: BokehQuality = 'export'
+): number {
+  const cocPx = Math.max(0, maxCocShortSide) * Math.max(1, shortSidePx);
+  if (!(cocPx >= 0.75)) return 0;
+  const preview = quality === 'preview';
+  if (cocPx < 6) return preview ? 12 : 24;
+  if (cocPx < 20) return preview ? 20 : 40;
+  return preview ? 32 : 64;
+}
+
 function sampleBilinear(
   src: Float32Array,
   width: number,

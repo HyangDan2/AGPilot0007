@@ -109,28 +109,29 @@ function distanceToSegment(p: Vec2, a: Vec2, b: Vec2): number {
 function brushWeight(mask: BrushMask, uv: Vec2, aspect: number): number {
   const p = uvToShortSide(uv, aspect);
   let acc = 0;
+  const union = (weight: number) => {
+    acc = acc + weight - acc * weight;
+  };
   for (const stroke of mask.strokes) {
-    if (stroke.points.length === 0) continue;
     const radius = Math.max(1e-6, stroke.radius);
     const feather = radius * (1 - Math.min(1, Math.max(0, stroke.hardness)));
-    let closest = Infinity;
+    const flow = Math.min(1, Math.max(0, stroke.flow));
+    if (stroke.points.length === 0) continue;
     if (stroke.points.length === 1) {
       const q = uvToShortSide(stroke.points[0], aspect);
-      closest = Math.hypot(p.x - q.x, p.y - q.y);
-    } else {
-      for (let i = 0; i < stroke.points.length - 1; i++) {
-        const d = distanceToSegment(
-          p,
-          uvToShortSide(stroke.points[i], aspect),
-          uvToShortSide(stroke.points[i + 1], aspect)
-        );
-        if (d < closest) closest = d;
-      }
+      const distance = Math.hypot(p.x - q.x, p.y - q.y);
+      union((1 - smoothstep(radius - feather, radius, distance)) * flow);
+      continue;
     }
-    const coverage = 1 - smoothstep(radius - feather, radius, closest);
-    const flow = Math.min(1, Math.max(0, stroke.flow));
-    const strokeWeight = coverage * flow;
-    acc = acc + strokeWeight - acc * strokeWeight;
+    for (let i = 0; i < stroke.points.length - 1; i++) {
+      const distance = distanceToSegment(
+        p,
+        uvToShortSide(stroke.points[i], aspect),
+        uvToShortSide(stroke.points[i + 1], aspect)
+      );
+      const coverage = 1 - smoothstep(radius - feather, radius, distance);
+      union(coverage * flow);
+    }
   }
   return acc;
 }
