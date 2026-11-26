@@ -41,10 +41,10 @@ export interface ExportProcessorHandle {
 /**
  * Abort contract: the adapter checks the signal before every pipeline stage and
  * after every await. Decoding is abortable (decodeImageFile accepts the signal);
- * the GPU render/encode call is not, so a cancel that arrives while
- * prepareExportImage is running is honoured once it resolves and the rendered
- * blob is disposed. Making the renderer itself abortable is a Q01 interface
- * requirement (see docs/phase1/CP1_1_INTERFACE_REQUIREMENTS.md).
+ * the export pipeline receives the same signal through Q01's ExportControl
+ * (IF-01), so render/encode stage boundaries are aborted inside
+ * prepareExportImage. If a cancel still races the call, the rendered blob is
+ * disposed once it resolves.
  */
 function abortError(stage: string): DOMException {
   return new DOMException(`Export cancelled during ${stage}`, 'AbortError');
@@ -126,17 +126,20 @@ export function createExportProcessor(options: ExportProcessorOptions): ExportPr
       prepared = await deps.prepare(
         image,
         lut,
-        edit.adjustments,
+        {
+          filmId: edit.activeFilmId,
+          adjustments: edit.adjustments,
+          curves: edit.curves,
+          camera: edit.camera,
+          colorMixer: edit.colorMixer,
+          sharpening: edit.sharpening,
+        },
         options.exportOptions,
         (progress, stage) => {
           const fraction = Math.min(100, Math.max(0, progress)) / 100;
           ctx.report(0.3 + fraction * 0.68, stage);
         },
-        edit.camera,
-        edit.activeFilmId,
-        edit.curves,
-        edit.colorMixer,
-        edit.sharpening,
+        { signal: ctx.signal },
       );
 
       throwIfAborted(ctx.signal, 'encoding');

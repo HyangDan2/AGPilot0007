@@ -434,13 +434,16 @@ describe('Q04 batch export adapter', () => {
     expect(deps.decode).toHaveBeenCalledWith(expect.any(File), 'p.jpg', ctx.signal);
     expect(deps.loadLut).toHaveBeenCalledWith(FILM_PROFILES['FS-006'].lutFile);
     const args = deps.prepare.mock.calls[0] as unknown[];
-    expect(args[2]).toBe(edit.adjustments);
+    const settings = args[2] as { filmId: string; adjustments: unknown; curves: unknown; camera: unknown; colorMixer: unknown; sharpening: unknown };
+    expect(settings.filmId).toBe('FS-006');
+    expect(settings.adjustments).toBe(edit.adjustments);
+    expect(settings.curves).toBe(edit.curves);
+    expect(settings.camera).toBe(edit.camera);
+    expect(settings.colorMixer).toBe(edit.colorMixer);
+    expect(settings.sharpening).toBe(edit.sharpening);
     expect(args[3]).toEqual(exportOptions);
-    expect(args[5]).toBe(edit.camera);
-    expect(args[6]).toBe('FS-006');
-    expect(args[7]).toBe(edit.curves);
-    expect(args[8]).toBe(edit.colorMixer);
-    expect(args[9]).toBe(edit.sharpening);
+    expect(typeof args[4]).toBe('function');
+    expect((args[5] as { signal: AbortSignal }).signal).toBe(ctx.signal);
     expect(revoke).toHaveBeenCalledWith('blob:decoded-p.jpg');
 
     const second: WorkspaceEntry = { ...entry, id: 'q', name: 'q.jpg', getFile: async () => new File(['img'], 'q.jpg') };
