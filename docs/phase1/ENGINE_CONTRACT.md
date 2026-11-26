@@ -1,0 +1,190 @@
+# Phase 1 Engine Contract
+
+상태: CP1 계약안 · QA 승인 대기 · 2026-11-27
+기준: `feature/phase1-pro-engine` CP0 `c31c790` + CP1 계약 커밋
+
+이 문서는 Q01~Q04가 공유하는 데이터 계약과 불변식을 정의한다. 계약을 바꾸려면 Q01 리뷰와 계약 테스트 갱신이 필요하다.
+
+## 1. 모듈 진입점
+
+| 목적 | 경로 |
+| --- | --- |
+| 단계 순서 | `src/engine/contracts/stages.ts` |
+| 기하 | `src/engine/contracts/geometry.ts` |
+| 마스크(계약 전용) | `src/engine/contracts/masks.ts` |
+| 이미지/디코딩 경계 | `src/engine/contracts/imageBuffer.ts` |
+| 모듈 Registry | `src/engine/contracts/moduleRegistry.ts` |
+| 렌더 계획 | `src/engine/contracts/renderPlan.ts` |
+| 렌더 컨텍스트/백엔드 | `src/engine/contracts/render.ts` |
+| 편집 상태 | `src/engine/contracts/editState.ts` |
+| 리소스 수명 | `src/engine/contracts/resources.ts` |
+| Recipe v8 | `src/engine/contracts/recipeV8.ts` |
+| AI 확장(Phase 2) | `src/engine/contracts/ai.ts` |
+| 공통 렌더 입력 | `src/engine/pipeline/renderSettings.ts` |
+| 레시피 기능 registry | `src/engine/pipeline/recipeFeatures.ts` |
+| 셰이더 기능 registry | `src/engine/pipeline/shaderChunks.ts` |
+
+배럴 import는 `src/engine/contracts/index.ts`를 사용한다.
+
+## 2. PipelineStage와 모듈
+
+```ts
+type PipelineStage =
+  | 'source' | 'optical' | 'geometry' | 'tone' | 'look'
+  | 'colorLab' | 'detail' | 'composite' | 'output';
+
+interface EditModule<T = unknown> {
+  readonly id: string;
+  readonly stage: PipelineStage;
+  readonly requires?: readonly string[];
+  readonly contractVersion: 1;
+  normalize?(value: unknown): T;
+  validate?(value: unknown): void;
+}
+```
+
+불변식:
+- 모듈 ID는 비어 있지 않고 registry 내에서 유일하다.
+- `requires`는 같은 단계 또는 이전 단계 모듈만 가리킨다. 이후 단계 의존은 금지한다.
+- Registry는 안정적 위상 정렬로 순서를 반환하며, 등록 순서가 같으면 결과가 같다.
+- 순환 의존은 실행하지 않는다.
+
+오류 문자열(테스트로 고정):
+- `Invalid module id`
+- `Duplicate module: <id>`
+- `Unknown module stage: <stage>`
+- `Unsupported module contract version: <n>`
+- `Unknown module dependency: <id>`
+- `Module dependency crosses later stage: <id>`
+- `Circular module dependency`
+
+## 3. GeometryTransform
+
+```ts
+interface GeometryTransform {
+  rotation: 0 | 90 | 180 | 270;   // 시계 방향
+  straighten: number;             // -45..45 도, 시계 방향 양수
+  flipHorizontal: boolean;
+  flipVertical: boolean;
+  crop: { x: number; y: number; width: number; height: number } | null;
+}
+```
+
+불변식:
+- `crop`은 0..1 정규화 좌표, 좌상단 원점, 회전·스트레이트 이후 이미지 기준이다.
+- `crop` 너비/높이는 최소 0.01이며 `x+width`, `y+height`는 1을 넘지 않는다.
+- 전체 프레임 크롭은 `null`로 정규화한다(항등).
+- 적용 순서: 좌우/상하 반전 → 90도 회전 → 스트레이트 → 크롭.
+- 원본 픽셀을 수정하지 않고 렌더 시점에만 적용한다.
+- `normalizeGeometry`는 잘못된 회전을 0, 스트레이트를 범위로 클램프하고 크롭을 프레임 안으로 제한한다. 가져오기 검증에는 `validateGeometry`를 사용해 잘못된 값을 거부한다.
+
+## 4. MaskData (계약 전용)
+
+- `MaskData`는 `brush | linear | radial | luminance | color` 유니온이다.
+- 공통 필드: `id`, `name`, `enabled`, `blend(add|subtract|intersect)`, `opacity(0..1)`, `inverted`.
+- 좌표는 정규화 이미지 좌표(0..1)이며, 반지름·feather는 보정된 이미지 짧은 변 기준이다.
+- 최대 마스크 16개, 브러시 64스트로크, 스트로크당 1024포인트다.
+- Q02 PoC의 `LocalMask` 명명(start/end, lo/hi, rotation, feather)을 따른다. Q02는 통합 시 이 계약으로 맞춘다.
+- 현재 어떤 렌더 단계도 마스크를 소비하지 않으며 EditState·RenderSettings·Recipe에 저장하지 않는다. UI도 없다.
+
+## 5. ImageBuffer / DecodedSource
+
+```ts
+type SourcePrecision = 'sdr-srgb8' | 'hdr-linear16';
+type ImageBufferFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
+
+interface DecodedSource {
+  source: ImageSourceDescriptor;  // id, name, mimeType, width, height, precision, hasAlpha, decoderId
+  working: ImageBuffer;           // colorSpace 'linear-srgb', rgba16f|rgba32f
+  preview?: ImageBuffer;
+  warnings: readonly string[];
+}
+```
+
+불변식:
+- 작업 버퍼는 항상 `linear-srgb`이며 float(16/32-bit) 저장이다. `rgba8` 작업 버퍼는 거부한다.
+- 작업 버퍼 크기는 원본 디스크립터와 같아야 한다.
+- SDR 입력은 sRGB EOTF로 선형화하고, RAW는 장면 선형을 유지한다. 디코더는 픽셀을 자르거나 임의 날짜로 대체하지 않는다.
+- `assertDecodedSource(value)`로 검증한다. 오류: `Invalid decoded source`, `Invalid decoded source dimensions`, `Invalid decoded source precision`, `Decoded source must provide a working buffer`, `Working buffer must be linear-srgb`, `Working buffer requires 16-bit or 32-bit float storage`, `CPU working buffer requires 16-bit or 32-bit float data`, `GPU working buffer requires a texture`.
+- Q03만 디코딩을 구현한다. 다른 모듈은 디코딩 라이브러리를 직접 호출하지 않는다.
+
+## 6. EditState
+
+```ts
+interface EditState {
+  activeFilmId: FilmId;
+  activePresetId: string | null;
+  adjustments: AdjustmentSettings;
+  curves: ToneCurves;
+  camera: CameraSettings;
+  colorMixer: ColorMixerSettings;
+  sharpening: SharpeningSettings;
+  geometry: GeometryTransform;
+}
+```
+
+- `createEditState(input?, legacySharpness?)`가 기본값·범위·필름 ID를 정규화한다.
+- 기존 v7 레시피의 `adjustments.sharpness > 0`은 `mode: 'legacy'`로 매핑한다.
+- Undo/Redo는 이 스냅샷 단위이며 최대 50개(`HISTORY_LIMIT`)를 유지한다.
+- 마스크는 포함하지 않는다(기능 승인 전).
+
+## 7. RenderSettings / RenderPlan
+
+- `RenderSettings`에 새 편집 그룹을 추가하면 Preview와 Export 양쪽 호출부가 반드시 같은 값을 전달한다.
+- `geometry`는 추가되었으나 아직 렌더러가 소비하지 않는다. 기하 구현 전에는 비항등 기하를 호출부에서 전달하지 않는다.
+- `resolveRenderPlan(settings, target)`은 `stages`, `features`, `floatIntermediate`, `previewOnly`를 계산한다.
+- `renderPlanFingerprint(plan)`은 target과 previewOnly를 제외한 안정 문자열이다. 같은 설정이면 Preview/Export 지문이 같아야 한다.
+- Preview 전용 요청 플래그: `compareMode`, `splitPos`, `sharpeningMask`, `sharpeningDraft`, `mixerReference`, `mixerVisualize`. Export는 `compareMode='none'`이며 이 플래그를 전달하지 않는다.
+- `seed`, `sourceWidth`, `sourceHeight`는 픽셀 정합성에 필요하므로 두 경로가 같은 값을 공유한다.
+- 계약 게이트: `tests/engineContracts.test.ts`의 지문 동등성, `tests/e2e/render-parity.spec.ts`.
+
+## 8. Recipe v8 계약
+
+- `RECIPE_SCHEMA_V8 = 8`, `RecipeV8 = CustomRecipe & { schemaVersion: 8; geometry: GeometryTransform }`.
+- `toRecipeV8(recipe)`는 기존 v1~v7 정규화 결과에 중립 기하를 추가한다. 8 이상 또는 0 이하 버전은 `Unsupported recipe version for v8 migration`으로 거부한다.
+- `normalizeRecipeV8Geometry`, `validateRecipeV8Geometry`를 제공한다. 가져오기 검증 오류는 `Invalid recipe geometry` 또는 `validateGeometry`의 세부 오류다.
+- 실제 스키마 상향·저장 연결은 기하 렌더 구현 체크포인트에서 수행한다. 그 전까지 `CURRENT_SCHEMA_VERSION`은 7이다.
+- 마스크는 v8에 포함하지 않는다.
+
+## 9. 리소스 수명
+
+```ts
+interface GpuResource { id: string; kind: ResourceKind; bytes: number; dispose(): void }
+interface ResourceScope {
+  disposed: boolean;
+  resources: readonly GpuResource[];
+  acquire<T extends GpuResource>(factory: () => T): T;
+  release(resource: GpuResource): void;
+  disposeAll(): void;
+}
+```
+
+- `disposeAll()`은 역순으로 해제하며 한 리소스의 예외가 나머지 해제를 막지 않는다.
+- 해제 후 `acquire`는 `Resource scope disposed`로 실패한다.
+- 이미 해제된 리소스의 `release`는 무시한다(중복 해제 방지).
+- 렌더러는 컨텍스트 손실·비활성화·destroy에서 소유 리소스를 모두 해제해야 한다.
+
+## 10. AI 확장 (Phase 2)
+
+- `AIModuleDescriptor`는 `id`, `version`, `capability`, `requiresGpu`, `input:'image-buffer'`, `output:'image-buffer'|'mask'`만 허용한다.
+- 허용 capability: `enhance`, `denoise`, `upscale`, `subject-mask`, `sky-replace`, `style-transfer`.
+- `CORE_AI_MODULES`는 비어 있고 `isAIModuleAvailable()`은 false다.
+- Phase 1에서 AI 모듈 등록·UI·추론·원격 전송을 추가하지 않는다.
+
+## 11. 검증 명령
+
+```bash
+npm test
+npx tsc --noEmit
+npm run build
+npx playwright test tests/e2e/render-parity.spec.ts
+```
+
+CP1 계약 변경 시 최소 `tests/engineContracts.test.ts`, `tests/recipeCompat.test.ts`, 전체 Unit, 운영 base 빌드를 실행한다. Preview/Export 또는 레시피 저장 경로를 건드리면 패리티·E2E 회귀를 추가로 실행한다.
+
+## 12. 변경 통제
+
+- 공통 파일 수정은 `MODULE_OWNERSHIP.md`의 Q01 리뷰 대상이다.
+- 기존 테스트 삭제·단정 완화·기준 이미지 무단 교체로 실패를 숨기지 않는다.
+- 미구현 기능을 위한 빈 핸들러·더미 데이터·Mock UI·숨은 플래그를 추가하지 않는다.
+- 비밀·평가 자료는 `.private/`에만 두고 Git·빌드 산출물에 포함하지 않는다.
