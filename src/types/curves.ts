@@ -19,6 +19,15 @@ export function normalizeCurves(value?: Partial<ToneCurves>): ToneCurves {
 }
 export const isIdentityCurve = (points: CurvePoint[]) => points.length >= 2 && points[0][0] === 0 && points.at(-1)![0] === 1 && points.every(([x,y]) => Math.abs(x-y)<1e-7);
 
+export function validateCurvesShape(value: unknown): void {
+  if (!value || typeof value !== 'object') throw new Error('Invalid tone curves');
+  const normalized = normalizeCurves(value as Partial<ToneCurves>);
+  for (const channel of CURVE_CHANNELS) {
+    const raw = (value as Partial<ToneCurves>)[channel];
+    if (raw !== undefined && JSON.stringify(raw) !== JSON.stringify(normalized[channel])) throw new Error('Invalid tone curve points');
+  }
+}
+
 // Keep point order while allowing both endpoints to move across the input range.
 export function moveCurvePoint(points: CurvePoint[], index: number, x: number, y: number): CurvePoint[] {
   const next = points.map(p => [...p] as CurvePoint);
