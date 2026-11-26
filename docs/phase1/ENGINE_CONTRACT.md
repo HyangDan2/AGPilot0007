@@ -1,6 +1,6 @@
 # Phase 1 Engine Contract
 
-상태: CP1.1 계약 보완 · QA 승인 대기 · 2026-11-27
+상태: CP1.1 + SC-01 계약 중재 · QA 승인 대기 · 2026-11-27
 기준: `feature/phase1-pro-engine` CP1 `3b22b6f` + beta merge `2a45290` + CP1.1
 
 이 문서는 Q01~Q04가 공유하는 데이터 계약과 불변식을 정의한다. 계약을 바꾸려면 Q01 리뷰와 계약 테스트 갱신이 필요하다.
@@ -111,6 +111,7 @@ interface OpticalTransform {
 - 왜곡은 centered space의 Brown-Conrady이고, 원근은 단위 정사각형 → 샘플링 quad 호모그래피다.
 - `validateOpticalTransform`은 비유한/특이 행렬(`Optical homography is singular`), 범위를 벗어난 왜곡 계수, 볼록하지 않거나 비정상 범위의 quad를 거부한다.
 - Q02는 선형 버퍼를 수정하지 않고 보정 매핑만 반환한다.
+- **SC-01 중재:** Q02 통합 경계 타입은 `OpticalTransform` 하나다. Q02 PoC의 `OpticalGeometry`는 내부 표현으로만 허용하며, `validateOpticalTransform`을 통과한 결과만 렌더 단계에 전달한다.
 
 ## 4. MaskData / LocalAdjustmentState (계약 전용)
 
@@ -120,6 +121,7 @@ interface OpticalTransform {
 - 공통 필드: `id`, `name`, `enabled`, `blend(add|subtract|intersect)`, `opacity(0..1)`, `inverted`.
 - 좌표는 정규화 이미지 좌표(0..1)이며, 반지름·feather는 보정된 이미지 짧은 변 기준이다.
 - 최대 마스크 16개, 브러시 64스트로크, 스트로크당 1024포인트다.
+- **SC-01 중재:** `MAX_MASKS=16`·`MAX_STROKES=64`·`MAX_STROKE_POINTS=1024`가 잠정 단일 정본이다. Q02의 8 masks/1024 segments와 충돌하므로 Q02가 GLSL uniform 예산을 제출한 뒤 Q01이 정본을 확정한다. 확정 전에는 Q01 수치를 계약으로 유지한다.
 - Q02 PoC의 `LocalMask` 명명(start/end, lo/hi, rotation, feather)을 따른다. Q02는 통합 시 이 계약으로 맞춘다.
 - 현재 어떤 렌더 단계도 마스크를 소비하지 않으며 EditState·RenderSettings·Recipe에 저장하지 않는다. UI도 없다.
 
@@ -161,6 +163,7 @@ interface DecodedSource {
 
 불변식:
 - 작업 버퍼는 항상 `linear-srgb`이며 float(16/32-bit) 저장이다. `rgba8` 작업 버퍼는 거부한다.
+- **SC-01 중재:** 제품 경계는 Q01 `ImageBuffer`(linear-srgb, RGBA float)로 고정한다. Q03의 RGB 3채널 `SceneLinearFrame`은 내부 표현으로만 허용하고 `assertDecodedSource`에 전달하기 전 RGBA16F/32F 어댑터를 거쳐야 한다. SDR 입력도 float 작업 버퍼를 요구하며 `rgba8`로 대체하지 않는다.
 - 작업 버퍼 크기는 원본 디스크립터와 같아야 하고 `sourceId`가 원본 `id`와 일치해야 한다.
 - `memoryBytes`는 `width × height × 4 × bytesPerPixel`과 정확히 일치하고, data 길이는 `width × height × 4`여야 한다. 형식별 타입(`Uint8Array`/`Uint16Array`/`Float32Array`)도 일치해야 한다.
 - Float 버퍼의 NaN/Infinity는 `Image buffer contains non-finite pixels`로 거부한다.
@@ -189,6 +192,7 @@ interface EditState {
 - 기존 v7 레시피의 `adjustments.sharpness > 0`은 `mode: 'legacy'`로 매핑한다.
 - Undo/Redo는 이 스냅샷 단위이며 최대 50개(`HISTORY_LIMIT`)를 유지한다.
 - 마스크는 포함하지 않는다(기능 승인 전).
+- **SC-01 중재:** `EditState.geometry` 포함은 CP1.1 범위다. Q04 IF-03 공용 선택 상태와 IF-05 추천 레지스트리는 CP1.1에서 구현하지 않고 PO 승인 전까지 연기한다. IF-01 Export 취소는 §7.1의 최소 계약으로 구현한다.
 
 ## 7. RenderSettings / RenderPlan
 
@@ -200,6 +204,14 @@ interface EditState {
 - Preview 전용 요청 플래그: `compareMode`, `splitPos`, `sharpeningMask`, `sharpeningDraft`, `mixerReference`, `mixerVisualize`. Export는 `compareMode='none'`이며 이 플래그를 전달하지 않는다.
 - `seed`, `sourceWidth`, `sourceHeight`는 픽셀 정합성에 필요하므로 두 경로가 같은 값을 공유한다.
 - 계약 게이트: `tests/engineContracts.test.ts`, `tests/engineContractCorrective.test.ts`, `tests/e2e/render-parity.spec.ts`.
+
+### 7.1 Export 취소 계약 (Q04 IF-01 / APP-03)
+
+- `prepareExportImage(image, lut, settings, options, onProgress?, control?)`의 선택적 6번째 인자로 `ExportControl { signal?: AbortSignal; onStage?: (stage: 'render'|'encode'|'complete') => void }`를 받는다.
+- `onStage`는 `render → encode → complete` 순서로 호출한다. 기존 `ExportOptions`와 호출부는 변경하지 않는다.
+- 각 단계 경계에서 `signal.aborted`를 확인하고, 취소 시 `DOMException('Export cancelled', 'AbortError')`로 거부한 뒤 renderer/canvas를 즉시 해제한다.
+- `canvas.toBlob`은 중단 API가 없으므로 인코딩 완료 후 결과 Blob/objectUrl을 생성하지 않고 폐기한다. 인코딩 자체의 즉시 중단은 후속 과제다.
+- Q04 배치는 `AbortError`를 cancelled로 정산하고, GPU 리소스·objectUrl 누수가 없어야 한다.
 
 ## 8. Recipe 버전·저장·v8 계약
 

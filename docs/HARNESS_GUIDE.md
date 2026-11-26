@@ -1,6 +1,6 @@
 # Film Studio 개발·검증 하네스
 
-상태: 현재 저장소에서 확인한 작업 절차 · 2026-11-11
+상태: 현재 저장소에서 확인한 작업 절차 · 2026-11-27 · Q01 단독 소유
 
 ## 1. 범위와 제품 계약
 
@@ -185,5 +185,34 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - `src/engine/contracts/resourceBudget.ts`의 `decideResourceAllocation`/`ResourceBroker`를 Batch Queue와 렌더러가 공유한다. `createRenderSession`의 `finish()`/`cancel()`은 멱등이며 grant를 한 번만 반환한다.
 - `src/engine/contracts/recipeValidation.ts`가 버전 판별·저장 키·저장 가드를 소유한다. 현재 상한은 7이며 Stable/Beta 키는 `RECIPE_STORAGE_KEYS`로 분리된다.
 - 회귀 게이트: `tests/engineContractCorrective.test.ts`(CORE-01~10), `tests/recipeCompat.test.ts`(v1~v7), `tests/e2e/render-parity.spec.ts`(실제 픽셀), `tests/e2e/geometry-contract.spec.ts`(CPU/GPU 매핑).
+
+## SC-01 계약 중재와 문서 소유권
+
+- `docs/HARNESS_GUIDE.md`는 **Q01 단독 소유**다. Q02/Q03/Q04는 직접 추가·수정하지 않고 목적, 최소 diff, 계약 영향, 실행 검사, 되돌릴 방법을 Q01에 요청한다. 이 절은 Q03/Q04 브랜치의 PoC 안내를 Q01이 흡수한 것이다.
+- 버퍼 경계: 제품 경계는 Q01 `ImageBuffer`(linear-srgb, RGBA float)다. Q03 RGB 3ch `SceneLinearFrame`은 내부 전용이며 RGBA16F/32F 어댑터를 거쳐 `assertDecodedSource`를 통과해야 한다. SDR도 float 작업 버퍼를 쓰고 `rgba8` 작업 버퍼는 금지한다.
+- 광학 경계: Q02 통합 시 Q01 `OpticalTransform`만 사용한다. Q02 `OpticalGeometry`는 내부 타입이며 경계를 넘기지 않는다.
+- 마스크 한도: `MAX_MASKS=16`, `MAX_STROKES=64`, `MAX_STROKE_POINTS=1024`가 잠정 정본이다. Q02가 GLSL uniform 예산을 제출하면 Q01이 확정한다.
+- Export 취소: `prepareExportImage`의 선택적 6번째 인자 `ExportControl { signal?, onStage? }`를 사용한다. `AbortError`로 거부하고 renderer/canvas를 즉시 해제한다. IF-03 선택 상태와 IF-05 추천 레지스트리는 CP1.1 범위 밖으로 연기한다.
+- 계약 검증에 `tests/engineContractCorrective.test.ts`의 SC-01 arbitration 테스트를 포함한다.
+
+## Q03 Imaging PoC 안내 (Q03 브랜치 전용, 배포 제외)
+
+- `poc/q03-imaging/`는 Phase 1 Q03(RAW/Video) 기술 검증용 독립 정적 PoC다. 제품 `src/`·`public/`·`dist/`·GitHub Pages 배포 경로에 포함하지 않는다. 통합 전에는 Q03 브랜치에만 존재한다.
+- 실행: `cd poc/q03-imaging && npm ci`, 입력 fixture는 `bash scripts/fetch-raw-samples.sh`(RAW, canonical URL + `scripts/raw-samples.sha256` 검증, `Q03_TESTDATA`로 대상 경로 변경)와 `bash scripts/make-fixtures.sh`(ffmpeg 합성 비디오 5종 기본 + silent/portrait/rot90/VFR/45s). `testdata/`, `node_modules/`, `dist/`, 트랜스코드 출력 `results/video/out_*`는 Git 제외다.
+- 측정: `node scripts/run-raw.mjs`, `node scripts/run-video.mjs` 뒤 `build-summary.mjs`/`summarize-raw.mjs`/`summarize-video.mjs`로 표를 만든다. 드라이버 실행 중에는 파일을 수정하지 않는다(Vite 재시작으로 측정이 중단된다).
+- RAW 단계 스위치: `RAW_SKIP_MAIN`, `RAW_SKIP_CONTRACT`, `RAW_SKIP_ROBUSTNESS`, `RAW_SKIP_RELEASE`, `RAW_FILES=cr3_canon_r6m3`, `RAW_LIBRAW=0`. 단계별 실행은 기존 결과 JSON을 덮어쓰지 않는다.
+- Video 스위치: `VIDEO_FILES`, `VIDEO_SKIP_BENCH`, `VIDEO_SKIP_BUDGET`, `VIDEO_SKIP_CANCEL`, `VIDEO_SKIP_LONG`. 자동화에서는 `page.exposeFunction('__q03Sink')`로 Node fs 스트림을 제공해 Base64 메모리 버퍼 없이 출력 파일을 만든다. 취소 검증은 앱 내부 abort(`abortAfterMs`)와 외부 `cancelRun()` 두 경로를 모두 실행한다.
+- Assertion: `node scripts/check-raw.mjs`(RAW 114개), `node scripts/run-video.mjs` 자체 assertion. 실패 시 exit 1, 결과는 `results/raw/assertions.json`, `results/video/assertions.json`.
+- 원칙: 확인하지 않은 포맷·코덱·기기(iOS Safari 포함)를 지원으로 표시하지 않는다. 내장 JPEG 프리뷰를 RAW 현상 결과로 쓰지 않는다. 수치는 headless 소프트웨어 GL·WASM 1스레드 기준이다.
+- 문서: `docs/phase1/RAW_POC.md`, `VIDEO_POC.md`, `Q03_SUPPORT_MATRIX.md`, `Q03_LICENSE_REVIEW.md`. 측정 원시값은 `poc/q03-imaging/results/`에 JSON/표로 보존한다.
+
+## Q04 Application PoC 안내 (Q04 브랜치 전용)
+
+- `src/poc/q04/`는 Q01 공통 상태/Recipe 인터페이스 확정 전까지 기존 store·컴포넌트를 수정하지 않는 독립 PoC다. 통합 시점에만 기존 코드를 변경한다. 통합 전에는 Q04 브랜치에만 존재한다.
+- 신규 검사: `npx vitest run tests/q04Workspace.test.ts tests/q04Batch.test.ts tests/q04Metadata.test.ts tests/q04Analysis.test.ts tests/q04Perf.test.ts`. `q04Perf`는 벽시계 측정이므로 6라운드의 min/median/p95/max를 출력하고 median으로 판정하되 임계값은 완화하지 않는다(최소값 단독 판정 금지). 임계값 초과는 회귀 증거로 취급한다.
+- 측정 도구: `node tools/q04-bench/bench.mjs`(로컬 Vite dev 서버 + Playwright Chromium, `public/samples`로 실제 decode→WebGL export→encode 실행, 업로드 없음). `Q04_BENCH_GPU=1`은 headless ANGLE Metal 실GPU를 요청하며 미지정 시 SwiftShader 수치(느린 하한)다. `Q04_BENCH_PORT`, `Q04_BENCH_JSON=0` 지원. CI 대상이 아니며 로컬 참고 수치로만 보고한다.
+- 결과 문서: `docs/phase1/WORKSPACE_POC.md`, `BATCH_POC.md`, `RECOMMENDATION_POC.md`, `CP1_1_INTERFACE_REQUIREMENTS.md`. 추천 타깃 상수는 학습 데이터가 아닌 레지스트리 설명 기반 휴리스틱이므로 UI에 점수 근거를 항상 노출한다.
+- 배치 동시성은 기기 권장값(`resources.ts`, 최대 4·모바일 2)을 쓰고 Queue의 전역 안전 상한은 8(재시도 상한 10)이다. NaN/Infinity·소수 입력은 클램프되며, 풀해상도 이미지를 여러 장 동시에 메모리에 보관하지 않는다는 제품 원칙을 유지한다. 기밀 평가·원본 대응 자료는 기존대로 `.private/`에만 둔다.
+- CP1.1 계약 반영: Export 취소는 `ExportControl`, 편집 상태는 `EditState.geometry`, 배치 예산은 `ResourceBroker`를 사용한다. IF-03/IF-05는 PO 승인 전까지 연기한다.
 
 

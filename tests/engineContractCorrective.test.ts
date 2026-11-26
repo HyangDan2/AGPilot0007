@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   AI_OUTPUT_KINDS,
   MAX_LOCAL_GROUPS,
+  MAX_MASKS,
+  MAX_STROKE_POINTS,
+  MAX_STROKES,
   RECIPE_SCHEMA_MAX,
   RENDER_FEATURES,
   acquireAll,
@@ -9,6 +12,7 @@ import {
   assertRecipePersistable,
   assertRecipeVersionSupported,
   createCoreRenderRegistry,
+  createEditState,
   createModuleRegistry,
   createOpticalTransform,
   createPerspectiveQuad,
@@ -33,6 +37,7 @@ import {
   resolveRecipeStorageKey,
   resolveRenderPlan,
   stageIndex,
+  throwIfExportAborted,
   LOCAL_ADJUSTMENT_STAGE,
   validateAIModuleDescriptor,
   validateImageBuffer,
@@ -230,6 +235,20 @@ describe('CORE-03 image buffer integrity', () => {
       /linear-srgb/,
     );
   });
+
+  it('pins the RGBA float boundary for SDR sources and rejects 3-channel formats', () => {
+    const sdr = { ...source, precision: 'sdr-srgb8' as const };
+    expect(() =>
+      assertDecodedSource({
+        source: sdr,
+        working: { ...working, format: 'rgba8', memoryBytes: 16, data: new Uint8Array(16) },
+        warnings: [],
+      } as DecodedSource),
+    ).toThrow(/16-bit or 32-bit float/);
+    expect(() =>
+      validateImageBuffer({ ...working, format: 'rgb16f' as never }, source),
+    ).toThrow(/format/);
+  });
 });
 
 describe('CORE-04 geometry order and forward/inverse mapping', () => {
@@ -309,6 +328,16 @@ describe('CORE-05 optical transform contract', () => {
       }),
     ).toThrow(/perspective/);
   });
+
+  it('rejects Q02-internal shapes so only the Q01 OpticalTransform crosses the boundary', () => {
+    const identityOptical = createOpticalTransform();
+    expect(() =>
+      validateOpticalTransform({ version: 1, matrix: [...identityOptical.homography] } as never),
+    ).toThrow(/homography/);
+    expect(() =>
+      validateOpticalTransform({ version: 2, homography: [...identityOptical.homography] } as never),
+    ).toThrow(/Invalid optical transform/);
+  });
 });
 
 describe('CORE-06 local adjustment contract', () => {
@@ -386,6 +415,10 @@ describe('CORE-06 local adjustment contract', () => {
         })),
       }),
     ).toThrow(/group count/);
+  });
+
+  it('keeps the Q01 mask limits as the provisional single source of truth', () => {
+    expect([MAX_MASKS, MAX_STROKES, MAX_STROKE_POINTS, MAX_LOCAL_GROUPS]).toEqual([16, 64, 1024, 8]);
   });
 });
 
@@ -604,5 +637,38 @@ describe('CORE-10 AI result extension contract', () => {
         output: ['chat'],
       }),
     ).toThrow(/output/);
+  });
+});
+
+describe('SC-01 shared contract arbitration', () => {
+  it('keeps geometry inside EditState and normalizes invalid values', () => {
+    const identityState = createEditState();
+    expect(identityState.geometry).toEqual(IDENTITY_GEOMETRY);
+
+    const normalized = createEditState({
+      geometry: {
+        ...IDENTITY_GEOMETRY,
+        rotation: 45 as GeometryTransform['rotation'],
+        straighten: 90,
+      },
+    });
+    expect(normalized.geometry.rotation).toBe(0);
+    expect(normalized.geometry.straighten).toBe(45);
+  });
+
+  it('exposes an AbortError-based export cancellation contract', () => {
+    const controller = new AbortController();
+    expect(() => throwIfExportAborted(controller.signal)).not.toThrow();
+    expect(() => throwIfExportAborted(undefined)).not.toThrow();
+
+    controller.abort();
+    let caught: unknown;
+    try {
+      throwIfExportAborted(controller.signal);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).name).toBe('AbortError');
   });
 });

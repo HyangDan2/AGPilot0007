@@ -13,4 +13,5 @@ export * from './recipeValidation';
 export * from './editState';
 export * from './resources';
 export * from './resourceBudget';
+export * from './exportControl';
 export * from './ai';

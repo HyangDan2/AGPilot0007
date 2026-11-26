@@ -1,6 +1,6 @@
 # Phase 1 Module Ownership
 
-상태: CP1.1 소유권 보완 · QA 승인 대기 · 2026-11-27
+상태: CP1.1 + SC-01 계약 중재 · QA 승인 대기 · 2026-11-27
 
 목적: Q02/Q03/Q04가 공통 파일을 건드리지 않고 자기 모듈을 구현하도록 경계를 고정한다. 소유 경로 밖 변경은 Q01 리뷰 후에만 수행한다.
 
@@ -102,7 +102,7 @@ Q04 규칙:
 - `src/films/**`, `src/presets/**`, `public/luts/**`
 - `package.json`, `package-lock.json`, `vite.config.ts`, `playwright.config.ts`
 - `.github/workflows/**`
-- `docs/HARNESS_GUIDE.md`, `docs/phase1/**`
+- `docs/HARNESS_GUIDE.md`(Q01 단독 소유, Q03/Q04 직접 수정 금지), `docs/phase1/**`
 
 공통 파일 변경 요청 시 다음을 포함한다: 목적, 필요한 최소 diff, 계약 영향, 실행한 검사, 되돌릴 방법.
 

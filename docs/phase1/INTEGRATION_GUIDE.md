@@ -1,10 +1,26 @@
 # Phase 1 Interface Integration Guide (Q02/Q03/Q04)
 
-상태: CP1.1 · QA 승인 대기 · 2026-11-27
+상태: CP1.1 + SC-01 중재 · QA 승인 대기 · 2026-11-27
 대상: Q02 Optical, Q03 Imaging, Q04 Application
 공통 진입점: `src/engine/contracts/index.ts`
 
 이 문서는 공통 계약을 어떤 순서와 형태로 소비해야 하는지만 정의한다. 각 모듈의 실제 구현·UI는 담당 작업 주문이 소유하며, 공통 파일 수정은 Q01 리뷰가 필요하다.
+
+## 0. SC-01 중재 결정 (2026-11-27)
+
+| 항목 | 결정 | 영향 |
+| --- | --- | --- |
+| 버퍼 경계 | 제품 경계는 Q01 `ImageBuffer`(linear-srgb, RGBA float). Q03 RGB 3ch `SceneLinearFrame`은 내부 전용이며 RGBA16F/32F 어댑터 필수. SDR도 float 작업 버퍼, `rgba8` 금지 | Q03 |
+| 광학 경계 | Q02는 통합 시 Q01 `OpticalTransform(version:1, homography, distortion, optional perspective)`만 사용. Q02 `OpticalGeometry`는 내부 전용 | Q02 |
+| 마스크 한도 | `MAX_MASKS=16`·`MAX_STROKES=64`·`MAX_STROKE_POINTS=1024`를 잠정 정본으로 유지. Q02 GLSL uniform 예산 제출 후 Q01이 확정 | Q02 |
+| 간섭 마스크 수 | Q02 PoC의 8 masks/1024 segments는 통합 전 조정 대상이며 제품 계약이 아니다 | Q02 |
+| EditState | `geometry` 포함은 CP1.1 범위 | Q04 |
+| IF-01 Export 취소 | `ExportControl { signal?, onStage? }` 최소 계약을 CP1.1에 구현 | Q04 |
+| IF-03 선택 상태 | CP1.1 미구현. PO 승인 전 연기. Q04 PoC 타입을 제품 계약으로 승격하지 않음 | Q04 |
+| IF-05 추천 레지스트리 | CP1.1 미구현. PO 승인 전 연기 | Q04 |
+| HARNESS_GUIDE | Q01 단독 소유. Q03/Q04는 직접 수정하지 않고 Q01에 변경 요청 | Q03/Q04 |
+
+IF-03/IF-05 연기 사유: 두 항목은 애플리케이션 계층 상태·레지스트리로, CP1.1 공통 엔진 계약의 소비자가 아직 없고 제품 UX 결정(PO)이 선행되어야 한다. 계약을 먼저 고정하면 Q04 PoC 타입이 제품 계약으로 굳을 위험이 있다.
 
 ## 1. 공통 모듈 등록
 
@@ -41,7 +57,7 @@ const plan = resolveRenderPlan(settings, 'export', registry);
 
 ## 2. Q02 Optical 연동
 
-1. 광학 수학은 `OpticalTransform`으로 결과를 낸다.
+1. 광학 수학은 Q01 `OpticalTransform`으로 결과를 낸다. Q02 PoC의 `OpticalGeometry`는 내부 표현으로만 사용하고 경계를 넘기지 않는다.
    - `homography`: corrected NIS → source NIS, 9개 row-major.
    - `distortion`: Brown-Conrady `k1,k2,k3,p1,p2`, centered space.
    - `perspective`: 단위 정사각형이 매핑되는 TL/TR/BR/BL quad.
@@ -83,6 +99,7 @@ assertDecodedSource(decoded); // 실패 시 파이프라인 진입 금지
 ### 4.1 편집 상태
 
 - 분석/선택/복사-붙여넣기는 `EditState`를 사용하고 자체 편집 상태 타입을 만들지 않는다.
+- IF-03 공용 선택 상태와 IF-05 추천 레지스트리는 CP1.1 범위 밖이다. PO 승인 전까지 Q04 PoC 타입을 공통 계약으로 승격하지 않는다.
 - 로컬 보정은 `LocalAdjustmentState` 계약만 참조한다. 승인 전 UI·저장·렌더 활성화는 금지다.
 
 ### 4.2 배치/동시성/메모리
@@ -124,7 +141,22 @@ if (!result.allowed) {
 - 컨텍스트 손실 직후에는 `scope.abandon()`을 사용하고, 복구 후 새 scope/session을 만든다. 손실된 GL 객체에 delete를 호출하지 않는다.
 - 부분 할당 실패는 `acquireAll(scope, factories)`로 처리한다.
 
-### 4.3 레시피 저장
+### 4.3 Export 취소 (IF-01)
+
+```ts
+import { prepareExportImage } from '../engine/export/imageExporter';
+import type { ExportControl } from '../engine/contracts';
+
+const controller = new AbortController();
+const control: ExportControl = { signal: controller.signal, onStage: (stage) => setStage(stage) };
+await prepareExportImage(image, lut, settings, options, onProgress, control);
+```
+
+- `onStage`는 `render → encode → complete` 순서다. 각 경계에서 취소를 확인한다.
+- 취소 시 `AbortError`로 거부하고 renderer/canvas를 즉시 해제한다. `toBlob` 완료 후에는 Blob/objectUrl을 만들지 않고 폐기한다.
+- `ExportOptions`는 변경하지 않는다. 기존 호출부는 6번째 인자를 생략하면 동작이 동일하다.
+
+### 4.4 레시피 저장
 
 - `resolveRecipeStorageKey(baseUrl)`가 Stable/Beta IDB 키를 선택한다. Beta 레시피를 Stable 키에 쓰지 않는다.
 - 저장 전 `assertRecipePersistable(recipe, key)`를 통과해야 한다. 현재 상한은 7이며 v8 geometry는 저장되지 않는다.
@@ -149,6 +181,7 @@ npx playwright test tests/e2e/geometry-contract.spec.ts --project=chromium
 ## 6. 금지 사항
 
 - 공통 파일 무단 변경, 자체 렌더 경로/자체 EditState 생성.
+- `docs/HARNESS_GUIDE.md` 직접 수정(Q01 단독 소유, 변경은 Q01에 요청).
 - 미구현 기능의 Mock UI·가짜 데이터·숨은 활성 플래그.
 - 8-bit 작업 버퍼, 비선형 작업 버퍼, 검증 우회.
 - main/beta 직접 수정, 승인 전 운영 배포.
