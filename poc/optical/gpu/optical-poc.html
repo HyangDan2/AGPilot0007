@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HD2Lab Optical PoC (CP1)</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #101116;
+        color: #cfd3dc;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      main {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        align-items: flex-start;
+      }
+      canvas {
+        display: block;
+        width: min(90vw, 640px);
+        height: auto;
+        background: #000;
+        image-rendering: pixelated;
+      }
+      p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Phase 1 Q02 optical PoC — homography / distortion / masks / defocus PSF. Standalone harness, not part of the production UI.</p>
+      <canvas id="view" width="512" height="512"></canvas>
+      <p id="status">initialising…</p>
+    </main>
+    <script type="module" src="./optical-poc.ts"></script>
+    <script>
+      window.addEventListener('optical-poc-ready', () => {
+        const info = window.__opticalPoc.info();
+        document.getElementById('status').textContent =
+          'ready · ' + info.renderer + ' · maxTexture ' + info.maxTextureSize;
+      });
+    </script>
+  </body>
+</html>
