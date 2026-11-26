@@ -1,0 +1,44 @@
+{
+  "path": "video/h264_aac_720p_6s.mp4",
+  "fileBytes": 3129218,
+  "format": {
+    "name": "MP4",
+    "mimeType": "video/mp4"
+  },
+  "duration": 6,
+  "video": {
+    "codec": "avc",
+    "codecString": "avc1.64001f",
+    "canDecode": true,
+    "codedWidth": 1280,
+    "codedHeight": 720,
+    "displayWidth": 1280,
+    "displayHeight": 720,
+    "rotation": 0,
+    "duration": 6,
+    "decoderConfig": {
+      "codec": "avc1.64001f",
+      "codedWidth": 1280,
+      "codedHeight": 720
+    },
+    "packetStats": {
+      "packetCount": 180,
+      "averagePacketRate": 30,
+      "averageBitrate": 4033967
+    }
+  },
+  "audio": {
+    "codec": "aac",
+    "codecString": "mp4a.40.2",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 2,
+    "duration": 6,
+    "decoderConfig": {
+      "codec": "mp4a.40.2",
+      "sampleRate": 48000,
+      "numberOfChannels": 2
+    }
+  },
+  "inputBytes": 3129218
+}

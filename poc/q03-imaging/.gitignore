@@ -1,0 +1,4 @@
+node_modules
+dist
+testdata
+results/video/out_*

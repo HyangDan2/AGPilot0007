@@ -1,0 +1,44 @@
+{
+  "path": "video/vp9_opus_720p_6s.webm",
+  "fileBytes": 1251574,
+  "format": {
+    "name": "WebM",
+    "mimeType": "video/webm"
+  },
+  "duration": 6,
+  "video": {
+    "codec": "vp9",
+    "codecString": "vp09.00.31.08.01.02.02.02.00",
+    "canDecode": true,
+    "codedWidth": 1280,
+    "codedHeight": 720,
+    "displayWidth": 1280,
+    "displayHeight": 720,
+    "rotation": 0,
+    "duration": 6,
+    "decoderConfig": {
+      "codec": "vp09.00.31.08.01.02.02.02.00",
+      "codedWidth": 1280,
+      "codedHeight": 720
+    },
+    "packetStats": {
+      "packetCount": 180,
+      "averagePacketRate": 30,
+      "averageBitrate": 1533431
+    }
+  },
+  "audio": {
+    "codec": "opus",
+    "codecString": "opus",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 2,
+    "duration": 5.994,
+    "decoderConfig": {
+      "codec": "opus",
+      "sampleRate": 48000,
+      "numberOfChannels": 2
+    }
+  },
+  "inputBytes": 1251574
+}

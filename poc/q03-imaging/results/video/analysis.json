@@ -1,0 +1,227 @@
+[
+  {
+    "key": "h264_aac_720p",
+    "path": "video/h264_aac_720p_6s.mp4",
+    "fileBytes": 3129218,
+    "format": {
+      "name": "MP4",
+      "mimeType": "video/mp4"
+    },
+    "duration": 6,
+    "video": {
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "canDecode": true,
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "duration": 6,
+      "decoderConfig": {
+        "codec": "avc1.64001f",
+        "codedWidth": 1280,
+        "codedHeight": 720
+      },
+      "packetStats": {
+        "packetCount": 180,
+        "averagePacketRate": 30,
+        "averageBitrate": 4033967
+      }
+    },
+    "audio": {
+      "codec": "aac",
+      "codecString": "mp4a.40.2",
+      "canDecode": true,
+      "sampleRate": 48000,
+      "numberOfChannels": 2,
+      "duration": 6,
+      "decoderConfig": {
+        "codec": "mp4a.40.2",
+        "sampleRate": 48000,
+        "numberOfChannels": 2
+      }
+    },
+    "inputBytes": 3129218
+  },
+  {
+    "key": "h264_aac_1080p",
+    "path": "video/h264_aac_1080p_10s.mp4",
+    "fileBytes": 10276661,
+    "format": {
+      "name": "MP4",
+      "mimeType": "video/mp4"
+    },
+    "duration": 10,
+    "video": {
+      "codec": "avc",
+      "codecString": "avc1.640028",
+      "canDecode": true,
+      "codedWidth": 1920,
+      "codedHeight": 1080,
+      "displayWidth": 1920,
+      "displayHeight": 1080,
+      "rotation": 0,
+      "duration": 10,
+      "decoderConfig": {
+        "codec": "avc1.640028",
+        "codedWidth": 1920,
+        "codedHeight": 1080
+      },
+      "packetStats": {
+        "packetCount": 300,
+        "averagePacketRate": 30,
+        "averageBitrate": 8083633
+      }
+    },
+    "audio": {
+      "codec": "aac",
+      "codecString": "mp4a.40.2",
+      "canDecode": true,
+      "sampleRate": 48000,
+      "numberOfChannels": 2,
+      "duration": 10,
+      "decoderConfig": {
+        "codec": "mp4a.40.2",
+        "sampleRate": 48000,
+        "numberOfChannels": 2
+      }
+    },
+    "inputBytes": 10276661
+  },
+  {
+    "key": "vp9_opus_720p",
+    "path": "video/vp9_opus_720p_6s.webm",
+    "fileBytes": 1251574,
+    "format": {
+      "name": "WebM",
+      "mimeType": "video/webm"
+    },
+    "duration": 6,
+    "video": {
+      "codec": "vp9",
+      "codecString": "vp09.00.31.08.01.02.02.02.00",
+      "canDecode": true,
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "duration": 6,
+      "decoderConfig": {
+        "codec": "vp09.00.31.08.01.02.02.02.00",
+        "codedWidth": 1280,
+        "codedHeight": 720
+      },
+      "packetStats": {
+        "packetCount": 180,
+        "averagePacketRate": 30,
+        "averageBitrate": 1533431
+      }
+    },
+    "audio": {
+      "codec": "opus",
+      "codecString": "opus",
+      "canDecode": true,
+      "sampleRate": 48000,
+      "numberOfChannels": 2,
+      "duration": 5.994,
+      "decoderConfig": {
+        "codec": "opus",
+        "sampleRate": 48000,
+        "numberOfChannels": 2
+      }
+    },
+    "inputBytes": 1251574
+  },
+  {
+    "key": "hevc_aac_360p",
+    "path": "video/hevc_aac_360p_3s.mp4",
+    "fileBytes": 391565,
+    "format": {
+      "name": "MP4",
+      "mimeType": "video/mp4"
+    },
+    "duration": 3,
+    "video": {
+      "codec": "hevc",
+      "codecString": "hvc1.1.6.L63.90",
+      "canDecode": true,
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "duration": 3,
+      "decoderConfig": {
+        "codec": "hvc1.1.6.L63.90",
+        "codedWidth": 640,
+        "codedHeight": 360
+      },
+      "packetStats": {
+        "packetCount": 90,
+        "averagePacketRate": 30,
+        "averageBitrate": 927725
+      }
+    },
+    "audio": {
+      "codec": "aac",
+      "codecString": "mp4a.40.2",
+      "canDecode": true,
+      "sampleRate": 48000,
+      "numberOfChannels": 1,
+      "duration": 3,
+      "decoderConfig": {
+        "codec": "mp4a.40.2",
+        "sampleRate": 48000,
+        "numberOfChannels": 1
+      }
+    },
+    "inputBytes": 391565
+  },
+  {
+    "key": "av1_opus_360p",
+    "path": "video/av1_opus_360p_4s.webm",
+    "fileBytes": 260668,
+    "format": {
+      "name": "WebM",
+      "mimeType": "video/webm"
+    },
+    "duration": 4,
+    "video": {
+      "codec": "av1",
+      "codecString": "av01.0.01M.08",
+      "canDecode": true,
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "duration": 4,
+      "decoderConfig": {
+        "codec": "av01.0.01M.08",
+        "codedWidth": 640,
+        "codedHeight": 360
+      },
+      "packetStats": {
+        "packetCount": 120,
+        "averagePacketRate": 30,
+        "averageBitrate": 438244
+      }
+    },
+    "audio": {
+      "codec": "opus",
+      "codecString": "opus",
+      "canDecode": true,
+      "sampleRate": 48000,
+      "numberOfChannels": 1,
+      "duration": 3.994,
+      "decoderConfig": {
+        "codec": "opus",
+        "sampleRate": 48000,
+        "numberOfChannels": 1
+      }
+    },
+    "inputBytes": 260668
+  }
+]

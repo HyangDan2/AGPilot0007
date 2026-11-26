@@ -1,0 +1,3473 @@
+{
+  "key": "raf_fuji_xt4",
+  "path": "raf/DSCF0268.RAF",
+  "fileBytes": 26971008,
+  "detectFormat": "RAF",
+  "supportsFile": true,
+  "openMs": 36.9,
+  "parseMs": 1.5999999046325684,
+  "format": "RAF",
+  "binary": "simd",
+  "capabilityFlags": {
+    "float": false,
+    "gpuUnpack": false,
+    "previews": 1,
+    "randomAccess": {
+      "kind": "blocks"
+    },
+    "tiles": 9
+  },
+  "metadata": {
+    "artist": null,
+    "bitsPerSample": 14,
+    "blackLevel": {
+      "cols": 6,
+      "mean": 1022,
+      "rows": 6,
+      "samples": 1,
+      "values": [
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022
+      ]
+    },
+    "camera": {
+      "canonicalMake": "Fujifilm",
+      "canonicalModel": "X-T4",
+      "firmware": null,
+      "make": "FUJIFILM",
+      "model": "X-T4",
+      "name": "Fujifilm X-T4",
+      "serial": "0BQ00325",
+      "uniqueModel": null
+    },
+    "captureTime": "2020-05-08T11:19:04",
+    "cfa": {
+      "colors": [
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "B",
+        "R",
+        "G",
+        "R",
+        "B",
+        "G",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "R",
+        "B",
+        "G",
+        "B",
+        "R",
+        "G"
+      ],
+      "height": 6,
+      "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+      "width": 6
+    },
+    "colorMatrices": {
+      "analogBalance": [],
+      "calibration": [],
+      "color": [
+        {
+          "illuminant": 21,
+          "rows": 3,
+          "temperature": 6500,
+          "values": [
+            1.3426,
+            -0.6334,
+            -0.1177,
+            -0.4244,
+            1.2136,
+            0.2371,
+            -0.058,
+            0.1303,
+            0.598
+          ]
+        }
+      ],
+      "forward": [],
+      "source": "camera-db"
+    },
+    "compression": "fuji-compressed",
+    "copyright": null,
+    "dng": null,
+    "dngVersion": null,
+    "exposure": {
+      "exposureBias": 0,
+      "exposureProgram": 1,
+      "exposureTime": 0.008,
+      "fNumber": 3.6,
+      "flash": 0,
+      "focalLength": 16,
+      "focalLength35mm": 24,
+      "iso": 160,
+      "meteringMode": 5
+    },
+    "extra": {
+      "crop_source": "file",
+      "image_size": "4416x2944",
+      "mode": "golomb-rice",
+      "raf_version": "0100"
+    },
+    "format": "RAF",
+    "gps": null,
+    "height": 4160,
+    "layout": "x-trans",
+    "lens": {
+      "apertureRange": [
+        2.8,
+        2.8
+      ],
+      "focalRange": [
+        16,
+        55
+      ],
+      "make": "FUJIFILM",
+      "model": "XF16-55mmF2.8 R LM WR",
+      "serial": "98C01491"
+    },
+    "opcodes": [],
+    "orientation": 1,
+    "orientationInfo": {
+      "autoRotate": null,
+      "exif": 1,
+      "makerNote": null,
+      "policy": "exif-only",
+      "resolved": 1,
+      "source": "exif"
+    },
+    "previews": [
+      {
+        "byteLength": 4239974,
+        "encoding": "jpeg",
+        "height": 2944,
+        "index": 0,
+        "kind": "full-size",
+        "mimeType": "image/jpeg",
+        "offset": 148,
+        "orientation": 1,
+        "width": 4416
+      }
+    ],
+    "rawHeight": 4182,
+    "rawWidth": 6384,
+    "software": "Digital Camera X-T4 Ver1.00",
+    "whiteBalance": [
+      1.9304636,
+      1,
+      2.1192052,
+      1
+    ],
+    "whiteBalanceApplied": false,
+    "whiteLevel": [
+      16383
+    ],
+    "width": 6240
+  },
+  "frameInfo": {
+    "activeArea": {
+      "height": 4170,
+      "width": 6246,
+      "x": 0,
+      "y": 6
+    },
+    "bitsPerSample": 14,
+    "blackFromMasked": false,
+    "blackLevel": {
+      "cols": 6,
+      "mean": 1022,
+      "rows": 6,
+      "samples": 1,
+      "values": [
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022
+      ]
+    },
+    "cfa": {
+      "colors": [
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "B",
+        "R",
+        "G",
+        "R",
+        "B",
+        "G",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "R",
+        "B",
+        "G",
+        "B",
+        "R",
+        "G"
+      ],
+      "height": 6,
+      "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+      "width": 6
+    },
+    "channels": 1,
+    "colorMatrices": {
+      "analogBalance": [],
+      "calibration": [],
+      "color": [
+        {
+          "illuminant": 21,
+          "rows": 3,
+          "temperature": 6500,
+          "values": [
+            1.3426,
+            -0.6334,
+            -0.1177,
+            -0.4244,
+            1.2136,
+            0.2371,
+            -0.058,
+            0.1303,
+            0.598
+          ]
+        }
+      ],
+      "forward": [],
+      "source": "camera-db"
+    },
+    "compression": "fuji-compressed",
+    "crop": {
+      "height": 4160,
+      "width": 6240,
+      "x": 6,
+      "y": 13
+    },
+    "height": 4182,
+    "layout": "x-trans",
+    "maskedAreas": [],
+    "orientation": 1,
+    "pixelAspect": 1,
+    "sampleFormat": "u16",
+    "whiteBalance": [
+      1.9304636,
+      1,
+      2.1192052,
+      1
+    ],
+    "whiteBalanceApplied": false,
+    "whiteLevel": [
+      16383
+    ],
+    "width": 6384
+  },
+  "previews": [
+    {
+      "byteLength": 4239974,
+      "encoding": "jpeg",
+      "height": 2944,
+      "index": 0,
+      "kind": "full-size",
+      "mimeType": "image/jpeg",
+      "offset": 148,
+      "orientation": 1,
+      "width": 4416
+    }
+  ],
+  "tiles": 9,
+  "decode": {
+    "raw_u16": {
+      "label": "raw_u16",
+      "options": {
+        "output": "raw-u16"
+      },
+      "ok": true,
+      "wallMsMedian": 532.6,
+      "wallMsAll": [
+        532.6
+      ],
+      "totalMs": 527.8999996185303,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 511.90000009536743
+      },
+      "copyMs": 6.100000381469727,
+      "outputMB": 50.92218017578125,
+      "peakHeapDeltaMB": 50.9,
+      "frame": null,
+      "summary": {
+        "width": 6384,
+        "height": 4182,
+        "channels": 1,
+        "output": "raw-u16",
+        "dataType": "u16",
+        "bitsPerSample": 14,
+        "cfa": {
+          "colors": [
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "B",
+            "R",
+            "G",
+            "R",
+            "B",
+            "G",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "R",
+            "B",
+            "G",
+            "B",
+            "R",
+            "G"
+          ],
+          "height": 6,
+          "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+          "width": 6
+        },
+        "layout": "x-trans",
+        "activeArea": {
+          "height": 4170,
+          "width": 6246,
+          "x": 0,
+          "y": 6
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 6,
+          "y": 13
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": null,
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 511.90000009536743
+          },
+          "totalMs": 527.8999996185303,
+          "copyMs": 6.100000381469727,
+          "wallMs": 532.6000003814697
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 53395776,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": false
+      },
+      "linearStats": {
+        "count": 404514,
+        "min": 0,
+        "max": 0.22021820401312275,
+        "mean": 0.027436350608656585,
+        "p01": 0,
+        "p50": 0.023804074158846417,
+        "p99": 0.10283054856183718,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0.022065985355265823
+      },
+      "dataRef": null
+    },
+    "raw_f32": {
+      "label": "raw_f32",
+      "options": {
+        "output": "raw-f32"
+      },
+      "ok": true,
+      "wallMsMedian": 758.4,
+      "wallMsAll": [
+        758.4
+      ],
+      "totalMs": 732.5,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 511.5
+      },
+      "copyMs": 24.699999809265137,
+      "outputMB": 101.8443603515625,
+      "peakHeapDeltaMB": 88.4,
+      "frame": null,
+      "summary": {
+        "width": 6384,
+        "height": 4182,
+        "channels": 1,
+        "output": "raw-f32",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": {
+          "colors": [
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "B",
+            "R",
+            "G",
+            "R",
+            "B",
+            "G",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "R",
+            "B",
+            "G",
+            "B",
+            "R",
+            "G"
+          ],
+          "height": 6,
+          "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+          "width": 6
+        },
+        "layout": "x-trans",
+        "activeArea": {
+          "height": 4170,
+          "width": 6246,
+          "x": 0,
+          "y": 6
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 6,
+          "y": 13
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": null,
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 511.5
+          },
+          "totalMs": 732.5,
+          "copyMs": 24.699999809265137,
+          "wallMs": 758.3999996185303
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 106791552,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": false
+      },
+      "linearStats": {
+        "count": 404514,
+        "min": 0,
+        "max": 14432,
+        "mean": 1798.0412371388877,
+        "p01": 0,
+        "p50": 1560,
+        "p99": 6739,
+        "clippedGreatherThan1": 395584,
+        "zeroFrac": 0.022065985355265823
+      },
+      "dataRef": null
+    },
+    "normalized": {
+      "label": "normalized",
+      "options": {
+        "output": "normalized"
+      },
+      "ok": true,
+      "wallMsMedian": 605.3,
+      "wallMsAll": [
+        605.3
+      ],
+      "totalMs": 592.8999996185303,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 462.2999997138977,
+        "postprocess": 127.90000009536743
+      },
+      "copyMs": 13.699999809265137,
+      "outputMB": 101.8443603515625,
+      "peakHeapDeltaMB": 0,
+      "frame": null,
+      "summary": {
+        "width": 6384,
+        "height": 4182,
+        "channels": 1,
+        "output": "normalized",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": {
+          "colors": [
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "B",
+            "R",
+            "G",
+            "R",
+            "B",
+            "G",
+            "G",
+            "G",
+            "B",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "R",
+            "G",
+            "G",
+            "B",
+            "R",
+            "B",
+            "G",
+            "B",
+            "R",
+            "G"
+          ],
+          "height": 6,
+          "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+          "width": 6
+        },
+        "layout": "x-trans",
+        "activeArea": {
+          "height": 4170,
+          "width": 6246,
+          "x": 0,
+          "y": 6
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 6,
+          "y": 13
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 462.2999997138977,
+            "postprocess": 127.90000009536743
+          },
+          "totalMs": 592.8999996185303,
+          "copyMs": 13.699999809265137,
+          "wallMs": 605.3000001907349
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 106791552,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": false
+      },
+      "linearStats": {
+        "count": 404514,
+        "min": 0,
+        "max": 0.8729900121688843,
+        "mean": 0.051989475763884234,
+        "p01": 0,
+        "p50": 0.0350237600505352,
+        "p99": 0.37217628955841064,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0.02209070637851842
+      },
+      "dataRef": null
+    },
+    "linear_rgb_f32": {
+      "label": "linear_rgb_f32",
+      "options": {
+        "output": "linear-rgb"
+      },
+      "ok": true,
+      "wallMsMedian": 1391.8,
+      "wallMsAll": [
+        1389.1,
+        1391.8,
+        1509.3
+      ],
+      "totalMs": 1308,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 666.4000000953674,
+        "postprocess": 629.5
+      },
+      "copyMs": 82.39999961853027,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 371.7,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 666.4000000953674,
+            "postprocess": 629.5
+          },
+          "totalMs": 1308,
+          "copyMs": 82.39999961853027,
+          "wallMs": 1391.5999999046326
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003909327982303997,
+        "max": 0.8760220209757488,
+        "mean": 0.06137643831867119,
+        "p01": 0.0033474394585937257,
+        "p50": 0.04491480812430382,
+        "p99": 0.396226167678833,
+        "clippedGreatherThan1": 438,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "meanLinearRGB": [
+        0.0644,
+        0.07025,
+        0.05032
+      ]
+    },
+    "linear_rgb_f16": {
+      "label": "linear_rgb_f16",
+      "options": {
+        "output": "linear-rgb",
+        "sampleType": "f16"
+      },
+      "ok": true,
+      "wallMsMedian": 1392.3,
+      "wallMsAll": [
+        1392.3
+      ],
+      "totalMs": 1270.7000002861023,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 629.6000003814697,
+        "postprocess": 638.3000001907349
+      },
+      "copyMs": 122.2000002861023,
+      "outputMB": 148.53515625,
+      "peakHeapDeltaMB": 148.6,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f16",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 629.6000003814697,
+            "postprocess": 638.3000001907349
+          },
+          "totalMs": 1270.7000002861023,
+          "copyMs": 122.2000002861023,
+          "wallMs": 1392.2000002861023
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 155750400,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": null,
+      "dataRef": null
+    },
+    "linear_rgb16": {
+      "label": "linear_rgb16",
+      "options": {
+        "output": "linear-rgb16"
+      },
+      "ok": true,
+      "wallMsMedian": 1583.2,
+      "wallMsAll": [
+        1583.2
+      ],
+      "totalMs": 1480.5,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 592.5999999046326,
+        "postprocess": 880.2000002861023
+      },
+      "copyMs": 103.5,
+      "outputMB": 148.53515625,
+      "peakHeapDeltaMB": 110.4,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb16",
+        "dataType": "u16",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 592.5999999046326,
+            "postprocess": 880.2000002861023
+          },
+          "totalMs": 1480.5,
+          "copyMs": 103.5,
+          "wallMs": 1583.0999999046326
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 155750400,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.00044251163500419623,
+        "max": 0.8630045014114596,
+        "mean": 0.06136889985863343,
+        "p01": 0.0033468121360087488,
+        "p50": 0.04491238778260981,
+        "p99": 0.3962259352508838,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0
+      },
+      "dataRef": null
+    },
+    "rgba8": {
+      "label": "rgba8",
+      "options": {
+        "output": "rgba8"
+      },
+      "ok": true,
+      "wallMsMedian": 1873.2,
+      "wallMsAll": [
+        1462.5,
+        1873.2,
+        1935.2
+      ],
+      "totalMs": 1417.9000000953674,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 612.2000002861023,
+        "postprocess": 794.8000001907349
+      },
+      "copyMs": 45.700000286102295,
+      "outputMB": 99.0234375,
+      "peakHeapDeltaMB": 168,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 4,
+        "output": "rgba8",
+        "dataType": "u8",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 612.2000002861023,
+            "postprocess": 794.8000001907349
+          },
+          "totalMs": 1417.9000000953674,
+          "copyMs": 45.700000286102295,
+          "wallMs": 1462.4000000953674
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 103833600,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0,
+        "max": 0.9830065359477125,
+        "mean": 0.2688295787085201,
+        "p01": 0.01045751633986928,
+        "p50": 0.2588235294117647,
+        "p99": 0.8562091503267975,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0.0010478303747534516
+      },
+      "dataRef": null
+    },
+    "rgb16": {
+      "label": "rgb16",
+      "options": {
+        "output": "rgb16"
+      },
+      "ok": true,
+      "wallMsMedian": 1764.9,
+      "wallMsAll": [
+        1764.9
+      ],
+      "totalMs": 1679.5,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 519.5,
+        "postprocess": 1150
+      },
+      "copyMs": 86.2000002861023,
+      "outputMB": 148.53515625,
+      "peakHeapDeltaMB": 111.7,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "rgb16",
+        "dataType": "u16",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 519.5,
+            "postprocess": 1150
+          },
+          "totalMs": 1679.5,
+          "copyMs": 86.2000002861023,
+          "wallMs": 1764.9000000953674
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 155750400,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003916482286818748,
+        "max": 0.9826911828285141,
+        "mean": 0.26932639750092957,
+        "p01": 0.011861346354365351,
+        "p50": 0.25901681035578955,
+        "p99": 0.8569110653340455,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0
+      },
+      "dataRef": null
+    }
+  },
+  "demosaic": {
+    "bilinear": {
+      "label": "bilinear",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "bilinear"
+      },
+      "ok": true,
+      "wallMsMedian": 2085.4,
+      "wallMsAll": [
+        2085.4
+      ],
+      "totalMs": 1799.8999996185303,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 546.8000001907349,
+        "postprocess": 1222.9000000953674
+      },
+      "copyMs": 281.90000009536743,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 262.8,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 546.8000001907349,
+            "postprocess": 1222.9000000953674
+          },
+          "totalMs": 1799.8999996185303,
+          "copyMs": 281.90000009536743,
+          "wallMs": 2085.300000190735
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003909327982303997,
+        "max": 0.8760220209757488,
+        "mean": 0.06137643831867119,
+        "p01": 0.0033474394585937257,
+        "p50": 0.04491480812430382,
+        "p99": 0.396226167678833,
+        "clippedGreatherThan1": 438,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsAuto": {
+        "samples": 77875200,
+        "mae": 0,
+        "rmse": 0,
+        "maxAbs": 0,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "p99Code": 0,
+          "maxCode": 0
+        }
+      }
+    },
+    "half-size": {
+      "label": "half-size",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "half-size"
+      },
+      "ok": true,
+      "wallMsMedian": 1140.8,
+      "wallMsAll": [
+        1140.8
+      ],
+      "totalMs": 1110.1999998092651,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 642.4000000953674,
+        "postprocess": 367.59999990463257
+      },
+      "copyMs": 22.299999713897705,
+      "outputMB": 74.267578125,
+      "peakHeapDeltaMB": 74.3,
+      "frame": null,
+      "summary": {
+        "width": 3120,
+        "height": 2080,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 2080,
+          "width": 3120,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 2080,
+          "width": 3120,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 642.4000000953674,
+            "postprocess": 367.59999990463257
+          },
+          "totalMs": 1110.1999998092651,
+          "copyMs": 22.299999713897705,
+          "wallMs": 1140.7999997138977
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 77875200,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0001618103154517788,
+        "max": 0.8736220598220825,
+        "mean": 0.05733275989782833,
+        "p01": 0.0026536890848850208,
+        "p50": 0.04191573957602183,
+        "p99": 0.3841827561457952,
+        "clippedGreatherThan1": 572,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsAuto": null,
+      "note": "output dimensions differ from auto (3120x2080 vs 6240x4160); no pixel diff computed"
+    },
+    "edge-aware": {
+      "label": "edge-aware",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "edge-aware"
+      },
+      "ok": true,
+      "wallMsMedian": 6466.3,
+      "wallMsAll": [
+        6466.3
+      ],
+      "totalMs": 5608.700000286102,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 871.5999999046326,
+        "postprocess": 3962
+      },
+      "copyMs": 364.40000009536743,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 254.1,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 871.5999999046326,
+            "postprocess": 3962
+          },
+          "totalMs": 5608.700000286102,
+          "copyMs": 364.40000009536743,
+          "wallMs": 6466.10000038147
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0,
+        "max": 0.8861673275629679,
+        "mean": 0.06137187199506719,
+        "p01": 0.003304242311666409,
+        "p50": 0.04479571990668774,
+        "p99": 0.39620939890543616,
+        "clippedGreatherThan1": 390,
+        "zeroFrac": 0.0000024654832347140038
+      },
+      "dataRef": null,
+      "diffVsAuto": {
+        "samples": 77875200,
+        "mae": 0.0016538960517614957,
+        "rmse": 0.004952454884184468,
+        "maxAbs": 0.47703397274017334,
+        "over001": 1576724,
+        "over005": 90045,
+        "display8": {
+          "differingFrac": 0.5785906681459566,
+          "meanAbsCode": 1.7331872411883529,
+          "p99Code": 0,
+          "maxCode": 126
+        }
+      }
+    },
+    "ahd": {
+      "label": "ahd",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "ahd"
+      },
+      "ok": true,
+      "wallMsMedian": 3525,
+      "wallMsAll": [
+        3525
+      ],
+      "totalMs": 3177.5999999046326,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 499,
+        "postprocess": 2633.5999999046326
+      },
+      "copyMs": 342,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 258.9,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 499,
+            "postprocess": 2633.5999999046326
+          },
+          "totalMs": 3177.5999999046326,
+          "copyMs": 342,
+          "wallMs": 3524.7000002861023
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0,
+        "max": 0.8861673275629679,
+        "mean": 0.06137187199506719,
+        "p01": 0.003304242311666409,
+        "p50": 0.04479571990668774,
+        "p99": 0.39620939890543616,
+        "clippedGreatherThan1": 390,
+        "zeroFrac": 0.0000024654832347140038
+      },
+      "dataRef": null,
+      "diffVsAuto": {
+        "samples": 77875200,
+        "mae": 0.0016538960517614957,
+        "rmse": 0.004952454884184468,
+        "maxAbs": 0.47703397274017334,
+        "over001": 1576724,
+        "over005": 90045,
+        "display8": {
+          "differingFrac": 0.5785906681459566,
+          "meanAbsCode": 1.7331872411883529,
+          "p99Code": 0,
+          "maxCode": 126
+        }
+      }
+    },
+    "ppg": {
+      "label": "ppg",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "ppg"
+      },
+      "ok": false,
+      "error": {
+        "name": "InvalidArgumentError",
+        "message": "invalid argument: the ppg demosaic needs a Bayer sensor; this file's pattern is not one (use edge-aware, bilinear or auto)"
+      },
+      "frame": null,
+      "dataRef": null,
+      "diffVsAuto": null,
+      "note": null
+    },
+    "rcd": {
+      "label": "rcd",
+      "options": {
+        "output": "linear-rgb",
+        "demosaic": "rcd"
+      },
+      "ok": false,
+      "error": {
+        "name": "InvalidArgumentError",
+        "message": "invalid argument: the rcd demosaic needs a Bayer sensor; this file's pattern is not one (use edge-aware, bilinear or auto)"
+      },
+      "frame": null,
+      "dataRef": null,
+      "diffVsAuto": null,
+      "note": null
+    }
+  },
+  "highlights": {
+    "neutral": {
+      "label": "neutral",
+      "options": {
+        "output": "linear-rgb",
+        "highlights": "neutral"
+      },
+      "ok": true,
+      "wallMsMedian": 1961.6,
+      "wallMsAll": [
+        1961.6
+      ],
+      "totalMs": 1666.1999998092651,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 609.7999997138977,
+        "postprocess": 968.0999999046326
+      },
+      "copyMs": 295.19999980926514,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 259,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 609.7999997138977,
+            "postprocess": 968.0999999046326
+          },
+          "totalMs": 1666.1999998092651,
+          "copyMs": 295.19999980926514,
+          "wallMs": 1961.5999999046326
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003909327982303997,
+        "max": 0.8760220209757488,
+        "mean": 0.06137643831867119,
+        "p01": 0.0033474394585937257,
+        "p50": 0.04491480812430382,
+        "p99": 0.396226167678833,
+        "clippedGreatherThan1": 438,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsClip": {
+        "samples": 77875200,
+        "mae": 2.8018277098059183e-8,
+        "rmse": 0.00007082602507177653,
+        "maxAbs": 0.3412536382675171,
+        "over001": 21,
+        "over005": 13,
+        "display8": {
+          "differingFrac": 1.6693376068376068e-7,
+          "meanAbsCode": 17.46153846153846,
+          "p99Code": 43,
+          "maxCode": 43
+        }
+      }
+    },
+    "blend": {
+      "label": "blend",
+      "options": {
+        "output": "linear-rgb",
+        "highlights": "blend"
+      },
+      "ok": true,
+      "wallMsMedian": 1726.4,
+      "wallMsAll": [
+        1726.4
+      ],
+      "totalMs": 1486.9000000953674,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 543.7000002861023,
+        "postprocess": 926.5
+      },
+      "copyMs": 239,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 297.1,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 543.7000002861023,
+            "postprocess": 926.5
+          },
+          "totalMs": 1486.9000000953674,
+          "copyMs": 239,
+          "wallMs": 1726.4000000953674
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003909327982303997,
+        "max": 0.8640649318695068,
+        "mean": 0.06137560030611969,
+        "p01": 0.0033474394585937257,
+        "p50": 0.04491480812430382,
+        "p99": 0.396226167678833,
+        "clippedGreatherThan1": 438,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsClip": {
+        "samples": 77875200,
+        "mae": 0.000001044482278057731,
+        "rmse": 0.00018458273691117222,
+        "maxAbs": 0.3412536382675171,
+        "over001": 2631,
+        "over005": 165,
+        "display8": {
+          "differingFrac": 0.00004806408201840894,
+          "meanAbsCode": 2.525247127972215,
+          "p99Code": 0,
+          "maxCode": 43
+        }
+      }
+    },
+    "reconstruct": {
+      "label": "reconstruct",
+      "options": {
+        "output": "linear-rgb",
+        "highlights": "reconstruct"
+      },
+      "ok": true,
+      "wallMsMedian": 3152.9,
+      "wallMsAll": [
+        3152.9
+      ],
+      "totalMs": 2805.0999999046326,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 703.1000003814697,
+        "postprocess": 1402
+      },
+      "copyMs": 337,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 259,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 703.1000003814697,
+            "postprocess": 1402
+          },
+          "totalMs": 2805.0999999046326,
+          "copyMs": 337,
+          "wallMs": 3152.699999809265
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0003909327982303997,
+        "max": 0.8640649318695068,
+        "mean": 0.06137560030611969,
+        "p01": 0.0033474394585937257,
+        "p50": 0.04491480812430382,
+        "p99": 0.396226167678833,
+        "clippedGreatherThan1": 438,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "diffVsClip": {
+        "samples": 77875200,
+        "mae": 0.000001023419796538776,
+        "rmse": 0.00017207786470632203,
+        "maxAbs": 0.25847601890563965,
+        "over001": 2619,
+        "over005": 157,
+        "display8": {
+          "differingFrac": 0.000047974194608809995,
+          "meanAbsCode": 2.4826017130620985,
+          "p99Code": 0,
+          "maxCode": 37
+        }
+      }
+    },
+    "clip": {
+      "label": "clip",
+      "ok": true,
+      "wallMsMedian": 1391.8,
+      "options": {
+        "output": "linear-rgb"
+      },
+      "note": "default clip = linear_rgb_f32 baseline"
+    }
+  },
+  "whiteBalance": {
+    "daylight": {
+      "label": "daylight",
+      "options": {
+        "output": "linear-rgb",
+        "whiteBalance": "daylight"
+      },
+      "ok": true,
+      "wallMsMedian": 6603.3,
+      "wallMsAll": [
+        6603.3
+      ],
+      "totalMs": 6002.999999523163,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 1202.0999999046326,
+        "postprocess": 2746.9000000953674
+      },
+      "copyMs": 510.2000002861023,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 259,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 1202.0999999046326,
+            "postprocess": 2746.9000000953674
+          },
+          "totalMs": 6002.999999523163,
+          "copyMs": 510.2000002861023,
+          "wallMs": 6586.699999809265
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.00034421728923916817,
+        "max": 0.830663005510966,
+        "mean": 0.05914881155443877,
+        "p01": 0.0032707406984021263,
+        "p50": 0.04336129066844781,
+        "p99": 0.36866534749666846,
+        "clippedGreatherThan1": 0,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "meanLinearRGB": [
+        0.07473,
+        0.0764,
+        0.02712
+      ],
+      "diffVsAsShot": {
+        "samples": 77875200,
+        "mae": 0.013223716082484724,
+        "rmse": 0.028046844858530637,
+        "maxAbs": 0.42541229724884033,
+        "over001": 26948726,
+        "over005": 3178281,
+        "display8": {
+          "differingFrac": 0.9954118255876069,
+          "meanAbsCode": 8.113453209739506,
+          "p99Code": 0,
+          "maxCode": 84
+        }
+      }
+    },
+    "auto": {
+      "label": "auto",
+      "options": {
+        "output": "linear-rgb",
+        "whiteBalance": "auto"
+      },
+      "ok": true,
+      "wallMsMedian": 3092.3,
+      "wallMsAll": [
+        3092.3
+      ],
+      "totalMs": 2572.5,
+      "stages": {
+        "containerParse": 1.5999999046325684,
+        "entropyDecode": 727.2000002861023,
+        "postprocess": 1518.0999999046326
+      },
+      "copyMs": 487.5,
+      "outputMB": 297.0703125,
+      "peakHeapDeltaMB": 259,
+      "frame": null,
+      "summary": {
+        "width": 6240,
+        "height": 4160,
+        "channels": 3,
+        "output": "linear-rgb",
+        "dataType": "f32",
+        "bitsPerSample": 14,
+        "cfa": null,
+        "layout": "linear",
+        "activeArea": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 0,
+          "y": 0
+        },
+        "origin": {
+          "x": 0,
+          "y": 0
+        },
+        "blackLevel": {
+          "cols": 6,
+          "mean": 1022,
+          "rows": 6,
+          "samples": 1,
+          "values": [
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022,
+            1022
+          ]
+        },
+        "whiteLevel": [
+          16383
+        ],
+        "whiteBalance": [
+          1.9304636,
+          1,
+          2.1192052,
+          1
+        ],
+        "whiteBalanceApplied": false,
+        "colorMatrices": {
+          "analogBalance": [],
+          "calibration": [],
+          "color": [
+            {
+              "illuminant": 21,
+              "rows": 3,
+              "temperature": 6500,
+              "values": "[depth-limit]"
+            }
+          ],
+          "forward": [],
+          "source": "camera-db"
+        },
+        "orientation": 1,
+        "backend": {
+          "decode": "CPU WASM SIMD128 x1 thread",
+          "gpuAdapter": null,
+          "kind": "cpu",
+          "postprocess": "CPU x1",
+          "requested": "auto",
+          "simd": "WASM SIMD128",
+          "threads": 1,
+          "fallbackReason": null,
+          "binary": "simd",
+          "jpegxl": false
+        },
+        "timings": {
+          "stages": {
+            "containerParse": 1.5999999046325684,
+            "entropyDecode": 727.2000002861023,
+            "postprocess": 1518.0999999046326
+          },
+          "totalMs": 2572.5,
+          "copyMs": 487.5,
+          "wallMs": 3089.5999999046326
+        },
+        "inputBytes": 26971008,
+        "outputBytes": 311500800,
+        "opcodes": [],
+        "incomplete": false,
+        "warnings": [],
+        "source": "sensor",
+        "colorSpace": "srgb",
+        "hasIccProfile": true
+      },
+      "linearStats": {
+        "count": 405600,
+        "min": 0.0004435088436972971,
+        "max": 0.9365115165710449,
+        "mean": 0.0701103889113232,
+        "p01": 0.0038266813692947235,
+        "p50": 0.05098157624403636,
+        "p99": 0.4570281058549881,
+        "clippedGreatherThan1": 1958,
+        "zeroFrac": 0
+      },
+      "dataRef": null,
+      "meanLinearRGB": [
+        0.07481,
+        0.06104,
+        0.07548
+      ],
+      "diffVsAsShot": {
+        "samples": 77875200,
+        "mae": 0.0149665894564323,
+        "rmse": 0.028888382716226135,
+        "maxAbs": 0.3568812608718872,
+        "over001": 30612120,
+        "over005": 3692316,
+        "display8": {
+          "differingFrac": 0.9983513750205457,
+          "meanAbsCode": 7.608274541105627,
+          "p99Code": 0,
+          "maxCode": 93
+        }
+      }
+    },
+    "as-shot": {
+      "label": "as-shot",
+      "ok": true,
+      "wallMsMedian": 1391.8,
+      "meanLinearRGB": [
+        0.0644,
+        0.07025,
+        0.05032
+      ]
+    }
+  },
+  "region": {
+    "ok": true,
+    "region": {
+      "x": 2523,
+      "y": 1688,
+      "w": 1200,
+      "h": 800
+    },
+    "wallMs": 546.3,
+    "totalMs": 438.19999980926514,
+    "outputMB": 3.66
+  },
+  "precision": {
+    "f16VsF32": {
+      "samples": 77875200,
+      "mae": 0.000010918255653093064,
+      "rmse": 0.000022532401949471574,
+      "maxAbs": 0.00048828125,
+      "over001": 0,
+      "over005": 0,
+      "display8": {
+        "differingFrac": 0.00557323769312952,
+        "meanAbsCode": 1,
+        "p99Code": 0,
+        "maxCode": 1
+      }
+    },
+    "linearRgb16VsF32": {
+      "samples": 77875200,
+      "mae": 0.000013975568991122221,
+      "rmse": 0.0006389103675947946,
+      "maxAbs": 0.14963901042938232,
+      "over001": 16766,
+      "over005": 5316,
+      "display8": {
+        "differingFrac": 0.003333217763806706,
+        "meanAbsCode": 1,
+        "p99Code": 0,
+        "maxCode": 1
+      }
+    },
+    "f32Bytes": 311500800,
+    "f16Bytes": 155750400,
+    "linearRgb16Bytes": 155750400,
+    "displayReadyRgb16Bytes": 155750400
+  },
+  "notes": [
+    "All decode outputs released (frames dropped, raw.close() called)."
+  ],
+  "previewDescriptor": {
+    "mimeType": "image/jpeg",
+    "width": 4416,
+    "height": 2944,
+    "byteLength": 4239974,
+    "orientation": 1
+  },
+  "images": {
+    "developed": {
+      "width": 1024,
+      "height": 683,
+      "sourceWidth": 6240,
+      "sourceHeight": 4160,
+      "savedAs": "images/raf_fuji_xt4_developed.jpg",
+      "fileBytes": 172410
+    },
+    "embeddedPreview": {
+      "width": 1024,
+      "height": 683,
+      "usage": "reference-only: not used as the RAW development result",
+      "savedAs": "images/raf_fuji_xt4_embeddedPreview.jpg",
+      "fileBytes": 147648
+    }
+  },
+  "libraw": {
+    "openMs": 3007.2,
+    "imageMs": 29126.5,
+    "ok": true,
+    "width": 6246,
+    "height": 4170,
+    "colors": 3,
+    "bits": 8,
+    "dataSize": 78137460,
+    "image": {
+      "width": 1024,
+      "height": 684,
+      "sourceWidth": 6246,
+      "sourceHeight": 4170,
+      "savedAs": "images/raf_fuji_xt4_libraw.jpg",
+      "fileBytes": 157963
+    }
+  },
+  "totalWallSeconds": 182.2
+}

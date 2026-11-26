@@ -1,0 +1,44 @@
+{
+  "path": "video/av1_opus_360p_4s.webm",
+  "fileBytes": 260668,
+  "format": {
+    "name": "WebM",
+    "mimeType": "video/webm"
+  },
+  "duration": 4,
+  "video": {
+    "codec": "av1",
+    "codecString": "av01.0.01M.08",
+    "canDecode": true,
+    "codedWidth": 640,
+    "codedHeight": 360,
+    "displayWidth": 640,
+    "displayHeight": 360,
+    "rotation": 0,
+    "duration": 4,
+    "decoderConfig": {
+      "codec": "av01.0.01M.08",
+      "codedWidth": 640,
+      "codedHeight": 360
+    },
+    "packetStats": {
+      "packetCount": 120,
+      "averagePacketRate": 30,
+      "averageBitrate": 438244
+    }
+  },
+  "audio": {
+    "codec": "opus",
+    "codecString": "opus",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 1,
+    "duration": 3.994,
+    "decoderConfig": {
+      "codec": "opus",
+      "sampleRate": 48000,
+      "numberOfChannels": 1
+    }
+  },
+  "inputBytes": 260668
+}

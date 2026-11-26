@@ -1,0 +1,44 @@
+{
+  "path": "video/h264_aac_1080p_10s.mp4",
+  "fileBytes": 10276661,
+  "format": {
+    "name": "MP4",
+    "mimeType": "video/mp4"
+  },
+  "duration": 10,
+  "video": {
+    "codec": "avc",
+    "codecString": "avc1.640028",
+    "canDecode": true,
+    "codedWidth": 1920,
+    "codedHeight": 1080,
+    "displayWidth": 1920,
+    "displayHeight": 1080,
+    "rotation": 0,
+    "duration": 10,
+    "decoderConfig": {
+      "codec": "avc1.640028",
+      "codedWidth": 1920,
+      "codedHeight": 1080
+    },
+    "packetStats": {
+      "packetCount": 300,
+      "averagePacketRate": 30,
+      "averageBitrate": 8083633
+    }
+  },
+  "audio": {
+    "codec": "aac",
+    "codecString": "mp4a.40.2",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 2,
+    "duration": 10,
+    "decoderConfig": {
+      "codec": "mp4a.40.2",
+      "sampleRate": 48000,
+      "numberOfChannels": 2
+    }
+  },
+  "inputBytes": 10276661
+}

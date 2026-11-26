@@ -1,0 +1,44 @@
+{
+  "path": "video/hevc_aac_360p_3s.mp4",
+  "fileBytes": 391565,
+  "format": {
+    "name": "MP4",
+    "mimeType": "video/mp4"
+  },
+  "duration": 3,
+  "video": {
+    "codec": "hevc",
+    "codecString": "hvc1.1.6.L63.90",
+    "canDecode": true,
+    "codedWidth": 640,
+    "codedHeight": 360,
+    "displayWidth": 640,
+    "displayHeight": 360,
+    "rotation": 0,
+    "duration": 3,
+    "decoderConfig": {
+      "codec": "hvc1.1.6.L63.90",
+      "codedWidth": 640,
+      "codedHeight": 360
+    },
+    "packetStats": {
+      "packetCount": 90,
+      "averagePacketRate": 30,
+      "averageBitrate": 927725
+    }
+  },
+  "audio": {
+    "codec": "aac",
+    "codecString": "mp4a.40.2",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 1,
+    "duration": 3,
+    "decoderConfig": {
+      "codec": "mp4a.40.2",
+      "sampleRate": 48000,
+      "numberOfChannels": 1
+    }
+  },
+  "inputBytes": 391565
+}

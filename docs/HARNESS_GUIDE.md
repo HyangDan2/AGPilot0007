@@ -157,3 +157,11 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - Light/Dark 테마는 PC·태블릿 상단 Sun/Moon 버튼, 작은 화면 More 메뉴에서 전환한다. 기본은 Dark이며 hd2lab_film_studio_theme 키로 선택을 기억한다. 같은 origin의 운영/베타는 테마 선호를 공유하고 레시피 DB는 기존처럼 분리한다. 저장소 사용이 불가능하면 현재 세션에서 동작한다.
 - UI 표면/글자/테두리는 CSS 변수로 테마를 바꾸며 사진·RGB 색상 칩·셰이더·LUT·출력에는 filter나 색상 변환을 적용하지 않는다. 히스토그램은 W/R/G/B 대비를 위해 중립 암부 배경을 유지한다. 초기 HTML과 앱 진입점에서 저장 테마를 적용해 재진입 시 깜박임을 줄인다. 테마는 레시피/Undo 이력에 포함하지 않는다.
 - 관련 검사: tests/uiStore.test.ts, tests/e2e/theme-sidebars.spec.ts와 전체 회귀. PC 홈/편집 Open 일치, 레일 복구·스크롤 보존, 하단 X 부재·복구, 라이트 홈/조정/Color Lab/커브, 사진 픽셀 불변·재로드 테마 보존, 모바일 넘침을 확인한다. 베타·main 배포와 각 공개 URL 및 이전 캐시 업데이트를 별개로 확인한다. 이번 사용자 지시는 beta 검증 후 main 병합·운영 배포까지 승인한 범위다.
+
+## Q03 Imaging PoC (비배포 실험)
+
+- `poc/q03-imaging/`는 Phase 1 Q03(RAW/Video) 기술 검증용 독립 정적 PoC다. 제품 `src/`·`public/`·`dist/`·GitHub Pages 배포 경로에 포함하지 않는다.
+- 실행: `cd poc/q03-imaging && npm ci`, 입력 fixture는 `bash scripts/fetch-raw-samples.sh`(RAW)와 `bash scripts/make-fixtures.sh`(ffmpeg 합성 비디오). `testdata/`, `node_modules/`, `dist/`와 트랜스코드 출력 `results/video/out_*`는 Git 제외다.
+- 측정: `node scripts/run-raw.mjs`, `node scripts/run-video.mjs` 뒤 `build-summary.mjs`/`summarize-raw.mjs`/`summarize-video.mjs`로 표를 만든다. 드라이버 실행 중에는 파일을 수정하지 않는다(Vite 재시작으로 측정이 중단된다).
+- 원칙: 이 PoC에서 확인하지 않은 포맷·코덱·기기(iOS Safari 포함)를 지원으로 표시하지 않는다. 내장 JPEG 프리뷰를 RAW 현상 결과로 쓰지 않는다. 수치는 headless 소프트웨어 GL·WASM 1스레드 기준이다.
+- 문서: `docs/phase1/RAW_POC.md`, `VIDEO_POC.md`, `Q03_SUPPORT_MATRIX.md`, `Q03_LICENSE_REVIEW.md`. 측정 원시값은 `poc/q03-imaging/results/`에 JSON/표로 보존한다.
