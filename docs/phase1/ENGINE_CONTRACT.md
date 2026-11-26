@@ -211,6 +211,7 @@ interface EditState {
 - `onStage`는 `render → encode → complete` 순서로 호출한다. 기존 `ExportOptions`와 호출부는 변경하지 않는다.
 - 각 단계 경계에서 `signal.aborted`를 확인하고, 취소 시 `DOMException('Export cancelled', 'AbortError')`로 거부한 뒤 renderer/canvas를 즉시 해제한다.
 - `canvas.toBlob`은 중단 API가 없으므로 인코딩 완료 후 결과 Blob/objectUrl을 생성하지 않고 폐기한다. 인코딩 자체의 즉시 중단은 후속 과제다.
+- Q01 `ExportModal`이 `AbortController`를 생성해 `control`을 전달하고, 진행 중 `Cancel Export` 버튼으로 `abort()`를 호출한다. `AbortError`는 오류가 아니라 `Export cancelled.` 안내로 정산한다(`tests/exportModalCancel.test.tsx`).
 - Q04 배치는 `AbortError`를 cancelled로 정산하고, GPU 리소스·objectUrl 누수가 없어야 한다.
 
 ## 8. Recipe 버전·저장·v8 계약
@@ -225,7 +226,7 @@ interface EditState {
 - v1~v7 가져오기에서 `geometry` 등 미승인 필드는 `migrateRecipe`의 명시 필드 구성으로 제거된다.
 - `RECIPE_SCHEMA_V8 = 8`, `RecipeV8 = CustomRecipe & { schemaVersion: 8; geometry }`.
 - `toRecipeV8(recipe)`는 기존 v1~v7 정규화 결과에 중립 기하를 추가한다. 8 이상 또는 0 이하 버전은 `Unsupported recipe version for v8 migration`으로 거부한다.
-- `normalizeRecipeV8Geometry`, `validateRecipeV8Geometry`를 제공한다. 가져오기 검증 오류는 `Invalid recipe geometry` 또는 `validateGeometry`의 세부 오류다.
+- `normalizeRecipeV8Geometry`, `validateRecipeV8Geometry`를 제공한다. `validateRecipeV8Geometry`는 `geometry` 래퍼가 없는 flat 객체(`{rotation,...}`), `geometry: undefined/null`, 배열을 `Invalid recipe geometry wrapper`/`Invalid recipe geometry`로 거부한다. 래퍼가 유효해도 세부 오류는 `validateGeometry`가 던진다. flat 입력의 무음 identity 강등은 허용하지 않는다.
 - 실제 스키마 상향·저장 연결은 기하 렌더 구현 체크포인트에서 수행한다.
 - 마스크·로컬 보정은 v8에 포함하지 않는다.
 

@@ -172,7 +172,7 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - 공통 계약은 `src/engine/contracts/`에 있다. 단계 순서 `PIPELINE_STAGES`는 source → optical → geometry → tone → look → colorLab → local → detail → composite → output이며, 모듈은 `EditModuleRegistry`에 `{id, stage, requires, contractVersion:1, role?, isActive?, resourceUsage?, execute?}`으로 등록한다.
 - `ImageBuffer`/`DecodedSource` 작업 버퍼는 `linear-srgb` float(16/32-bit)만 허용한다. Q03이 디코딩을 소유하고 `assertDecodedSource` 계약을 만족해야 한다.
 - `RenderSettings.geometry`는 계약에만 추가되었고 아직 렌더러가 적용하지 않는다. 기하 구현 전 비항등 값을 호출부에서 전달하지 않는다. Preview/Export는 `resolveRenderPlan`의 지문이 같아야 하며 비교/분할/마스크 보기 플래그는 Export에 전달하지 않는다.
-- Recipe v8은 `geometry`만 추가한 계약이며 `CURRENT_SCHEMA_VERSION`은 기하 구현 체크포인트까지 7이다. `toRecipeV8`은 순수 변환이고 `validateRecipeV8Geometry`가 가져오기 geometry를 검증한다. 마스크는 계약 타입만 있고 저장·렌더하지 않는다.
+- Recipe v8은 `geometry`만 추가한 계약이며 `CURRENT_SCHEMA_VERSION`은 기하 구현 체크포인트까지 7이다. `toRecipeV8`은 순수 변환이고 `validateRecipeV8Geometry`가 가져오기 geometry를 검증한다. v8 가져오기는 `geometry` 래퍼를 요구하며 flat `{rotation,...}`·`geometry: null/undefined`·배열은 거부한다. 마스크는 계약 타입만 있고 저장·렌더하지 않는다. 마스크 한도는 `validateMasks`가 17번째 마스크·65번째 스트로크·1025번째 포인트를 실제로 거부하는 테스트로 고정한다.
 - `ResourceScope`는 리소스를 역순으로 해제하고 해제 후 사용을 거부한다. AI는 `src/engine/contracts/ai.ts`의 Phase 2 설명자만 있으며 `CORE_AI_MODULES`는 비어 있어야 한다.
 - 설계 문서: `docs/phase1/ARCHITECTURE.md`, `ENGINE_CONTRACT.md`, `MODULE_OWNERSHIP.md`, `RECIPE_SCHEMA.md`. Q02~Q04 연동은 `docs/phase1/INTEGRATION_GUIDE.md`를 따른다.
 - 계약 검증: `npx vitest run tests/engineContracts.test.ts tests/engineContractCorrective.test.ts`, 전체 `npm test`, `npm run build`, `npm run build:beta`, `npx playwright test tests/e2e/render-parity.spec.ts`, `npx playwright test tests/e2e/geometry-contract.spec.ts --project=chromium`. 공통 파일 변경은 Q01 리뷰와 계약 테스트 갱신이 필요하다.

@@ -155,6 +155,7 @@ await prepareExportImage(image, lut, settings, options, onProgress, control);
 - `onStage`는 `render → encode → complete` 순서다. 각 경계에서 취소를 확인한다.
 - 취소 시 `AbortError`로 거부하고 renderer/canvas를 즉시 해제한다. `toBlob` 완료 후에는 Blob/objectUrl을 만들지 않고 폐기한다.
 - `ExportOptions`는 변경하지 않는다. 기존 호출부는 6번째 인자를 생략하면 동작이 동일하다.
+- Q01 `ExportModal`은 이미 `AbortController` + 진행 중 `Cancel Export` 버튼으로 배선되어 있다. Q04 배치·다른 호출부도 동일하게 controller를 소유하고 `AbortError`를 cancelled로 정산한다.
 
 ### 4.4 레시피 저장
 
