@@ -15,7 +15,7 @@
 | 7개 RAW 포맷 실제 센서 디코드 | ✅ CR3/CR2/RAF/NEF/ARW/ORF/DNG 모두 성공. `source=sensor`, `incomplete=false`, 경고 0 | `results/raw/TABLE.md` decode matrix |
 | 비RAW 입력 정직성 | ✅ JPEG 제어 파일은 `detectFormat=null`, `supportsFile=false`, `UnsupportedFormatError: ... no recognisable header`로 거부 | `results/raw/unsupported_probe.json` |
 | Bayer / 비Bayer 구분 | ✅ X-Trans에서 `ppg`/`rcd`는 명시적 오류로 거부, `auto`/`bilinear`/`edge-aware`만 허용 | `raf_fuji_xt4.json` |
-| 내장 썸네일 비대체 | ✅ 내장 프리뷰는 `usage: "reference-only: not used as the RAW development result"`로만 저장, 현상 결과와 분리 | `src/raw/main.ts`, `results/raw/images/*_embeddedPreview.jpg` |
+| 내장 썸네일 비대체 | ✅ 내장 프리뷰는 `usage: "reference-only: not used as the RAW development result"`로만 저장, 현상 결과와 분리 | `src/raw/main.ts`, 로컬 생성 `results/raw/images/*_embeddedPreview.jpg`(Git 제외) |
 | 선형 고정밀 버퍼 | ✅ f32/f16/linear-rgb16 출력 확인. f16은 f32 대비 8-bit sRGB 결과 최대 1 code 차이 | 정밀도 표 |
 | 메모리/시간 측정 | ✅ 24~26MP에서 f32 출력 245~297MB, 피크 heap 360~607MB, 0.24~1.39초(1스레드 WASM SIMD) | decode matrix |
 | 정적 배포 가능성 | ✅ `vite build` 산출물을 `vite preview`로 서빙해 실제 CR3 디코드 재확인. 서버·모델·네트워크 업로드 없음 | §8, `results/raw/TABLE.md` |
@@ -235,6 +235,6 @@ LibRaw은 카메라 WB·sRGB 8-bit 기본값의 참고 출력이며 픽셀 일�
 | `poc/q03-imaging/THIRD_PARTY_NOTICES.md` | PoC 의존성 고지(FlashRaw/Mediabunny/LibRaw 제외/샘플 CC0) |
 | `poc/q03-imaging/results/raw/TABLE.md` | 전체 측정 표 |
 | `poc/q03-imaging/results/raw/*.json` | 파일별 원시 측정값, `color_contract_*.json`, `robustness.json`, `release.json`, `assertions.json` |
-| `poc/q03-imaging/results/raw/images/` | 현상 결과 / 내장 프리뷰(참고) / LibRaw 참고 이미지 |
+| `poc/q03-imaging/results/raw/images/` | 현상 결과 / 내장 프리뷰(참고) / LibRaw 참고 이미지 — **로컬 생성 전용, Git 제외**(재현: `run-raw.mjs`) |
 | `docs/phase1/Q03_SUPPORT_MATRIX.md` | 포맷 지원 매트릭스(검증/미검증 구분) |
 | `docs/phase1/Q03_LICENSE_REVIEW.md` | 라이선스 검토 |

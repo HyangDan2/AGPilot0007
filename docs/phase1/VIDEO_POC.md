@@ -116,7 +116,7 @@ npm run build && npm run preview
 - AAC 시작 오프셋 -21.33ms는 AAC 인코더 프라이밍(1024 samples @48kHz), Opus -7ms는 프리롤 차이다. 검증 기준은 절대값이 아니라 **입력의 오프셋이 그대로 보존되는지**(시작 ≤1ms, 종료 ≤5ms)이다. VFR의 100ms 종료 차는 입력 자체의 비디오(5.9s)/오디오(6.0s) 길이 차이이며 출력도 동일하다.
 - VFR: 입력의 가변 간격이 출력 PTS에 유지된다(ffprobe: 33.3ms ×109 + 133.3ms ×17). 출력 프레임 수 126, 길이 6s.
 - 회전: 입력은 coded 1280×720 + rotation side data(표시 720×1280)다. 출력은 **픽셀이 캔버스에서 회전되어 coded 720×1280**으로 기록되고 rotation 태그는 없다(ffprobe 확인). 모바일 재생기는 태그 없이도 올바른 방향으로 표시한다.
-- 출력 영상의 graded 스냅샷은 육안 및 픽셀로 LUT 적용이 확인된다(`results/video/images/*_graded.jpg`).
+- 출력 영상의 graded 스냅샷은 육안 및 픽셀로 LUT 적용이 확인된다(로컬 생성 `results/video/images/*_graded.jpg`, Git 제외; 커밋 증거는 `transcode.json`의 pixelDiff/그리드).
 
 ### 6.1 동적 코덱/프로파일/레벨 선택 (IMG-04)
 
@@ -222,7 +222,7 @@ npm run build && npm run preview
 | `poc/q03-imaging/scripts/make-fixtures.sh` | ffmpeg 합성 fixture 10종 생성(무음/세로/회전/VFR/45s 포함) |
 | `poc/q03-imaging/results/video/TABLE.md` | 전체 측정 표 |
 | `poc/q03-imaging/results/video/*.json` | capability/analysis/bench/transcode/budget/cancel/long/assertions 원시값 |
-| `poc/q03-imaging/results/video/images/` | 원본/graded 스냅샷(회전 포함 10종) |
+| `poc/q03-imaging/results/video/images/` | 원본/graded 스냅샷(회전 포함 10종) — **로컬 생성 전용, Git 제외**(재현: `run-video.mjs`) |
 | `poc/q03-imaging/results/video/out/`, `out_*` | 트랜스코드 출력(용량 관계로 Git 제외, 재생성 가능) |
 | `poc/q03-imaging/THIRD_PARTY_NOTICES.md` | FlashRaw/Mediabunny/LibRaw 제외/샘플 고지 |
 | `docs/phase1/Q03_SUPPORT_MATRIX.md` | 디코드/인코드 매트릭스 |

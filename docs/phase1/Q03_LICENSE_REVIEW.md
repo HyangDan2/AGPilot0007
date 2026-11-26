@@ -28,7 +28,7 @@
 
 - libraw-wasm은 LibRaw를 Emscripten으로 WASM에 **정적 링크**한 패키지다. npm에는 래퍼의 `ISC`만 표기되어 있으나, 내부 LibRaw 자체는 LGPL-2.1 또는 CDDL-1.0(이중)이다.
 - LGPL 준수는 사용자가 라이브러리를 교체/재링크할 수 있는 형태를 요구한다. 정적 링크된 WASM을 단일 파일로 배포할 경우 고지·소스 제공·재링크 가능성에 대한 별도 검토가 필요하다.
-- 이번 PoC에서 LibRaw은 **참고 출력 생성에만** 사용했고, 제품 코드/문서 산출물에 LibRaw 결과물을 내장하지 않는다. `results/raw/images/*_libraw.jpg`는 PoC 증거로 저장된 참고 이미지다.
+- 이번 PoC에서 LibRaw은 **참고 출력 생성에만** 사용했고, 제품 코드/문서 산출물에 LibRaw 결과물을 내장하지 않는다. 참고 이미지(`results/raw/images/*_libraw.jpg`)는 로컬 생성 전용이며 Git에 커밋하지 않는다(§7).
 - 권장: 제품 번들에서 libraw-wasm을 제거하고, 필요 시 FlashRaw 단일 엔진으로 통일한다. 참고 디코드가 계속 필요하면 개발 전용(배포 제외)으로 분리한다.
 
 ## 4. mediabunny (MPL-2.0)
@@ -56,3 +56,10 @@
 - [ ] 사용하지 않는 flashraw WASM 변형(jxl/gpu/threads) 번들 제외 검토 (배포 크기 27.8MB → 대폭 감소)
 - [ ] 고지 파일을 정적 배포물과 PWA 캐시에 포함
 - [ ] 라이선스 원문을 npm 패키지가 아닌 업스트림 저장소와 대조
+
+## 8. PoC 산출물 정책 (P2-04)
+
+- 결정: **파생 이미지·대용량 출력은 브랜치에서 제거하고 요약 JSON/표만 유지**(PO 권장안 a). 테스트 스크립트·단정·fixture 생성 스크립트는 그대로 보존한다.
+- 제거: `results/raw/images/*.jpg`, `results/video/images/*.jpg` 39개(약 4.05MB, CC0 원본에서 파생된 JPG). `results/` 추적 용량 5.0MB → 1.0MB.
+- 유지: `results/*/TABLE.md`, 파일별 측정 JSON, `assertions.json`, video의 스냅샷 픽셀 diff/9점 그리드(`transcode.json`) — 수치 증거는 JSON에 남는다.
+- 이미지·트랜스코드 출력(`results/video/out*`)은 `.gitignore`로 제외하며 `run-raw.mjs`/`run-video.mjs`로 재생성한다. 커밋 산출물에 LibRaw 결과물은 포함하지 않는다.

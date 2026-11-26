@@ -3,3 +3,5 @@ dist
 testdata
 results/video/out/
 results/video/out_*
+results/video/images/
+results/raw/images/
