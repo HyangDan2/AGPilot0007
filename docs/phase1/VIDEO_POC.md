@@ -21,7 +21,7 @@
 | Streaming 출력 (IMG-02) | ✅ `StreamTarget` + harness WritableStream으로 출력 파일 직접 기록. 제품 경로에서 Base64 변환 **없음** (`outputBase64: "absent"`) | budget probe |
 | 파일 저장 런타임 감지 | ✅ `showSaveFilePicker`/FileSystemWritable 감지, 파일 선택기 거부 시 `OutputTargetError`로 구조화 오류 반환 | budget probe `file-picker-unsupported` |
 | 메모리 예산 초과 | ✅ 1MB 예산에서 `MemoryBudgetError: estimated output 25.6MB exceeds the 1MB memory budget` | budget probe |
-| 장시간 Export 메모리 | ✅ 45초(1350프레임)에서 heap slope −1.58 MB/min, 샘플 20.6~31.6MB(증가 없음) | `long_export.json` |
+| 장시간 Export 메모리 | ✅ 45초(1350프레임)에서 heap slope −0.68 MB/min, 샘플 20.6~31.7MB(증가 없음) | `long_export.json` |
 | 취소/재실행 (IMG-07) | ✅ 내부 abort·외부 `cancelRun()` 모두 `AbortError`로 중단·해제, 직후 1080p 재실행 성공 | `cancel.json` |
 | A/V·오디오 자동 검증 (IMG-08) | ✅ 프레임/패킷 수, 시작·종료 오프셋(입력 기준 보존), 오디오 패킷 SHA-256 일치, 출력 독립 디코드·타임스탬프 단조성 | transcode `outputVerification` |
 | 동일 프레임 스냅샷 (IMG-05) | ✅ 10종 전부 `sameFrameVerified=true`, LUT 적용 확인(`gradingApplied=true`), 픽셀 diff 기록 | transcode `snapshotVerification` |
@@ -35,6 +35,7 @@
 ```bash
 cd poc/q03-imaging
 npm ci
+npm run verify                         # tsc --noEmit + Q01 계약/어댑터 테스트 + 계약 SHA sync
 bash scripts/make-fixtures.sh          # ffmpeg 7.1.1 합성 fixture 10종 → testdata/video (Git 제외)
 node scripts/run-video.mjs             # Chromium + Vite dev 자동 기동, 분석/벤치/트랜스코드/예산/취소/장시간 + assertion
 node scripts/summarize-video.mjs
@@ -78,21 +79,21 @@ npm run build && npm run preview
 
 | 파일 | 모드 | 프레임 | wall fps | wall ms | per-frame 중앙값 | p95 | 최대 | 피크 heap Δ |
 |---|---|---|---|---|---|---|---|---|
-| h264 720p | draw only | 180 | 215.5 | 835 | 0.1ms | 0.3 | 3.1 | 1.6MB |
-| h264 720p | draw + LUT | 180 | 55.2 | 3259 | 0.1ms | 0.3 | 4.5 | 3.0MB |
-| h264 1080p | draw only | 300 | 103.4 | 2902 | 0.2ms | 1.0 | 66.4 | 10.5MB |
-| h264 1080p | draw + LUT | 300 | 49.4 | 6076 | 0.1ms | 0.3 | 1.2 | 10.3MB |
-| vp9 720p | draw only | 180 | 134.1 | 1342 | 0.2ms | 0.5 | 7.2 | 2.4MB |
-| vp9 720p | draw + LUT | 180 | 165.6 | 1087 | 0.1ms | 0.3 | 1.3 | 2.0MB |
-| hevc 360p | draw only | 90 | 829.5 | 109 | 0.1ms | 0.2 | 5.4 | 0.7MB |
-| hevc 360p | draw + LUT | 90 | 62.8 | 1433 | 0.1ms | 0.3 | 0.9 | 1.2MB |
-| av1 360p | draw only | 120 | 1267.2 | 95 | 0.1ms | 0.3 | 11.8 | 0.7MB |
-| av1 360p | draw + LUT | 120 | 1595.7 | 75 | 0.0ms | 0.2 | 1.1 | 0.9MB |
+| h264 720p | draw only | 180 | 281.7 | 639 | 0.1ms | 0.3 | 9.5 | 4.7MB |
+| h264 720p | draw + LUT | 180 | 229.2 | 786 | 0.1ms | 0.2 | 1.1 | 2.9MB |
+| h264 1080p | draw only | 300 | 150.3 | 1996 | 0.2ms | 0.4 | 3.8 | 10.5MB |
+| h264 1080p | draw + LUT | 300 | 128.0 | 2343 | 0.1ms | 0.2 | 1.8 | 0.3MB |
+| vp9 720p | draw only | 180 | 464.9 | 387 | 0.1ms | 0.2 | 3.5 | 0MB |
+| vp9 720p | draw + LUT | 180 | 254.7 | 707 | 0.1ms | 0.2 | 0.3 | 7.6MB |
+| hevc 360p | draw only | 90 | 1404.1 | 64 | 0.1ms | 0.2 | 0.3 | 0.8MB |
+| hevc 360p | draw + LUT | 90 | 419.0 | 215 | 0.1ms | 0.2 | 0.2 | 1.3MB |
+| av1 360p | draw only | 120 | 3038.0 | 40 | 0.1ms | 0.2 | 2.7 | 0MB |
+| av1 360p | draw + LUT | 120 | 1673.6 | 72 | 0.0ms | 0.2 | 0.6 | 0.6MB |
 
 해석 주의:
-- per-frame 시간은 셰이더 제출 구간만 측정되어 매우 작다. wall fps는 디코더 콜백·GPU 백프레셔·SwiftShader 실행을 포함한 처리율이다. 두 값의 차이가 크며, **소프트웨어 GL headless 수치이므로 실기기 GPU 성능의 근거로 사용하지 않는다.**
+- per-frame 시간은 셰이더 제출 구간만 측정되어 매우 작다. wall fps는 디코더 콜백·GPU 백프레셔·SwiftShader 실행을 포함한 처리율이다. 두 값의 차이가 크며, **소프트웨어 GL headless 수치이므로 실기기 GPU 성능의 근거로 사용하지 않는다.** 같은 코드에서도 실행마다 720p draw 215~282fps처럼 크게 변동한다.
 - VP9/AV1에서 LUT 모드가 draw 모드보다 빠른 역전은 측정 잡음/백프레셔 영향으로 판단한다. 절대값보다 "모든 포맷에서 실시간(30fps) 이상 처리"라는 사실에 의미를 둔다.
-- 1080p draw only의 max 66.4ms는 디코더 초기화/첫 프레임 스파이크로 보인다.
+- 1080p draw only의 max 스파이크는 이번 실행 3.8ms(이전 66.4ms)로, 디코더 초기화 구간 변동이다.
 
 ## 6. LUT 트랜스코드·출력·검증 (CP1.1)
 
@@ -100,17 +101,17 @@ npm run build && npm run preview
 
 | 입력 | 출력 컨테이너/코덱 | 프레임 | fps | wall ms | 오디오 패킷 | 피크 heap | 출력 크기 | 길이 | A/V 시작 | A/V 종료 차 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| h264 720p | MP4 / AVC 64001f | 180 | 13.1 | 13,760 | 283 | 14.6MB | 4.28MB | 6s | -21.33ms | 0ms |
-| h264 1080p | MP4 / **AVC 640028** | 300 | 11.7 | 25,581 | 470 | 32.2MB | 15.29MB | 10s | -21.33ms | 0ms |
-| vp9 720p | WebM / VP9 | 180 | 27.4 | 6,580 | 301 | 41.0MB | 2.98MB | 6s | -7ms | -6ms |
-| hevc 360p | MP4 / AVC 64001e | 90 | 95.8 | 939 | 142 | 37.6MB | 0.63MB | 3s | -21.33ms | 0ms |
-| av1 360p | WebM / VP9 | 120 | 63.4 | 1,893 | 201 | 7.7MB | 0.71MB | 4s | -7ms | -6ms |
-| h264 무음 720p | MP4 / AVC 64001f | 180 | 27.4 | 6,578 | — | 49.5MB | 4.18MB | 6s | — | — |
-| h264 세로 720×1280 | MP4 / AVC 64001f | 120 | 22.0 | 5,453 | 189 | 4.5MB | 3.28MB | 4s | -21.33ms | 0ms |
-| h264 회전 270° | MP4 / AVC 64001f (720×1280 출력) | 180 | 13.3 | 13,526 | 283 | 7.7MB | 4.32MB | 6s | -21.33ms | 0ms |
-| h264 VFR | MP4 / AVC 64001e | 126 | 86.0 | 1,466 | 283 | 6.4MB | 1.11MB | 6s | -21.33ms | 100ms(입력과 동일) |
+| h264 720p | MP4 / AVC 64001f | 180 | 31.2 | 5,775 | 283 | 17.6MB | 4.28MB | 6s | -21.33ms | 0ms |
+| h264 1080p | MP4 / **AVC 640028** | 300 | 15.2 | 19,740 | 470 | 24.8MB | 15.29MB | 10s | -21.33ms | 0ms |
+| vp9 720p | WebM / VP9 | 180 | 32.7 | 5,514 | 301 | 0MB | 2.98MB | 6s | -7ms | -6ms |
+| hevc 360p | MP4 / AVC 64001e | 90 | 107.9 | 834 | 142 | 31.3MB | 0.63MB | 3s | -21.33ms | 0ms |
+| av1 360p | WebM / VP9 | 120 | 82.4 | 1,457 | 201 | 0MB | 0.71MB | 4s | -7ms | -6ms |
+| h264 무음 720p | MP4 / AVC 64001f | 180 | 34.7 | 5,184 | — | 0MB | 4.18MB | 6s | — | — |
+| h264 세로 720×1280 | MP4 / AVC 64001f | 120 | 28.9 | 4,154 | 189 | 1.1MB | 3.28MB | 4s | -21.33ms | 0ms |
+| h264 회전 270° | MP4 / AVC 64001f (720×1280 출력) | 180 | 15.9 | 11,355 | 283 | 28.1MB | 4.32MB | 6s | -21.33ms | 0ms |
+| h264 VFR | MP4 / AVC 64001e | 126 | 111.3 | 1,132 | 283 | 13.8MB | 1.11MB | 6s | -21.33ms | 100ms(입력과 동일) |
 
-- 1080p 출력은 CP1의 AV1 폴백(4.3fps)에서 **AVC L4.0(11.7fps)**으로 교정됐다. 인코드 fps는 SwiftShader 소프트웨어 GL 수치로 실행마다 변동한다(720p 13~27fps). 실기기 GPU 성능 근거로 쓰지 않는다.
+- 1080p 출력은 CP1의 AV1 폴백(4.3fps)에서 **AVC L4.0**으로 교정됐다(이번 실행 15.2fps, 이전 11.7fps). 인코드 fps는 SwiftShader 소프트웨어 GL 수치로 실행마다 크게 변동한다(720p 13~31fps, 피크 heap도 0~31MB). 실기기 GPU 성능 근거로 쓰지 않는다.
 - 무음 입력은 오디오 트랙 없이 mux되고 검증도 4항목(화면·프레임 수·디코드·타임스탬프)만 수행된다.
 - AAC 시작 오프셋 -21.33ms는 AAC 인코더 프라이밍(1024 samples @48kHz), Opus -7ms는 프리롤 차이다. 검증 기준은 절대값이 아니라 **입력의 오프셋이 그대로 보존되는지**(시작 ≤1ms, 종료 ≤5ms)이다. VFR의 100ms 종료 차는 입력 자체의 비디오(5.9s)/오디오(6.0s) 길이 차이이며 출력도 동일하다.
 - VFR: 입력의 가변 간격이 출력 PTS에 유지된다(ffprobe: 33.3ms ×109 + 133.3ms ×17). 출력 프레임 수 126, 길이 6s.
@@ -147,23 +148,23 @@ npm run build && npm run preview
 
 | 검사 | 결과 |
 |---|---|
-| 내부 abort(`abortAfterMs`) | `AbortError: transcode cancelled`, `aborted=true`, 피크 heap 11.5MB |
-| 외부 `cancelRun()` | 반환 true, `aborted=true`, 피크 heap 22.4MB |
+| 내부 abort(`abortAfterMs`) | `AbortError: transcode cancelled`, `aborted=true`, 피크 heap 15.5MB |
+| 외부 `cancelRun()` | 반환 true, `aborted=true`, 피크 heap 20.5MB |
 | 취소 직후 재실행 | 1080p 300프레임 완료, 출력 독립 검증 7/7 통과 |
 
 - 취소 경로에서 `VideoFrame`/`CanvasSource`/`Input`/`Output`을 finally에서 해제하고, 재실행 시 상태가 남지 않는 것을 확인했다. 인코더 `flush()` 중 취소도 동일하게 `AbortError`로 정리된다.
 
 ### 6.4 장시간 Export 메모리 (IMG-02)
 
-- 45초·1350프레임 720p export: wall 33.8초(39.9fps), 출력 26.7MB.
-- heap 샘플 45개: 20.6~31.6MB 범위의 톱니파, **선형 증가 없음**(slope −1.58 MB/min, gc 피크 +0MB). 비디오 전체를 메모리에 쌓지 않는다는 근거다.
+- 45초·1350프레임 720p export: wall 79.1초(17.1fps, CP1.1 최초 측정 33.8초/39.9fps — 동일 코드, 소프트웨어 GL 부하 변동), 출력 26.7MB.
+- heap 샘플 45개: 20.6~31.7MB 범위의 톱니파, **선형 증가 없음**(slope −0.68 MB/min). 비디오 전체를 메모리에 쌓지 않는다는 근거다.
 - 45초를 넘는 길이·4K·모바일 한도는 미검증이다. 예산 추정치로 사전 차단하는 구조만 확인했다.
 
 ### 6.5 동일 프레임 스냅샷과 픽셀 비교 (IMG-05)
 
 - 각 트랜스코드에서 지정 시각(1.0s)의 **렌더 완료 후** 원본/graded 두 이미지를 캡처하고, 같은 타임스탬프의 프레임에서 나왔는지(`sameFrameVerified`), LUT 적용이 픽셀에 반영됐는지(`gradingApplied`)를 검사했다. 10종 전부 true.
 - 캡처 원본은 출력 파일과 별도로 입력에서 다시 디코드한 프레임과 9점 그리드 비교해 **최대 0 code 차이**였다. graded는 원본 대비 평균 70~87 code 차이(차이 픽셀 35~46%)로 LUT 적용이 뚜렷하다.
-- 회전 입력은 원본 스냅샷(비회전 프레임)과 graded(회전 반영)의 공간 방향이 달라 픽셀 비교에 회전 오프셋이 포함된다. 회전 처리를 어느 단계에서 통일할지는 Q01 확정 시 정한다.
+- 회전 입력(270°)도 원본과 graded를 **같은 표시 방향 소스**(파이프라인에 들어간 회전 반영 캔버스)에서 캡처하도록 수정했다. 원본 vs 독립 디코드 차이 0 code, graded는 45.8% 픽셀이 5~215 code 변해 공간 오프셋 없이 LUT만 반영된다. 표시 방향은 디코드→렌더 경계에서 정규화하고, Q01 파이프라인에서 회전 단계가 LUT **앞**에 와야 한다는 의존성을 PR에 기록했다.
 
 ### 6.6 출력 독립 검증과 자동 Assertion (IMG-08)
 
@@ -203,7 +204,7 @@ npm run build && npm run preview
 ## 9. 한계와 미해결
 
 - 실기기(iOS/Android) 검증 없음. 모든 성능 수치는 headless 소프트웨어 GL 환경이며 실행마다 수십 % 변동한다.
-- 회전: 메타데이터(270°)를 픽셀에 구워 출력하는 경로만 확인했다. 원본 스냅샷은 비회전, graded는 회전이 반영되어 회전 입력의 스냅샷 픽셀 비교에 공간 오프셋이 포함된다. 회전 단계 통일은 Q01 확정 시 결정한다.
+- 회전: 메타데이터(270°)를 픽셀에 구워 출력하는 경로만 확인했다(출력에 rotation 태그 없음, 표시 해상도 유지). 스냅샷 원본/graded 모두 표시 방향으로 캡처해 회전 입력도 픽셀 비교가 성립한다. Q01 파이프라인에서는 회전 정규화가 LUT 적용보다 앞서야 한다.
 - VFR fixture 1종만 확인했다. B프레임 재정렬된 장편·가변 fps 인코드, HDR/10-bit, 다중 오디오/자막 트랙은 미검증이다.
 - 오디오 패스스루는 원본 패킷 바이트와 타임스탬프 시작·종료 오프셋을 유지하지만, 컨테이너별 프라이밍 표현 차이(§6)의 실제 재생 동기는 실기기 확인이 필요하다.
 - 파일 선택기 직접 저장은 자동화에서 거부되어 `OutputTargetError` 경로만 측정했다. 데스크톱 Chrome의 실제 저장 성공 흐름, 대용량 디스크 지속 쓰기 오류 처리는 미검증이다.

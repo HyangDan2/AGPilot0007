@@ -77,10 +77,10 @@ VFR 판별은 패킷 타임스탬프를 정렬한 뒤 간격을 계산한다(CP1
 | Streaming 출력 | ✅ `StreamTarget`(WritableStream)으로 chunk 단위 직접 쓰기. 제품 경로 Base64 없음 |
 | 파일 저장 감지 | ✅ `showSaveFilePicker`/FileSystemWritable 런타임 감지. 거부 시 `OutputTargetError` |
 | 메모리 예산 | ✅ 초과 시 시작 전 `MemoryBudgetError`(추정 25.6MB > 1MB). 예산 내 buffer는 검증 통과 |
-| 장시간(45s) | ✅ heap slope −1.58 MB/min, 20.6~31.6MB 톱니파, 증가 없음 |
+| 장시간(45s) | ✅ heap slope −0.68 MB/min, 20.6~31.7MB 톱니파, 증가 없음(wall 79.1s/17.1fps, 실행마다 변동) |
 | 취소 | ✅ 내부 abort·외부 `cancelRun()` 모두 `AbortError` 후 해제, 직후 재실행 성공 |
 | A/V 검증 | ✅ 프레임/패킷 수, 시작·종료 오프셋(입력 보존), 오디오 해시, 타임스탬프 단조성 |
-| 스냅샷 | ✅ 10종 same-frame, 원본 vs 입력 독립 디코드 최대 0 code, graded LUT 적용 확인 |
+| 스냅샷 | ✅ 10종 same-frame, 원본 vs 입력 독립 디코드 최대 0 code, graded LUT 적용 확인. 회전(270°) 입력도 표시 방향 캡처로 공간 오프셋 없이 비교 |
 | 4K/수 분/모바일 한도 | ⚪ 미검증 |
 
 ## 3. iOS Safari (문헌 기준, 실기기 미검증)

@@ -99,7 +99,7 @@
       "budgetMB": 1,
       "hint": "use a streaming target or shorten the export"
     },
-    "peakHeapDeltaMB": 6.2
+    "peakHeapDeltaMB": 0
   },
   {
     "probe": "file-picker-unsupported",
@@ -261,7 +261,7 @@
       ]
     },
     "heapSlopeMBPerMinute": null,
-    "peakHeapDeltaMB": 9.6,
+    "peakHeapDeltaMB": 11.7,
     "outputBase64": "absent"
   }
 ]

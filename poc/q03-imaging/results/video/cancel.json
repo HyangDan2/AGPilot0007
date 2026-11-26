@@ -4,7 +4,7 @@
     "aborted": true,
     "ok": false,
     "error": "AbortError: transcode cancelled",
-    "peakHeapDeltaMB": 11.5
+    "peakHeapDeltaMB": 15.5
   },
   {
     "probe": "external-cancel",
@@ -12,7 +12,7 @@
     "aborted": true,
     "ok": false,
     "error": "AbortError: transcode cancelled",
-    "peakHeapDeltaMB": 22.4
+    "peakHeapDeltaMB": 20.5
   },
   {
     "probe": "rerun-after-cancel",

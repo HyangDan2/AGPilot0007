@@ -929,7 +929,9 @@ async function transcode(path: string, opts: TranscodeOptions = {}): Promise<Tra
           snapCanvas.width = width;
           snapCanvas.height = height;
           const snapCtx = snapCanvas.getContext('2d', { willReadFrequently: true })!;
-          sample.draw(snapCtx, 0, 0, width, height);
+          // Capture the exact display-oriented image the pipeline rendered, so the original/graded
+          // pixel compare cannot drift when rotation/flip handling differs between draw paths.
+          snapCtx.drawImage(src, 0, 0, width, height);
           // The graded pixels come from the same render that is about to be encoded. A WebGL
           // canvas cannot hand out a 2d context, so copy it into one for the pixel comparison.
           const gradedCanvas = document.createElement('canvas');

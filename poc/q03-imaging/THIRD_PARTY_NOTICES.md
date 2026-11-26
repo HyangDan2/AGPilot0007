@@ -53,6 +53,13 @@ Source: https://github.com/ybouane/LibRaw-Wasm. Used only to generate reference 
 measurement. It statically links LibRaw into WASM; shipping it would require LGPL relinking/source
 obligations. Per the CP1.1 WO it stays out of the product bundle and out of `dist/`.
 
+## Dev/CI tooling (not shipped)
+
+- `typescript` 7.x — Apache-2.0, used only by `npm run typecheck`.
+- `@types/node` — MIT, type declarations for the Node-based tests/harness.
+- `playwright-core` — Apache-2.0, drives the headless Chromium measurement runs.
+None of these are imported by the PoC bundle (`dist/`).
+
 ## Test data (not redistributed)
 
 - RAW samples: raw.pixls.us corpus (samples published as CC0 / public domain). Downloaded by

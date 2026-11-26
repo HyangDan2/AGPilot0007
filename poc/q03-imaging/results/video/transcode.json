@@ -182,17 +182,17 @@
       }
     },
     "timing": {
-      "wallMs": 13759.6,
-      "fps": 13.08,
+      "wallMs": 5774.9,
+      "fps": 31.17,
       "perFrameMs": {
-        "median": 49.1,
-        "p95": 126.8,
-        "max": 1603.2
+        "median": 25.3,
+        "p95": 36.4,
+        "max": 182.5
       },
       "encodeAwaitMs": {
-        "median": 48.5,
-        "p95": 110.7,
-        "max": 355.1
+        "median": 25.2,
+        "p95": 34.4,
+        "max": 66.3
       }
     },
     "output": {
@@ -204,31 +204,31 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 33.5
+        "heapMB": 13
       },
       {
         "frame": 60,
-        "heapMB": 20.3
+        "heapMB": 11.1
       },
       {
         "frame": 90,
-        "heapMB": 12.4
+        "heapMB": 13.6
       },
       {
         "frame": 120,
-        "heapMB": 19.2
+        "heapMB": 19.7
       },
       {
         "frame": 150,
-        "heapMB": 28.4
+        "heapMB": 12.2
       },
       {
         "frame": 180,
-        "heapMB": 10.9
+        "heapMB": 14.5
       }
     ],
-    "heapSlopeMBPerMinute": -61.21,
-    "peakHeapDeltaMB": 14.6,
+    "heapSlopeMBPerMinute": 30.1,
+    "peakHeapDeltaMB": 17.6,
     "images": {
       "original": {
         "width": 1024,
@@ -484,7 +484,7 @@
     },
     "outputFile": "out/out_h264_aac_1080p.mp4",
     "audioPacketsCopied": 470,
-    "audioCopyMs": 10.8,
+    "audioCopyMs": 4.2,
     "audioHash": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
     "frames": 300,
     "snapshot": {
@@ -572,17 +572,17 @@
       }
     },
     "timing": {
-      "wallMs": 25581.3,
-      "fps": 11.73,
+      "wallMs": 19740.1,
+      "fps": 15.2,
       "perFrameMs": {
-        "median": 73.8,
-        "p95": 142.2,
-        "max": 670.8
+        "median": 61.1,
+        "p95": 95.4,
+        "max": 339.5
       },
       "encodeAwaitMs": {
-        "median": 73.4,
-        "p95": 138.8,
-        "max": 247.8
+        "median": 60.9,
+        "p95": 94.7,
+        "max": 163.6
       }
     },
     "output": {
@@ -594,47 +594,47 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 25.5
+        "heapMB": 26.8
       },
       {
         "frame": 60,
-        "heapMB": 48.6
+        "heapMB": 23.8
       },
       {
         "frame": 90,
-        "heapMB": 29.2
+        "heapMB": 24.2
       },
       {
         "frame": 120,
-        "heapMB": 31.1
+        "heapMB": 23
       },
       {
         "frame": 150,
-        "heapMB": 40.1
-      },
-      {
-        "frame": 180,
-        "heapMB": 24.1
-      },
-      {
-        "frame": 210,
-        "heapMB": 21.6
-      },
-      {
-        "frame": 240,
         "heapMB": 31.5
       },
       {
+        "frame": 180,
+        "heapMB": 29.2
+      },
+      {
+        "frame": 210,
+        "heapMB": 26.8
+      },
+      {
+        "frame": 240,
+        "heapMB": 22.5
+      },
+      {
         "frame": 270,
-        "heapMB": 20.5
+        "heapMB": 20.1
       },
       {
         "frame": 300,
-        "heapMB": 30.3
+        "heapMB": 25.5
       }
     ],
-    "heapSlopeMBPerMinute": -26.52,
-    "peakHeapDeltaMB": 32.2,
+    "heapSlopeMBPerMinute": -6.82,
+    "peakHeapDeltaMB": 24.8,
     "images": {
       "original": {
         "width": 1024,
@@ -890,7 +890,7 @@
     },
     "outputFile": "out/out_vp9_opus_720p.webm",
     "audioPacketsCopied": 301,
-    "audioCopyMs": 2.3,
+    "audioCopyMs": 2,
     "audioHash": "a38c1db42d2d44bc42e5a50b7e71a8b2a2419c8d58760c89418cf144bd74222f",
     "frames": 180,
     "snapshot": {
@@ -978,17 +978,17 @@
       }
     },
     "timing": {
-      "wallMs": 6580,
-      "fps": 27.36,
+      "wallMs": 5513.6,
+      "fps": 32.65,
       "perFrameMs": {
-        "median": 30.1,
-        "p95": 56.9,
-        "max": 271.2
+        "median": 26.4,
+        "p95": 58.4,
+        "max": 196.8
       },
       "encodeAwaitMs": {
-        "median": 29.9,
-        "p95": 54.2,
-        "max": 194.7
+        "median": 26.4,
+        "p95": 55.8,
+        "max": 114.8
       }
     },
     "output": {
@@ -1000,31 +1000,31 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 47.6
+        "heapMB": 11
       },
       {
         "frame": 60,
-        "heapMB": 55.5
+        "heapMB": 18.9
       },
       {
         "frame": 90,
-        "heapMB": 13.9
+        "heapMB": 21.9
       },
       {
         "frame": 120,
-        "heapMB": 14.8
+        "heapMB": 22.8
       },
       {
         "frame": 150,
-        "heapMB": 21.5
+        "heapMB": 11.6
       },
       {
         "frame": 180,
-        "heapMB": 22.2
+        "heapMB": 12.4
       }
     ],
-    "heapSlopeMBPerMinute": -356.62,
-    "peakHeapDeltaMB": 41,
+    "heapSlopeMBPerMinute": -26.12,
+    "peakHeapDeltaMB": 0,
     "images": {
       "original": {
         "width": 1024,
@@ -1280,7 +1280,7 @@
     },
     "outputFile": "out/out_hevc_aac_360p.mp4",
     "audioPacketsCopied": 142,
-    "audioCopyMs": 0.8,
+    "audioCopyMs": 0.6,
     "audioHash": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
     "frames": 90,
     "snapshot": {
@@ -1368,17 +1368,17 @@
       }
     },
     "timing": {
-      "wallMs": 939.2,
-      "fps": 95.83,
+      "wallMs": 833.8,
+      "fps": 107.94,
       "perFrameMs": {
-        "median": 7.8,
-        "p95": 17.7,
-        "max": 68
+        "median": 7.6,
+        "p95": 13.6,
+        "max": 44.7
       },
       "encodeAwaitMs": {
-        "median": 7.7,
-        "p95": 17.2,
-        "max": 44
+        "median": 7.5,
+        "p95": 13.3,
+        "max": 44.6
       }
     },
     "output": {
@@ -1390,19 +1390,19 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 18.3
+        "heapMB": 23.2
       },
       {
         "frame": 60,
-        "heapMB": 21.1
+        "heapMB": 26
       },
       {
         "frame": 90,
-        "heapMB": 22
+        "heapMB": 26.9
       }
     ],
-    "heapSlopeMBPerMinute": 354.57,
-    "peakHeapDeltaMB": 37.6,
+    "heapSlopeMBPerMinute": 399.38,
+    "peakHeapDeltaMB": 31.3,
     "images": {
       "original": {
         "width": 640,
@@ -1658,7 +1658,7 @@
     },
     "outputFile": "out/out_av1_opus_360p.webm",
     "audioPacketsCopied": 201,
-    "audioCopyMs": 0.6,
+    "audioCopyMs": 0.5,
     "audioHash": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
     "frames": 120,
     "snapshot": {
@@ -1746,17 +1746,17 @@
       }
     },
     "timing": {
-      "wallMs": 1892.8,
-      "fps": 63.4,
+      "wallMs": 1456.5,
+      "fps": 82.39,
       "perFrameMs": {
-        "median": 12.3,
-        "p95": 29.6,
-        "max": 255.5
+        "median": 10.6,
+        "p95": 20.5,
+        "max": 95.6
       },
       "encodeAwaitMs": {
-        "median": 12.2,
-        "p95": 26.3,
-        "max": 255.4
+        "median": 10.4,
+        "p95": 19.9,
+        "max": 95.6
       }
     },
     "output": {
@@ -1768,23 +1768,23 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 15.8
+        "heapMB": 9
       },
       {
         "frame": 60,
-        "heapMB": 18.1
+        "heapMB": 11.3
       },
       {
         "frame": 90,
-        "heapMB": 19.5
+        "heapMB": 12.7
       },
       {
         "frame": 120,
-        "heapMB": 19.9
+        "heapMB": 13.1
       }
     ],
-    "heapSlopeMBPerMinute": 173.72,
-    "peakHeapDeltaMB": 7.7,
+    "heapSlopeMBPerMinute": 225.75,
+    "peakHeapDeltaMB": 0,
     "images": {
       "original": {
         "width": 640,
@@ -2120,17 +2120,17 @@
       }
     },
     "timing": {
-      "wallMs": 6578.1,
-      "fps": 27.36,
+      "wallMs": 5183.7,
+      "fps": 34.72,
       "perFrameMs": {
-        "median": 30.7,
-        "p95": 66.1,
-        "max": 247.6
+        "median": 26.4,
+        "p95": 45.2,
+        "max": 150.1
       },
       "encodeAwaitMs": {
-        "median": 30.3,
-        "p95": 65.6,
-        "max": 151.9
+        "median": 26.3,
+        "p95": 43.9,
+        "max": 72.6
       }
     },
     "output": {
@@ -2142,31 +2142,31 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 13.8
+        "heapMB": 12.8
       },
       {
         "frame": 60,
-        "heapMB": 13.1
+        "heapMB": 13.8
       },
       {
         "frame": 90,
-        "heapMB": 19.4
+        "heapMB": 20.3
       },
       {
         "frame": 120,
-        "heapMB": 12.4
+        "heapMB": 12.6
       },
       {
         "frame": 150,
-        "heapMB": 19.6
+        "heapMB": 19.7
       },
       {
         "frame": 180,
-        "heapMB": 21.7
+        "heapMB": 21.8
       }
     ],
-    "heapSlopeMBPerMinute": 81.3,
-    "peakHeapDeltaMB": 49.5,
+    "heapSlopeMBPerMinute": 109.12,
+    "peakHeapDeltaMB": 0,
     "images": {
       "original": {
         "width": 1024,
@@ -2404,7 +2404,7 @@
     },
     "outputFile": "out/out_h264_portrait.mp4",
     "audioPacketsCopied": 189,
-    "audioCopyMs": 1.2,
+    "audioCopyMs": 3.6,
     "audioHash": "5b118197a1030791fb408d59889bbb566c8aaab45208a19b11d74f9354704f12",
     "frames": 120,
     "snapshot": {
@@ -2492,17 +2492,17 @@
       }
     },
     "timing": {
-      "wallMs": 5453.4,
-      "fps": 22,
+      "wallMs": 4154,
+      "fps": 28.89,
       "perFrameMs": {
-        "median": 38.1,
-        "p95": 87.5,
-        "max": 229.5
+        "median": 28.9,
+        "p95": 65.6,
+        "max": 217.7
       },
       "encodeAwaitMs": {
-        "median": 37.9,
-        "p95": 84.3,
-        "max": 217.7
+        "median": 28.7,
+        "p95": 64.9,
+        "max": 148.5
       }
     },
     "output": {
@@ -2514,23 +2514,23 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 11.6
+        "heapMB": 11.8
       },
       {
         "frame": 60,
-        "heapMB": 11.3
+        "heapMB": 11.5
       },
       {
         "frame": 90,
-        "heapMB": 14
+        "heapMB": 14.2
       },
       {
         "frame": 120,
-        "heapMB": 20.2
+        "heapMB": 20.4
       }
     ],
-    "heapSlopeMBPerMinute": 125.4,
-    "peakHeapDeltaMB": 4.5,
+    "heapSlopeMBPerMinute": 164.67,
+    "peakHeapDeltaMB": 1.1,
     "images": {
       "original": {
         "width": 720,
@@ -2786,7 +2786,7 @@
     },
     "outputFile": "out/out_h264_rot90.mp4",
     "audioPacketsCopied": 283,
-    "audioCopyMs": 2.2,
+    "audioCopyMs": 1,
     "audioHash": "bd82d14eb6590d6560638eeb98924af71ba7fe2b4abdbae39d090c25e9c8a3f4",
     "frames": 180,
     "snapshot": {
@@ -2874,17 +2874,17 @@
       }
     },
     "timing": {
-      "wallMs": 13525.8,
-      "fps": 13.31,
+      "wallMs": 11355,
+      "fps": 15.85,
       "perFrameMs": {
-        "median": 64.5,
-        "p95": 146.8,
-        "max": 451.3
+        "median": 51.4,
+        "p95": 135.8,
+        "max": 335.3
       },
       "encodeAwaitMs": {
-        "median": 63.4,
-        "p95": 142.5,
-        "max": 402.1
+        "median": 51.1,
+        "p95": 126.7,
+        "max": 335
       }
     },
     "output": {
@@ -2896,31 +2896,31 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 13
+        "heapMB": 13.2
       },
       {
         "frame": 60,
-        "heapMB": 12.9
+        "heapMB": 15.2
       },
       {
         "frame": 90,
-        "heapMB": 15.4
+        "heapMB": 17.7
       },
       {
         "frame": 120,
-        "heapMB": 21.6
+        "heapMB": 14.4
       },
       {
         "frame": 150,
-        "heapMB": 12.9
+        "heapMB": 20.6
       },
       {
         "frame": 180,
-        "heapMB": 15.2
+        "heapMB": 22.9
       }
     ],
-    "heapSlopeMBPerMinute": 13.08,
-    "peakHeapDeltaMB": 7.7,
+    "heapSlopeMBPerMinute": 55.61,
+    "peakHeapDeltaMB": 28.1,
     "images": {
       "original": {
         "width": 720,
@@ -3176,7 +3176,7 @@
     },
     "outputFile": "out/out_h264_vfr.mp4",
     "audioPacketsCopied": 283,
-    "audioCopyMs": 1.5,
+    "audioCopyMs": 0.9,
     "audioHash": "85a57f5256998ad0c4539ce4c21ef9adb43cf09ced502285c593989c56ac4a1b",
     "frames": 126,
     "snapshot": {
@@ -3264,17 +3264,17 @@
       }
     },
     "timing": {
-      "wallMs": 1465.6,
-      "fps": 85.97,
+      "wallMs": 1132.3,
+      "fps": 111.28,
       "perFrameMs": {
-        "median": 8.7,
-        "p95": 14.4,
-        "max": 57.2
+        "median": 7,
+        "p95": 11.6,
+        "max": 49
       },
       "encodeAwaitMs": {
-        "median": 8.6,
-        "p95": 13.4,
-        "max": 51.1
+        "median": 7,
+        "p95": 11.3,
+        "max": 41.7
       }
     },
     "output": {
@@ -3286,23 +3286,23 @@
     "heapSeries": [
       {
         "frame": 30,
-        "heapMB": 9.6
+        "heapMB": 39
       },
       {
         "frame": 60,
-        "heapMB": 10.5
+        "heapMB": 39.9
       },
       {
         "frame": 90,
-        "heapMB": 11.9
+        "heapMB": 41
       },
       {
         "frame": 120,
-        "heapMB": 12.6
+        "heapMB": 42.1
       }
     ],
-    "heapSlopeMBPerMinute": 178.82,
-    "peakHeapDeltaMB": 6.4,
+    "heapSlopeMBPerMinute": 231.46,
+    "peakHeapDeltaMB": 13.8,
     "images": {
       "original": {
         "width": 640,

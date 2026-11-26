@@ -69,60 +69,60 @@
 
 | File | mode | ok | frames | fps | wall ms | per-frame median ms | p95 ms | max ms | peak heap Δ MB |
 |---|---|---|---|---|---|---|---|---|---|
-| h264_aac_720p | decode-draw | ✅ | 180 | 267.38 | 673 | 0.1 | 0.3 | 3 | 4.7 |
-| h264_aac_720p | decode-grade | ✅ | 180 | 263.62 | 683 | 0.1 | 0.2 | 1.3 | 2.9 |
-| h264_aac_1080p | decode-draw | ✅ | 300 | 200.04 | 1500 | 0.1 | 0.4 | 2.4 | 10.5 |
-| h264_aac_1080p | decode-grade | ✅ | 300 | 133.33 | 2250 | 0.1 | 0.2 | 1.4 | 2.6 |
-| vp9_opus_720p | decode-draw | ✅ | 180 | 503.64 | 357 | 0.1 | 0.2 | 4.8 | 1.7 |
-| vp9_opus_720p | decode-grade | ✅ | 180 | 312.07 | 577 | 0.1 | 0.2 | 0.2 | 8.4 |
-| hevc_aac_360p | decode-draw | ✅ | 90 | 1444.62 | 62 | 0.1 | 0.2 | 0.2 | 0 |
-| hevc_aac_360p | decode-grade | ✅ | 90 | 490.46 | 184 | 0.1 | 0.2 | 0.2 | 1 |
-| av1_opus_360p | decode-draw | ✅ | 120 | 3157.89 | 38 | 0.1 | 0.2 | 1.7 | 0 |
-| av1_opus_360p | decode-grade | ✅ | 120 | 2072.54 | 58 | 0 | 0.1 | 0.7 | 2.5 |
-| h264_silent_720p | decode-draw | ✅ | 180 | 473.81 | 380 | 0.1 | 0.2 | 0.3 | 1.9 |
-| h264_silent_720p | decode-grade | ✅ | 180 | 293.78 | 613 | 0.1 | 0.2 | 0.2 | 2.4 |
-| h264_portrait | decode-draw | ✅ | 120 | 435.26 | 276 | 0.1 | 0.2 | 0.4 | 1.5 |
-| h264_portrait | decode-grade | ✅ | 120 | 289.93 | 414 | 0.1 | 0.2 | 0.3 | 2 |
-| h264_rot90 | decode-draw | ✅ | 180 | 406.5 | 443 | 0.1 | 0.3 | 1 | 0 |
-| h264_rot90 | decode-grade | ✅ | 180 | 304.11 | 592 | 0.1 | 0.2 | 0.2 | 2.5 |
-| h264_vfr | decode-draw | ✅ | 126 | 1253.73 | 101 | 0.1 | 0.2 | 0.4 | 0.7 |
-| h264_vfr | decode-grade | ✅ | 126 | 636.04 | 198 | 0.1 | 0.2 | 0.2 | 1.2 |
+| h264_aac_720p | decode-draw | ✅ | 180 | 281.69 | 639 | 0.1 | 0.3 | 9.5 | 4.7 |
+| h264_aac_720p | decode-grade | ✅ | 180 | 229.15 | 786 | 0.1 | 0.2 | 1.1 | 2.9 |
+| h264_aac_1080p | decode-draw | ✅ | 300 | 150.3 | 1996 | 0.2 | 0.4 | 3.8 | 10.5 |
+| h264_aac_1080p | decode-grade | ✅ | 300 | 128.03 | 2343 | 0.1 | 0.2 | 1.8 | 0.3 |
+| vp9_opus_720p | decode-draw | ✅ | 180 | 464.88 | 387 | 0.1 | 0.2 | 3.5 | 0 |
+| vp9_opus_720p | decode-grade | ✅ | 180 | 254.67 | 707 | 0.1 | 0.2 | 0.3 | 7.6 |
+| hevc_aac_360p | decode-draw | ✅ | 90 | 1404.06 | 64 | 0.1 | 0.2 | 0.3 | 0.8 |
+| hevc_aac_360p | decode-grade | ✅ | 90 | 418.99 | 215 | 0.1 | 0.2 | 0.2 | 1.3 |
+| av1_opus_360p | decode-draw | ✅ | 120 | 3037.97 | 40 | 0.1 | 0.2 | 2.7 | 0 |
+| av1_opus_360p | decode-grade | ✅ | 120 | 1673.64 | 72 | 0 | 0.2 | 0.6 | 0.6 |
+| h264_silent_720p | decode-draw | ✅ | 180 | 432.07 | 417 | 0.1 | 0.2 | 0.4 | 3 |
+| h264_silent_720p | decode-grade | ✅ | 180 | 269.14 | 669 | 0.1 | 0.2 | 0.2 | 2.4 |
+| h264_portrait | decode-draw | ✅ | 120 | 479.42 | 250 | 0.1 | 0.2 | 0.3 | 2.2 |
+| h264_portrait | decode-grade | ✅ | 120 | 244.35 | 491 | 0.1 | 0.2 | 0.2 | 1.9 |
+| h264_rot90 | decode-draw | ✅ | 180 | 408.53 | 441 | 0.1 | 0.2 | 1.3 | 0 |
+| h264_rot90 | decode-grade | ✅ | 180 | 249.38 | 722 | 0.1 | 0.2 | 0.2 | 2.5 |
+| h264_vfr | decode-draw | ✅ | 126 | 1188.68 | 106 | 0.1 | 0.2 | 0.4 | 0.7 |
+| h264_vfr | decode-grade | ✅ | 126 | 630.63 | 200 | 0.1 | 0.1 | 0.2 | 1.2 |
 
 ## LUT transcode + mux (streaming target, no Base64)
 
 | File | ok | codec | codec string | frames | fps | wall ms | peak heap Δ MB | audio pkts copied | output bytes | duration s | A/V start ms | A/V end ms | out video pkts | verify | snapshot | base64 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| h264_aac_720p | ✅ | avc | avc1.64001f | 180 | 13.08 | 13760 | 14.6 | 283 | 4281046 | 6 | -21.33 | 0 | 180 | 7/7 ✅ | same/graded 7 | absent |
-| h264_aac_1080p | ✅ | avc | avc1.640028 | 300 | 11.73 | 25581 | 32.2 | 470 | 15292735 | 10 | -21.33 | 0 | 300 | 7/7 ✅ | same/graded 5 | absent |
-| vp9_opus_720p | ✅ | vp9 | vp09.00.31.08 | 180 | 27.36 | 6580 | 41 | 301 | 2975807 | 6 | -7 | -6 | 180 | 7/7 ✅ | same/graded 7 | absent |
-| hevc_aac_360p | ✅ | avc | avc1.64001e | 90 | 95.83 | 939 | 37.6 | 142 | 630564 | 3 | -21.33 | 0 | 90 | 7/7 ✅ | same/graded 7 | absent |
-| av1_opus_360p | ✅ | vp9 | vp09.00.31.08 | 120 | 63.4 | 1893 | 7.7 | 201 | 711702 | 4 | -7 | -6 | 120 | 7/7 ✅ | same/graded 7 | absent |
-| h264_silent_720p | ✅ | avc | avc1.64001f | 180 | 27.36 | 6578 | 49.5 | — | 4183375 | 6 | — | — | 180 | 4/4 ✅ | same/graded 7 | absent |
-| h264_portrait | ✅ | avc | avc1.64001f | 120 | 22 | 5453 | 4.5 | 189 | 3277341 | 4 | -21.33 | 0 | 120 | 7/7 ✅ | same/graded 5 | absent |
-| h264_rot90 | ✅ | avc | avc1.64001f | 180 | 13.31 | 13526 | 7.7 | 283 | 4321310 | 6 | -21.33 | 0 | 180 | 7/7 ✅ | same/graded 215 | absent |
-| h264_vfr | ✅ | avc | avc1.64001e | 126 | 85.97 | 1466 | 6.4 | 283 | 1106135 | 6 | -21.33 | 100 | 126 | 7/7 ✅ | same/graded 7 | absent |
+| h264_aac_720p | ✅ | avc | avc1.64001f | 180 | 31.17 | 5775 | 17.6 | 283 | 4281046 | 6 | -21.33 | 0 | 180 | 7/7 ✅ | same/graded 7 | absent |
+| h264_aac_1080p | ✅ | avc | avc1.640028 | 300 | 15.2 | 19740 | 24.8 | 470 | 15292735 | 10 | -21.33 | 0 | 300 | 7/7 ✅ | same/graded 5 | absent |
+| vp9_opus_720p | ✅ | vp9 | vp09.00.31.08 | 180 | 32.65 | 5514 | 0 | 301 | 2975807 | 6 | -7 | -6 | 180 | 7/7 ✅ | same/graded 7 | absent |
+| hevc_aac_360p | ✅ | avc | avc1.64001e | 90 | 107.94 | 834 | 31.3 | 142 | 630564 | 3 | -21.33 | 0 | 90 | 7/7 ✅ | same/graded 7 | absent |
+| av1_opus_360p | ✅ | vp9 | vp09.00.31.08 | 120 | 82.39 | 1457 | 0 | 201 | 711702 | 4 | -7 | -6 | 120 | 7/7 ✅ | same/graded 7 | absent |
+| h264_silent_720p | ✅ | avc | avc1.64001f | 180 | 34.72 | 5184 | 0 | — | 4183375 | 6 | — | — | 180 | 4/4 ✅ | same/graded 7 | absent |
+| h264_portrait | ✅ | avc | avc1.64001f | 120 | 28.89 | 4154 | 1.1 | 189 | 3277341 | 4 | -21.33 | 0 | 120 | 7/7 ✅ | same/graded 5 | absent |
+| h264_rot90 | ✅ | avc | avc1.64001f | 180 | 15.85 | 11355 | 28.1 | 283 | 4321310 | 6 | -21.33 | 0 | 180 | 7/7 ✅ | same/graded 215 | absent |
+| h264_vfr | ✅ | avc | avc1.64001e | 126 | 111.28 | 1132 | 13.8 | 283 | 1106135 | 6 | -21.33 | 100 | 126 | 7/7 ✅ | same/graded 7 | absent |
 
 ## Output target / memory budget probes
 
 | probe | ok | mode | estimate MB | budget MB | chunks | result | peak heap Δ MB |
 |---|---|---|---|---|---|---|---|
-| buffer-budget-overflow | ❌ | buffer | 25.6 | 1 | 0 | MemoryBudgetError: estimated output 25.6MB exceeds the 1MB memory budget | 6.2 |
+| buffer-budget-overflow | ❌ | buffer | 25.6 | 1 | 0 | MemoryBudgetError: estimated output 25.6MB exceeds the 1MB memory budget | 0 |
 | file-picker-unsupported | ❌ | file-picker | 11 | 512 | 0 | OutputTargetError: file picker dismissed at runtime: AbortError: Failed to execute 'showSaveFilePicker' on 'Window': The user aborted a request. | 0 |
-| buffer-under-budget | ✅ | — | — | — | — | output verified | 9.6 |
+| buffer-under-budget | ✅ | — | — | — | — | output verified | 11.7 |
 
 ## Cancel / rerun
 
 | probe | aborted | ok | frames | verification | error | peak heap Δ MB |
 |---|---|---|---|---|---|---|
-| internal-abort | yes | ❌ | — | — | AbortError: transcode cancelled | 11.5 |
-| external-cancel | yes | ❌ | — | — | AbortError: transcode cancelled | 22.4 |
+| internal-abort | yes | ❌ | — | — | AbortError: transcode cancelled | 15.5 |
+| external-cancel | yes | ❌ | — | — | AbortError: transcode cancelled | 20.5 |
 | rerun-after-cancel | no | ✅ | 300 | 7/7 ✅ | — | — |
 
 ## Long export (45 s)
 
 | frames | wall ms | fps | per-frame median/p95/max ms | heap slope MB/min | peak heap Δ MB | output bytes | verification |
 |---|---|---|---|---|---|---|---|
-| 1350 | 33795 | 39.95 | 23.9/31.5/152.5 | -1.58 | 0 | 26669627 | 6/6 ✅ |
+| 1350 | 79132 | 17.06 | 46.3/130.5/550.6 | -0.68 | 18.8 | 26669627 | 6/6 ✅ |
 
 ## Automated assertions
 
