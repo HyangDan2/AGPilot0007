@@ -23,7 +23,9 @@ Node.js 22와 npm lockfile을 기준으로 `npm ci`를 사용한다. LUT 생성�
 | 명령 | 역할 |
 | --- | --- |
 | `npm run dev` | Vite 개발 서버 (기본 5173) |
-| `npm test` | Vitest 단위 검사 |
+| `npm test` | Vitest 단위 검사 (병렬; 벽시계 perf 검사 `tests/q04Perf.test.ts`는 제외) |
+| `npm run test:perf` | Q04 성능 게이트 직렬 실행 (`vitest.perf.config.ts`, 단일 워커). 호스트가 한가할 때 실행하고 median 임계값은 완화하지 않는다 |
+| `npm run test:all` | `npm test` 후 성능 게이트 순차 실행 |
 | `npm run build` | TypeScript 검사와 Vite 정적 빌드 |
 | `npm run test:e2e` | Playwright 브라우저 검사; 설정이 개발 서버를 시작함 |
 | `npm run generate-luts` | Python 도구로 LUT 재생성; 생성 파일 차이를 검토해야 함 |
@@ -161,7 +163,8 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 ## Phase 1 Q04 PoC (선택·배치·분석)
 
 - `src/poc/q04/`는 Q01 공통 상태/Recipe 인터페이스 확정 전까지 **기존 store·컴포넌트를 수정하지 않는 독립 PoC**다. 통합 시점에만 기존 코드를 변경한다.
-- 신규 검사: `npx vitest run tests/q04Workspace.test.ts tests/q04Batch.test.ts tests/q04Metadata.test.ts tests/q04Analysis.test.ts tests/q04Perf.test.ts`. `q04Perf`는 벽시계 측정이므로 6라운드의 min/median/p95/max를 출력하고 **median으로 판정**하되 임계값은 완화하지 않는다(최소값 단독 판정 금지). 임계값 초과는 회귀 증거로 취급한다.
+- 신규 검사: `npx vitest run tests/q04Workspace.test.ts tests/q04Batch.test.ts tests/q04Metadata.test.ts tests/q04Analysis.test.ts` (성능 검사는 별도). `tests/q04Perf.test.ts`는 벽시계 측정이므로 기본 병렬 `npm test`에서 제외되고 `npm run test:perf`로 **직렬 실행**한다. 기본 config에서는 `npx vitest run tests/q04Perf.test.ts`가 exclude되어 "No test files found"(exit 1)이므로 perf config를 명시해야 한다. 6라운드의 min/median/p95/max를 출력하고 **median으로 판정**하되 임계값은 완화하지 않는다(최소값 단독 판정 금지). 임계값 초과는 회귀 증거로 취급한다.
 - 신규 측정 도구: `node tools/q04-bench/bench.mjs` (로컬 Vite dev 서버 + Playwright Chromium, `public/samples`로 실제 decode→WebGL export→encode 실행, 업로드 없음). `Q04_BENCH_GPU=1`은 headless에서 ANGLE Metal 실GPU를 요청하며, 미지정 시 SwiftShader 소프트웨어 렌더링 수치(느린 하한)다. `Q04_BENCH_PORT`, `Q04_BENCH_JSON=0` 지원. 출력은 큐 실행별 wall/per-job과 작업별 min/median/p95/max를 함께 표시한다. 이 벤치마크는 CI 대상이 아니며 로컬 참고 수치로만 보고한다. Playwright 브라우저 설치가 필요하다.
 - 결과 문서: `docs/phase1/WORKSPACE_POC.md`, `docs/phase1/BATCH_POC.md`, `docs/phase1/RECOMMENDATION_POC.md`, `docs/phase1/CP1_1_INTERFACE_REQUIREMENTS.md`. 추천 타깃 상수는 학습 데이터가 아닌 레지스트리 설명 기반 휴리스틱이므로 UI에 점수 근거를 항상 노출한다.
 - 배치 동시성은 기기 권장값(`resources.ts`, 최대 4·모바일 2)을 쓰고, Queue의 전역 안전 상한은 8(재시도 상한 10)이다. NaN/Infinity·소수 입력은 클램프되며, 풀해상도 이미지를 여러 장 동시에 메모리에 보관하지 않는다는 제품 원칙을 유지한다. 기밀 평가·원본 대응 자료는 기존대로 `.private/`에만 둔다.
+- Q01 `EditState`의 `geometry`는 아직 저장하지 않는다(레시피 상한 v7). Q04 PoC는 `src/poc/q04/editStateAdapter.ts`로 프레이밍을 분리 보존하며, v8 저장 활성화는 Q01 기하 체크포인트 이후 `docs/phase1/CP1_1_INTERFACE_REQUIREMENTS.md` §5.1 순서를 따른다.

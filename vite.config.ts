@@ -73,7 +73,9 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'happy-dom',
-      exclude: ['node_modules', 'dist', 'tests/e2e/**', '**/.private/**'],
+      // Wall-clock perf assertions cannot be deterministic next to parallel
+      // workers; they run serially via vitest.perf.config.ts (`npm run test:perf`).
+      exclude: ['node_modules', 'dist', 'tests/e2e/**', 'tests/q04Perf.test.ts', '**/.private/**'],
     },
   };
 });
