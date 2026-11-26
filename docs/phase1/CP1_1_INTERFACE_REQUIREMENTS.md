@@ -128,9 +128,16 @@ PoC는 `subscribe(snapshot)`/`overallProgress`를 제공하지만 UI는 구현�
 
 | IF | CP1.1 PoC 상태 | 소유자 | 남은 의존/다음 단계 |
 | --- | --- | --- | --- |
-| IF-01 export signal/onStage | **어댑터만 준비** — 단계 전후 signal 검사 + 단계명 AbortError. 렌더/`toBlob` 중간 취소는 미지원 | Q01 | Q01 SC-01-5(공용 export signal/onStage) 결과 대기. Q04는 어댑터 유지만 |
+| IF-01 export signal/onStage | **부분/대기(WO-CP2-01)** — Q04 `batchExport`는 6번째 인자로 `{ signal }`을 전달해 render/encode 단계 경계 abort를 사용한다. 그러나 Q01 `ExportModal.tsx`는 아직 `control`/`AbortController`를 배선하지 않아 사용자 대상 취소는 미완결(CP2-01-P1-01) | Q01 | Q01 최소 취소 배선 완료 후 실제 배선을 검증하고 PR #19 본문을 갱신. Q04는 어댑터 유지만 |
 | IF-02 렌더/전달 분리 | **구현 완료**(PoC) — `deliver`, `renderSucceeded`/`deliveryError`, `disposePrepared`, `createDeliverySink` | Q01 (API 소유) | 공용 Export API에 동일 계약 반영, 저장 소유권 문구 확정 |
 | IF-03 active selection | **구현 완료**(PoC) — `anchor`/`active` 분리, `primarySelection` | Q01 (workspaceStore 소유) | `workspaceStore.activeId`와 선택 집합 원장 분리 통합 |
 | IF-04 EditStateHost | **어댑터 구현**(`editStateAdapter.ts`) + geometry 매핑/비저장 정책(§5.1) | Q01 | Q01 `EditStateHost` 확정 후 구조적 타입 → Q01 `EditState` import 교체. v8 저장은 Q01 기하 체크포인트 이후 |
 | IF-05 recommendation registry | **구현 완료**(PoC) — 런타임 등록/해제, 파생 타깃 | Q01/Q04 | 프로파일 레지스트리 변경 시 메타데이터 동반 등록 절차 합의 |
 | IF-06 batch UI hook | **연기** — 상태 API/`subscribe`만 제공 | Q01 (UI 소유) | 공통 진행 UI 확정 후 `subscribe` 연결 |
+
+보강 (WO-CP2-01, 2026-11-27):
+
+- **IF-01 정정:** Q01 `ExportControl` 계약은 merge(21fd6dc)로 들어왔고 Q04 어댑터는 이를 전달하지만, `ExportModal` 배선 전까지 "해소"로 표기하지 않는다. Q01 배선 병합 시 `tests/q04Batch.test.ts`에 batch adapter 취소 경로 테스트를 추가하고 PR 본문을 갱신한다.
+- **HARNESS 소유권:** `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. PR #19가 추가한 `npm test`/`test:perf`/`test:all` 행은 Q01이 흡수하며, Q04는 이후 HARNESS를 직접 수정하지 않고 이 문서와 PR 본문으로만 제안한다(CP2-01-P3-01).
+- **Recipe v8:** `geometry` 저장(v8 활성화)은 G1 이후 Q01 기하 체크포인트와 별도 PO 승인 전까지 금지한다. 어댑터는 v7 저장 정책을 유지한다.
+- **Q00 문서:** `docs/phase1/MASTER_STATUS.md`, `EXECUTION_ENVIRONMENT.md`는 Q00 소유이며 Q04는 수정하지 않는다.
