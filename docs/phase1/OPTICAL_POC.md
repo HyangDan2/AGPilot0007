@@ -4,11 +4,12 @@
 - 작업 브랜치: `feature/phase1-q02-optical`
 - 기준 Commit: `b850f82e0eb3fc33c76619f5dee9eec3e8a4890a` (`origin/main`)
 - CP1 Commit: `0b5e6caa6aa19b34d778ed8f36886e8cb7434384`
-- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 문서 교정 완료.** OPT-01~05 교정,
+- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 완료 + G1 최종 동기화 완료.** OPT-01~05 교정,
   OPT-06~07 기술 검증·본개발 설계, Q01 `OpticalTransform` 어댑터·예산 측정 완료. Q01
-  `feature/phase1-pro-engine`을 `21fd6dc` → Q00 `0cf7d38`까지 병합해 계약 소스를 직접 교차 검증한다.
-  P2-02(하네스 한도 문구), P2-03(계수 정책·런타임 거부 명세), Silent Truncation 금지 원칙을 반영했다.
-  **Q01/Q00 `src/`·소유 문서는 병합으로만 수용했고 Q02가 수정하지 않았다.** CP2-03 구현은 G1 대기.
+  `feature/phase1-pro-engine`을 `21fd6dc` → G1 `4dea9b6`까지 병합해 계약 소스를 직접 교차 검증한다.
+  P2-02(하네스 한도 문구), P2-03(계수 정책 **Closed**: Q01 `c67d533` 계약 채택), Silent Truncation
+  금지 원칙을 반영했다. **Q01/Q00 `src/`·소유 문서는 병합으로만 수용했고 Q02가 수정하지 않았다.**
+  CP2-03 구현은 G1 종료 승인 후 착수한다.
 - 범위: WO-08~WO-21 (Geometry & Local Adjustment), WO-37~WO-40 (Optical Effects)
 
 ## 0. CP1.1 교정 요약 (검토 Commit `0b5e6ca`)
@@ -264,6 +265,9 @@ coc = maxCoc · t²(3 − 2t)
   재실행에서 모두 통과해 병렬 리소스 경합 flaky로 판정했다(제품 결함 아님).
 - 2026-11-27 WO-CP2-01, Q00 `0cf7d38` 병합 후: tsc 0 errors, vitest 21 files / 193 tests, 광학 E2E
   17 passed(전용 포트 5273). 전체 Chromium E2E는 Q01 CP2-00 격리 설정 전이라 실행하지 않았다.
+- 2026-11-27 G1 최종 동기화, Q01 `4dea9b6`(P2-03 계약 채택 `c67d533` 포함) 병합 후:
+  tsc 0 errors, vitest **22 files / 199 tests**, 광학 E2E **17 passed**(`E2E_PORT=5273`,
+  `PW_OUTPUT_DIR=.private/e2e-artifacts/q02`, `PW_REUSE_SERVER` 미설정, 33.1s). 전체 스위트는 Q05 소관으로 미실행.
 - CP1에서 테스트로 발견한 결함(모두 수정):
   1. GPU FBO 상하 반전 → 마스크/장면 불일치 (3.2 규약으로 수정)
   2. Luminance 마스크 하한 램프 반전 (`bandWeight`) → CPU·셰이더 동시 수정, 하한/상한 페더 단위 테스트 추가
@@ -378,26 +382,39 @@ Q02 쪽 어댑터 `poc/optical/math/optical-transform.ts`에서 차이를 흡수
 - Q01 브랜치 병합 후에는 Q01 `validateOpticalTransform`/`createPerspectiveQuad`/`geometryMappings`를 직접 import해
   어댑터 출력 수용, quad 일치, 마스크 정본 한도, y-down NIS 핸드오프를 교차 검증한다(총 13 tests).
   Q01 계약 소스는 병합으로만 수용했고 Q02가 수정하지 않았다.
-- 주의: Q01 검증은 계수 **범위**만 보므로 `k1=−0.5`처럼 Q01을 통과하지만 Q02 렌더 가역성 게이트(4.2)에서
-  거부되는 조합이 있다. 어댑터는 통과시키고 렌더 시 명시적으로 실패한다. Q01 검증에 가역성 조건을 넣을지는
-  Q01 소관이며, 본 브랜치에서 Q01 src를 수정하지 않았다.
+- Q01 `c67d533`에서 가역성 게이트가 계약으로 채택됐다. `validateOpticalTransform`은 범위 검사 뒤에
+  Q02와 동일한 방사·접선 게이트를 적용하므로 `k1=−0.5`는 이제 계약 경계에서 거부된다. Q02 어댑터 자체
+  `assertOpticalTransform`은 아직 범위 검사만 수행하며, 게이트 승격은 **CP2-03(G1 이후)** 범위다.
 
-### 12.1.1 계수 정책 불일치(P2-03) — 런타임 거부 명세와 Q01 제안
+### 12.1.1 계수 정책 합치(P2-03 Closed) — 계약 채택과 런타임 명세
 
-Q01 `validateOpticalTransform`은 범위(`|k1|≤1.5`, `|k2|,|k3|≤1`, `|p1|,|p2|≤0.5`)만 확인하므로
-`k1=−0.5`를 허용한다. Q02 렌더는 같은 입력을 가역성 게이트에서 거부한다. G1 전에는 계약을 수정하지 않고
-다음을 Q01/Q00에 회신한다.
+Q01 `c67d533`(G1 동기화 기준 `4dea9b6`)이 Q02 §12.1.1 제안을 계약으로 채택했다. Q01 계약 경계와 Q02
+런타임 게이트는 다음 수치로 동일하며, P2-03은 **Closed**다. Q01 `src`는 병합으로만 수용했고 Q02가
+수치를 변경하지 않았다.
 
-**(a) Q02 런타임 거부 조건·오차·사용자 메시지 명세**
+**(a) 계약·런타임 공통 가역성 게이트**
+
+| 항목 | 값 | Q01 계약 | Q02 런타임 |
+|------|-----|----------|------------|
+| 방사 도메인 | `r ∈ [0,1.5]`, 256분할(257점) | 동일 | 동일 |
+| 방사 조건 | `1+3k1r²+5k2r⁴+7k3r⁶ > 1e-6` | 동일 | 동일 |
+| 접선 격자 | `[-1.2,1.2]²`, 16분할(17×17) | 동일 | 동일 |
+| 접선 조건 | 야코비안 행렬식 `> 1e-6` (p1/p2 존재 시) | 동일 | 동일 |
+| 계수 상한 | `|k1|≤1.5`, `|k2|,|k3|≤1`, `|p1|,|p2|≤0.5` | 유지 | 동일 형식 |
+
+- `k1=−0.5`는 `1+6.75·(−0.5)=−2.375`로 계약·렌더 양쪽에서 거부된다. Q01 경계 메시지는
+  `Optical distortion is not invertible in the image domain`, Q02 GPU 렌더는
+  `Distortion coefficients are not invertible in the image domain`이다. 조건은 같고 계층별 문구만 다르다.
+
+**(b) 런타임 거부 조건·오차·사용자 메시지 명세**
 
 | 단계 | 조건 | 결과/메시지 |
 |------|------|-------------|
+| 계약 경계 | 위 게이트 실패 | `Optical distortion is not invertible in the image domain` |
 | 계수 프리플라이트 | 계수 중 비유한 값 | 거부, `non-finite coefficients` |
-| 방사 단조성 | `r = i/256·1.5 (i=0..256)` 257점에서 `1+3k1r²+5k2r⁴+7k3r⁶ ≤ 1e-6` | 거부, `not invertible in the image domain` |
-| 접선 야코비안 | p1/p2가 0이 아닐 때 `[-1.2,1.2]²` 17×17 격자의 행렬식 `≤ 1e-6` | 거부, 동일 메시지 |
 | 역변환 반복 | 최대 16회(테스트 64회), 허용오차 `1e-9` | 실패 사유 `outside-domain`/`singular-jacobian`/`diverged`/`residual` |
 | 잔차 검증 | 최종 잔차 `> max(1e-6, 10·tol)` 또는 비유한 값 | 거부, `Distortion is not invertible at the requested point (residual)` |
-| GPU 렌더 | `render()` 진입 시 위 게이트 실패 | `Error: Distortion coefficients are not invertible in the image domain`, 프레임 미생성 |
+| GPU 렌더 | `render()` 진입 시 게이트 실패 | `Error: Distortion coefficients are not invertible in the image domain`, 프레임 미생성 |
 | UI | 입력 중 게이트 실패 | 마지막 유효 계수 유지, 인라인 경고, Export 차단. **자동 클램프·조용한 보정 금지** |
 
 - 좌표 역변환 실패 시 해당 마커/마스크는 원좌표를 유지하고 경고를 표시한다(4.2). 렌더 자체는 실패하므로
@@ -405,21 +422,14 @@ Q01 `validateOpticalTransform`은 범위(`|k1|≤1.5`, `|k2|,|k3|≤1`, `|p1|,|p
 - 사용자 문구(안): "왜곡 계수가 이미지 영역에서 역변환 가능하지 않습니다. k1을 -0.148 이상으로 올리거나
   k2/k3를 조정하세요." (`k2=k3=0` 기준; 일반 조합은 게이트가 판정)
 
-**(b) Q01 검증 범위를 렌더 게이트와 일치시키는 제안(수치)**
+**(c) 채택 결과와 후속**
 
-1. `validateOpticalTransform`의 범위 검사 **뒤에** Q02와 동일한 가역성 게이트를 추가한다:
-   - 방사: `r ∈ [0,1.5]`, 256분할 257점, `1+3k1r²+5k2r⁴+7k3r⁶ > 1e-6`
-   - 접선: p1/p2가 있으면 `[-1.2,1.2]²` 17×17 격자, 야코비안 행렬식 `> 1e-6`
-2. 거부는 구조화 코드 `OPTICAL_DISTORTION_NOT_INVERTIBLE`와 메시지
-   `'Optical distortion coefficients are not invertible in the image domain'`로 반환한다.
-3. 평면 하한만 원할 경우 `k2=k3=0`일 때 `k1 > -0.148148`이 최소 조건이다. 그러나 `k1=−0.5,k2=0.2`처럼
-   상위 항이 보상하면 방사 미분이 양수일 수 있으므로 **단일 하한보다 게이트가 정확하다**. `k1=−0.5`는
-   `1+6.75·(−0.5)=−2.375`로 거부되어야 한다.
-4. 기존 상한(k1≤1.5 등)은 유지한다. 계수 조합에 따라 유효/무효가 갈리므로 UI는 게이트 결과를 즉시 표시한다.
-5. Q01이 게이트를 수용하면 Q02 어댑터 `assertOpticalTransform`도 같은 조건으로 승격해 경계에서 선제 거부한다.
-   이는 **CP2-03(G1 이후)** 작업이며, 현재는 문서·테스트 고정만 수행한다.
-6. 회귀 테스트: `k1=−0.5`는 Q01 범위 통과 + Q02 GPU render 예외(현행 유지), Q01 게이트 추가 후에는
-   양쪽 모두 거부로 단정 변경. 기존 테스트 삭제·완화 없이 추가한다.
+1. Q01은 구조화 오류 코드 없이 위 문구로 거부한다. Q02 UI는 메시지 문자열에 의존하지 않고 자체
+   프리플라이트 결과로 경고·Export 차단을 결정한다.
+2. 평면 하한(`k1 > -0.148148`)은 채택되지 않았다. 계수 조합에 따라 유효/무효가 갈리므로 게이트가 정확하다.
+3. Q02 어댑터 `assertOpticalTransform`의 게이트 승격과 선분 preflight는 **CP2-03**에서 수행한다. 현재는
+   문서·테스트 고정만 하며 Q01/Q02 `src` 수치를 변경하지 않았다.
+4. 회귀: `k1=−0.5`는 Q01 계약 거부 + Q02 GPU render 예외로 고정한다. 기존 테스트 삭제·완화 없이 추가한다.
 
 ### 12.2 GLSL uniform 예산 (16마스크)
 
@@ -480,7 +490,7 @@ Q01 정본 상한(16마스크 × 64스트로크 × 1024포인트)을 전량 수�
 - 테스트 고정: 미리보기 160↔Export 320 마스크 좌표 최대 2/255(CP1.1), 512↔1024 합성 최대 1/255(CP1),
   1:1~9:16 마스크/CoC CPU↔GPU 차이 0/255.
 - Q01 `geometryMappings`는 flip→rotate→straighten→crop 순서로 **geometry NIS**를 만들고, Q02는 그 출력 NIS를
-  광학 샘플링 입력으로 소비한다(픽셀 버퍼 비변경). 2026-11-27 Q01 `21fd6dc` 병합 후 직접 import로
+  광학 샘플링 입력으로 소비한다(픽셀 버퍼 비변경). Q01 `4dea9b6`(G1) 병합 후 직접 import로
   `sourceToGeometry`/`geometryToSource` 왕복과 y-down NIS 핸드오프를 검증했고, Q01 `geometry-contract.spec.ts`도
   Chromium에서 통과했다. Q01이 이후 커밋을 추가하면 재실행이 필요하다.
 - `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. 이번 병합에서는 충돌이 없었고 Q02는 해당 문서를 수정하지 않았다.
