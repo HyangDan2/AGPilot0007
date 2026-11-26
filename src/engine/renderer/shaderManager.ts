@@ -1,6 +1,4 @@
-import {SHARPENING_SHADER} from '../color/sharpening';
-import { RGB_BASE_SHADER } from '../color/rgbBase';
-import { MIXER_SHADER } from '../color/colorMixer';
+import { FRAGMENT_FEATURE_SOURCE } from '../pipeline/shaderChunks';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
 in vec2 a_position;
 in vec2 a_uv;
@@ -79,9 +77,7 @@ vec3 applyCurves(vec3 c) {
     vec3 w = vec3(curveSample(c.r).r, curveSample(c.g).r, curveSample(c.b).r);
     return vec3(curveSample(w.r).g, curveSample(w.g).b, curveSample(w.b).a);
 }
-${MIXER_SHADER}
-${RGB_BASE_SHADER}
-${SHARPENING_SHADER}
+${FRAGMENT_FEATURE_SOURCE}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments

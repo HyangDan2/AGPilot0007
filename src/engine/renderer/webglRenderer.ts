@@ -1,38 +1,16 @@
-import {SharpeningSettings,normalizeSharpening} from '../../types/sharpening';
+import {normalizeSharpening} from '../../types/sharpening';
 import {buildRGBBaseMatrix,hasRGBBaseEdits} from '../color/rgbBase';
-import { ColorMixerSettings, MIXER_COLORS, normalizeColorMixer, hasColorMixerEdits } from '../../types/colorMixer';
-import { ToneCurves } from '../../types/curves';
+import { MIXER_COLORS, normalizeColorMixer, hasColorMixerEdits } from '../../types/colorMixer';
 import { buildCurveTexture, CURVE_SAMPLES } from '../color/userCurves';
 import { getEffectiveCamera } from '../../films/cameraEffects';
-import type { FilmId } from '../../types/film';
-import { CameraSettings } from '../../types/camera';
 import { createDateStamp } from '../overlay/dateStamp';
 import { VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE } from './shaderManager';
 import { ParsedLut3D } from '../color/lutLoader';
-import { AdjustmentSettings } from '../../types/film';
-
-export interface RenderOptions {
-  sharpening?:SharpeningSettings;
-  sharpeningMask?:boolean;
-  sharpeningDraft?:boolean;
-  sourceWidth?:number;
-  sourceHeight?:number;
-  colorMixer?: ColorMixerSettings;
-  mixerReference?: boolean;
-  mixerVisualize?: string | null;
-  curves?: ToneCurves;
-  filmId?: FilmId;
-  camera?: CameraSettings;
-  adjustments: AdjustmentSettings;
-  compareMode: 'none' | 'original' | 'split';
-  splitPos: number; // 0.0 to 1.0
-  seed?: number;
-}
+import { RenderTarget } from './renderTarget';
+import type { RenderRequest } from '../pipeline/renderSettings';
 
 export class WebGL2FilmRenderer {
-  private detailTexture:WebGLTexture|null=null;
-  private detailFbo:WebGLFramebuffer|null=null;
-  private detailSize='';
+  private detailTarget: RenderTarget | null = null;
   private imageWidth=1;
   private imageHeight=1;
   private canvas: HTMLCanvasElement;
@@ -109,7 +87,7 @@ export class WebGL2FilmRenderer {
 
     this.canvas.addEventListener('webglcontextrestored', () => {
       console.log('WebGL2 context restored. Reinitializing pipeline...');
-      this.detailTexture=null;this.detailFbo=null;this.detailSize='';
+      this.detailTarget?.dispose();this.detailTarget=null;
       this.imageTexture = null;
       this.lutTexture = null;
       this.stampTexture = null;
@@ -333,7 +311,7 @@ export class WebGL2FilmRenderer {
     }
   }
 
-  public render(options: RenderOptions) {
+  public render(options: RenderRequest) {
     const gl = this.gl;
     if (!gl || !this.program || !this.vao || this.isContextLost || !this.isInitialized) return;
 
@@ -445,13 +423,13 @@ export class WebGL2FilmRenderer {
     if(detail){
       this.ensureDetailTarget();
       gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,null);gl.uniform1i(this.uniforms.u_graded,4);
-      gl.bindFramebuffer(gl.FRAMEBUFFER,this.detailFbo);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,this.detailTarget!.handle);
       gl.uniform1i(this.uniforms.u_detail_stage,1);
       gl.bindVertexArray(this.vao);gl.drawArrays(gl.TRIANGLES,0,6);
       gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-      gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTexture);gl.uniform1i(this.uniforms.u_graded,4);
+      gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTarget!.colorTexture);gl.uniform1i(this.uniforms.u_graded,4);
       gl.uniform1i(this.uniforms.u_detail_stage,2);
-    }else if(this.detailTexture&&!options.mixerReference&&!options.mixerVisualize&&sharpening.amount===0&&!options.sharpeningMask){gl.deleteTexture(this.detailTexture);gl.deleteFramebuffer(this.detailFbo);this.detailTexture=null;this.detailFbo=null;this.detailSize='';}
+    }else if(this.detailTarget&&!options.mixerReference&&!options.mixerVisualize&&sharpening.amount===0&&!options.sharpeningMask){this.detailTarget.dispose();this.detailTarget=null;}
     // Draw
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -459,17 +437,10 @@ export class WebGL2FilmRenderer {
   }
 
   private ensureDetailTarget(){
-    const gl=this.gl!;const key=`${this.canvas.width}x${this.canvas.height}`;
-    if(this.detailTexture&&this.detailSize===key)return;
-    if(this.detailTexture)gl.deleteTexture(this.detailTexture);if(this.detailFbo)gl.deleteFramebuffer(this.detailFbo);
-    this.detailTexture=gl.createTexture();this.detailFbo=gl.createFramebuffer();
-    gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTexture);
-    const floating=!!gl.getExtension('EXT_color_buffer_float');
-    gl.texImage2D(gl.TEXTURE_2D,0,floating?gl.RGBA16F:gl.RGBA8,this.canvas.width,this.canvas.height,0,gl.RGBA,floating?gl.HALF_FLOAT:gl.UNSIGNED_BYTE,null);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    gl.bindFramebuffer(gl.FRAMEBUFFER,this.detailFbo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.detailTexture,0);
-    if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw Error('Sharpening buffer could not be allocated');
-    gl.bindFramebuffer(gl.FRAMEBUFFER,null);this.detailSize=key;
+    const gl=this.gl!;
+    this.detailTarget??=new RenderTarget(gl);
+    gl.activeTexture(gl.TEXTURE4);
+    this.detailTarget.ensure(this.canvas.width,this.canvas.height);
   }
   /**
    * Reads raw pixel data from canvas framebuffer for testing and verification.
@@ -485,10 +456,9 @@ export class WebGL2FilmRenderer {
   public destroy() {
     const gl = this.gl;
     if (!gl) return;
-    if(this.detailTexture)gl.deleteTexture(this.detailTexture);if(this.detailFbo)gl.deleteFramebuffer(this.detailFbo);this.detailTexture=null;this.detailFbo=null;this.detailSize='';
+    if(this.detailTarget){this.detailTarget.dispose();this.detailTarget=null;}
     if (this.imageTexture) {
       gl.deleteTexture(this.imageTexture);
-      this.detailTexture=null;this.detailFbo=null;this.detailSize='';
       this.imageTexture = null;
     }
     if (this.lutTexture) {

@@ -1,12 +1,9 @@
-import {SharpeningSettings} from '../../types/sharpening';
-import { ColorMixerSettings } from '../../types/colorMixer';
-import { ToneCurves } from '../../types/curves';
-import { CameraSettings } from '../../types/camera';
 import { DecodedImage } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
-import { AdjustmentSettings, FilmId } from '../../types/film';
 import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
+import type { RenderSettings } from '../pipeline/renderSettings';
 import { ExportOptions, PreparedExport } from '../../types/export';
+import { createAbortError, throwIfExportAborted, type ExportControl } from '../contracts/exportControl';
 
 export type { ExportOptions, PreparedExport };
 
@@ -33,15 +30,13 @@ export function formatBytes(bytes: number): string {
 export async function prepareExportImage(
   image: DecodedImage,
   lut: ParsedLut3D,
-  adjustments: AdjustmentSettings,
+  settings: RenderSettings,
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings,
-  filmId?: FilmId,
-  curves?: ToneCurves,
-  colorMixer?: ColorMixerSettings,
-  sharpening?:SharpeningSettings
+  control?: ExportControl
 ): Promise<PreparedExport> {
+  throwIfExportAborted(control?.signal);
+  const { adjustments, camera, filmId, curves, colorMixer, sharpening } = settings;
   onProgress?.(10, 'Initializing export pipeline...');
 
   // Target dimensions preserving exact aspect ratio
@@ -87,38 +82,56 @@ export async function prepareExportImage(
   if (!renderer.isReady()) {
     throw new Error('Failed to allocate WebGL2 export context on this device.');
   }
+  const disposeRenderer = () => {
+    renderer.destroy();
+    exportCanvas.width = 1;
+    exportCanvas.height = 1;
+  };
 
   onProgress?.(50, 'Uploading image textures and 3D LUT...');
   renderer.setImage(image.originalElement, exportWidth, exportHeight);
   renderer.setLut(lut);
 
-  onProgress?.(75, 'Applying film color science and tone curves...');
-  renderer.render({
-    adjustments,
-    camera,
-    filmId,
-    curves,
-    colorMixer,sharpening,sourceWidth:image.originalWidth,sourceHeight:image.originalHeight,
-    compareMode: 'none',
-    splitPos: 1.0,
-    seed: 42.0,
-  });
+  try {
+    throwIfExportAborted(control?.signal);
+    control?.onStage?.('render');
+    onProgress?.(75, 'Applying film color science and tone curves...');
+    renderer.render({
+      adjustments,
+      camera,
+      filmId,
+      curves,
+      colorMixer,sharpening,sourceWidth:image.originalWidth,sourceHeight:image.originalHeight,
+      compareMode: 'none',
+      splitPos: 1.0,
+      seed: 42.0,
+    });
+    throwIfExportAborted(control?.signal);
+    control?.onStage?.('encode');
+    throwIfExportAborted(control?.signal);
+  } catch (error) {
+    disposeRenderer();
+    throw error;
+  }
 
   onProgress?.(90, `Encoding ${options.format === 'image/jpeg' ? 'JPEG' : 'PNG'} output...`);
 
   return new Promise<PreparedExport>((resolve, reject) => {
     exportCanvas.toBlob(
       (blob) => {
-        // Clean up GPU resources immediately
-        renderer.destroy();
-        exportCanvas.width = 1;
-        exportCanvas.height = 1;
+        disposeRenderer();
+
+        if (control?.signal?.aborted) {
+          reject(createAbortError());
+          return;
+        }
 
         if (!blob || blob.size === 0) {
           reject(new Error('Failed to generate export image: blob was empty or encoding failed.'));
           return;
         }
 
+        control?.onStage?.('complete');
         onProgress?.(100, 'Photo preparation complete!');
         const ext = options.format === 'image/jpeg' ? 'jpg' : 'png';
         const baseName = image.name.replace(/\.[^/.]+$/, '');
@@ -154,21 +167,17 @@ export async function prepareExportImage(
 }
 
 /**
- * Backward-compatible full resolution image export function.
+ * Full resolution image export with the same shared render settings.
  */
 export async function exportFullResolutionImage(
   image: DecodedImage,
   lut: ParsedLut3D,
-  adjustments: AdjustmentSettings,
+  settings: RenderSettings,
   options: ExportOptions,
   onProgress?: (progress: number, stage: string) => void,
-  camera?: CameraSettings,
-  filmId?: FilmId,
-  curves?: ToneCurves,
-  colorMixer?: ColorMixerSettings,
-  sharpening?:SharpeningSettings
+  control?: ExportControl
 ): Promise<ExportResult> {
-  const prepared = await prepareExportImage(image, lut, adjustments, options, onProgress, camera, filmId, curves, colorMixer,sharpening);
+  const prepared = await prepareExportImage(image, lut, settings, options, onProgress, control);
   return {
     blob: prepared.blob,
     filename: prepared.filename,
