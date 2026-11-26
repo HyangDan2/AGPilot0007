@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BatchQueue } from '../src/poc/q04/batchQueue';
+import { BatchQueue, MAX_CONCURRENCY } from '../src/poc/q04/batchQueue';
 import { recommendedConcurrency } from '../src/poc/q04/resources';
-import { createExportProcessor } from '../src/poc/q04/batchExport';
+import { createDeliverySink, createExportProcessor, disposePrepared } from '../src/poc/q04/batchExport';
 import { createEditState } from '../src/poc/q04/editState';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 import { FILM_PROFILES } from '../src/films/registry';
@@ -204,6 +204,167 @@ describe('Q04 batch queue concurrency, progress and cancellation', () => {
     expect(snapshot.counts.cancelled).toBe(2);
     expect(queue.isDestroyed).toBe(true);
   });
+
+  it('normalizes non-finite concurrency and retry limits into safe ranges', () => {
+    const queue = new BatchQueue<string, void>({ concurrency: Number.NaN, processor: async () => {} });
+    expect(queue.concurrency).toBe(2);
+    queue.setConcurrency(Number.POSITIVE_INFINITY);
+    expect(queue.concurrency).toBe(2);
+    queue.setConcurrency(Number.NEGATIVE_INFINITY);
+    expect(queue.concurrency).toBe(2);
+    queue.setConcurrency(-4);
+    expect(queue.concurrency).toBe(1);
+    queue.setConcurrency(2.9);
+    expect(queue.concurrency).toBe(2);
+    queue.setConcurrency(999);
+    expect(queue.concurrency).toBe(MAX_CONCURRENCY);
+    queue.setConcurrency(Number.NaN);
+    expect(queue.concurrency).toBe(MAX_CONCURRENCY);
+    queue.destroy();
+
+    expect(new BatchQueue({ concurrency: Number.POSITIVE_INFINITY, processor: async () => {} }).concurrency).toBe(2);
+    expect(new BatchQueue({ retryLimit: Number.NaN, processor: async () => {} }).retryLimit).toBe(3);
+    expect(new BatchQueue({ retryLimit: -1, processor: async () => {} }).retryLimit).toBe(1);
+    expect(new BatchQueue({ retryLimit: 999, processor: async () => {} }).retryLimit).toBe(10);
+    expect(new BatchQueue({ retryLimit: 2.7, processor: async () => {} }).retryLimit).toBe(2);
+  });
+
+  it('separates render success from consumer delivery failure', async () => {
+    const settled: string[] = [];
+    const queue = new BatchQueue<string, string>({
+      concurrency: 2,
+      processor: async (input) => `render-${input.id}`,
+      deliver: async (job) => {
+        if (job.id === 'bad') throw new Error('disk full');
+      },
+      onSettled: (job, outcome) =>
+        settled.push(`${job.id}:${outcome.status}:${outcome.status === 'succeeded' ? true : outcome.renderSucceeded ?? false}`),
+    });
+    queue.add([
+      { id: 'ok', meta: 'ok' },
+      { id: 'bad', meta: 'bad' },
+    ]);
+    const snapshot = await queue.drain();
+
+    const bad = snapshot.jobs.find((job) => job.id === 'bad')!;
+    expect(bad.status).toBe('failed');
+    expect(bad.renderSucceeded).toBe(true);
+    expect(bad.deliveryError).toContain('disk full');
+    expect(snapshot.counts.rendered).toBe(2);
+    expect(snapshot.counts.deliveryFailed).toBe(1);
+    expect(snapshot.counts.succeeded).toBe(1);
+    expect(snapshot.jobs.find((job) => job.id === 'ok')!.status).toBe('succeeded');
+    expect(settled).toContain('bad:failed:true');
+    queue.destroy();
+  });
+
+  it('retries delivery failures with a fresh render', async () => {
+    let deliveries = 0;
+    const queue = new BatchQueue<string, string>({
+      concurrency: 1,
+      retryLimit: 2,
+      processor: async (input) => input.id,
+      deliver: async () => {
+        deliveries++;
+        if (deliveries === 1) throw new Error('share sheet closed');
+      },
+    });
+    queue.add([{ id: 'a', meta: 'a' }]);
+    let snapshot = await queue.drain();
+    expect(snapshot.counts.deliveryFailed).toBe(1);
+    expect(snapshot.counts.rendered).toBe(1);
+    expect(queue.retryFailed()).toBe(1);
+    snapshot = await queue.drain();
+    expect(snapshot.counts.succeeded).toBe(1);
+    expect(snapshot.counts.rendered).toBe(1);
+    expect(snapshot.counts.deliveryFailed).toBe(0);
+    expect(snapshot.jobs[0].deliveryError).toBe('');
+    queue.destroy();
+  });
+
+  it('settles a cancel/retry race without double-running a job', async () => {
+    const attempts = new Map<string, number>();
+    const queue = new BatchQueue<string, string>({
+      concurrency: 1,
+      processor: (input, ctx) => {
+        attempts.set(input.id, (attempts.get(input.id) ?? 0) + 1);
+        if (attempts.get(input.id) === 1) {
+          return new Promise<string>((_resolve, reject) => {
+            ctx.signal.addEventListener('abort', () => reject(new DOMException('cancelled', 'AbortError')));
+          });
+        }
+        return Promise.resolve('second');
+      },
+    });
+    queue.add([{ id: 'a', meta: 'a' }]);
+    await flush();
+    expect(queue.cancel('a')).toBe(true);
+    expect(queue.retry('a')).toBe(false);
+    const first = await queue.drain();
+    expect(first.counts.cancelled).toBe(1);
+    expect(queue.get('a')!.renderSucceeded).toBe(false);
+
+    expect(queue.retry('a')).toBe(true);
+    const second = await queue.drain();
+    expect(second.counts.succeeded).toBe(1);
+    expect(second.counts.cancelled).toBe(0);
+    expect(attempts.get('a')).toBe(2);
+    queue.destroy();
+  });
+
+  it('handles 100 mixed jobs with bounded concurrency, failures, retries and delivery errors', async () => {
+    const maxAttempts = new Map<string, number>();
+    let active = 0;
+    let maxActive = 0;
+    const queue = new BatchQueue<string, string>({
+      concurrency: 3,
+      retryLimit: 2,
+      processor: async (input) => {
+        maxAttempts.set(input.id, (maxAttempts.get(input.id) ?? 0) + 1);
+        active++;
+        maxActive = Math.max(maxActive, active);
+        await Promise.resolve();
+        active--;
+        if (Number(input.id) % 11 === 0 && maxAttempts.get(input.id) === 1) throw new Error('transient render');
+        return `img-${input.id}`;
+      },
+      deliver: async (job) => {
+        if (Number(job.id) % 17 === 0 && job.attempts === 1) throw new Error('save failed');
+      },
+    });
+
+    const jobs = Array.from({ length: 100 }, (_, i) => ({ id: String(i), meta: String(i) }));
+    queue.add(jobs);
+    for (const id of ['1', '2', '3', '4', '5']) expect(queue.cancel(id)).toBe(true);
+
+    let snapshot = await queue.drain();
+    expect(snapshot.counts.total).toBe(100);
+    expect(snapshot.counts.running).toBe(0);
+    expect(snapshot.counts.queued).toBe(0);
+    expect(snapshot.counts.cancelled).toBe(5);
+    expect(snapshot.counts.failed).toBe(15);
+    expect(snapshot.counts.succeeded).toBe(80);
+    expect(snapshot.counts.rendered).toBe(85);
+    expect(snapshot.counts.deliveryFailed).toBe(5);
+    expect(maxActive).toBeLessThanOrEqual(3);
+
+    const failedIds = snapshot.jobs.filter((job) => job.status === 'failed').map((job) => job.id);
+    expect(failedIds).toHaveLength(15);
+    for (const id of failedIds) expect(queue.retry(id)).toBe(true);
+    snapshot = await queue.drain();
+    expect(snapshot.counts.succeeded).toBe(95);
+    expect(snapshot.counts.cancelled).toBe(5);
+    expect(snapshot.counts.failed).toBe(0);
+    expect(snapshot.counts.rendered).toBe(95);
+    expect(snapshot.counts.deliveryFailed).toBe(0);
+    expect(maxActive).toBeLessThanOrEqual(3);
+    expect(new Set(snapshot.jobs.map((job) => job.id)).size).toBe(100);
+    for (const job of snapshot.jobs) {
+      expect(['succeeded', 'cancelled']).toContain(job.status);
+      expect(maxAttempts.get(job.id) ?? 0).toBeLessThanOrEqual(2);
+    }
+    queue.destroy();
+  });
 });
 
 describe('Q04 device-aware concurrency', () => {
@@ -315,5 +476,80 @@ describe('Q04 batch export adapter', () => {
       handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: new AbortController().signal, report: vi.fn() }),
     ).rejects.toThrow('GPU allocation failed');
     expect(revoke).toHaveBeenCalledWith('blob:decoded-p.jpg');
+  });
+
+  it('honours an abort signal before any file work starts', async () => {
+    const deps = makeDeps();
+    const getFile = vi.fn(entry.getFile);
+    const controller = new AbortController();
+    controller.abort();
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    await expect(
+      handle.processor({ id: 'p', meta: { entry: { ...entry, getFile }, edit } }, { id: 'p', signal: controller.signal, report: vi.fn() }),
+    ).rejects.toMatchObject({ name: 'AbortError', message: expect.stringContaining('reading file') });
+    expect(getFile).not.toHaveBeenCalled();
+    expect(deps.decode).not.toHaveBeenCalled();
+    expect(deps.prepare).not.toHaveBeenCalled();
+  });
+
+  it('drops a file read that completes after cancellation without decoding', async () => {
+    const deps = makeDeps();
+    const controller = new AbortController();
+    let resolveFile: (file: File) => void = () => {};
+    const pending = new Promise<File>((resolve) => {
+      resolveFile = resolve;
+    });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    const running = handle.processor(
+      { id: 'p', meta: { entry: { ...entry, getFile: () => pending }, edit } },
+      { id: 'p', signal: controller.signal, report: vi.fn() },
+    );
+    controller.abort();
+    resolveFile(new File(['img'], 'p.jpg'));
+    await expect(running).rejects.toMatchObject({ name: 'AbortError', message: expect.stringContaining('reading file') });
+    expect(deps.decode).not.toHaveBeenCalled();
+    expect(deps.prepare).not.toHaveBeenCalled();
+  });
+
+  it('labels the stage where a mid-render cancellation was observed', async () => {
+    const controller = new AbortController();
+    const deps = makeDeps({
+      prepare: vi.fn(async () => {
+        controller.abort();
+        return prepared('late.jpg');
+      }),
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    await expect(
+      handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: controller.signal, report: vi.fn() }),
+    ).rejects.toMatchObject({ name: 'AbortError', message: expect.stringContaining('encoding') });
+  });
+
+  it('delivers results through a sink and always releases the object URL', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const saved: string[] = [];
+    const sink = createDeliverySink((result, job) => {
+      saved.push(`${job.id}:${result.filename}`);
+    });
+    const job = { id: 'job-1' } as any;
+    const result = prepared('shot.jpg');
+    await sink(job, result);
+    expect(saved).toEqual(['job-1:shot.jpg']);
+    expect(revoke).toHaveBeenCalledWith('blob:prepared-shot.jpg');
+    disposePrepared(result);
+    expect(revoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates save failures after releasing the object URL', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const sink = createDeliverySink(async () => {
+      throw new Error('storage quota exceeded');
+    });
+    await expect(sink({ id: 'job-1' } as any, prepared('lost.jpg'))).rejects.toThrow('storage quota exceeded');
+    expect(revoke).toHaveBeenCalledWith('blob:prepared-lost.jpg');
+    const success = createDeliverySink(() => {});
+    await success({ id: 'job-2' } as any, prepared('kept.jpg'));
+    expect(revoke).toHaveBeenCalledTimes(2);
   });
 });

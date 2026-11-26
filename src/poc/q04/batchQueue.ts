@@ -23,6 +23,10 @@ export interface BatchJobView<Meta> {
   cancelRequested: boolean;
   startedAt: number | null;
   finishedAt: number | null;
+  /** Processor produced a result, even if delivering it later failed. */
+  renderSucceeded: boolean;
+  /** Set when the consumer delivery step failed; job status is failed. */
+  deliveryError: string;
 }
 
 export interface BatchCounts {
@@ -32,6 +36,10 @@ export interface BatchCounts {
   succeeded: number;
   failed: number;
   cancelled: number;
+  /** Jobs whose render step succeeded (includes delivery failures). */
+  rendered: number;
+  /** Jobs that rendered but failed to save/share. */
+  deliveryFailed: number;
 }
 
 export interface BatchSnapshot<Meta> {
@@ -44,18 +52,33 @@ export interface BatchSnapshot<Meta> {
 
 export type SettleOutcome<Result> =
   | { status: 'succeeded'; result: Result }
-  | { status: 'failed' | 'cancelled'; error: string };
+  | { status: 'failed' | 'cancelled'; error: string; renderSucceeded?: boolean };
 
 export interface BatchQueueOptions<Meta, Result> {
   processor: (input: BatchJobInput<Meta>, ctx: JobContext) => Promise<Result>;
+  /**
+   * Consumer delivery step (save/share). Runs after a successful render. A
+   * throw marks the job failed with deliveryError while renderSucceeded stays
+   * true, so callers can distinguish a render failure from a save failure.
+   */
+  deliver?: (job: BatchJobView<Meta>, result: Result) => Promise<void> | void;
   concurrency?: number;
-  /** Attempts allowed per job; retry() refuses past this limit. Default 3. */
+  /** Attempts allowed per job; retry() refuses past this limit. Default 3, max 10. */
   retryLimit?: number;
   /**
    * Result sink. The queue never retains results, so consumers own blobs and
    * must revoke object URLs after use.
    */
   onSettled?: (job: BatchJobView<Meta>, outcome: SettleOutcome<Result>) => void;
+}
+
+/** Queue-wide safety caps; device-specific limits live in resources.ts. */
+export const MAX_CONCURRENCY = 8;
+export const MAX_RETRY_LIMIT = 10;
+
+function normalizeInteger(value: unknown, fallback: number, min: number, max: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(value)));
 }
 
 interface InternalJob<Meta> extends BatchJobView<Meta> {
@@ -70,7 +93,8 @@ export class BatchQueue<Meta, Result> {
   private readonly listeners = new Set<Listener<Meta>>();
   private readonly drainWaiters: Array<(snapshot: BatchSnapshot<Meta>) => void> = [];
   private readonly processor: BatchQueueOptions<Meta, Result>['processor'];
-  private readonly retryLimit: number;
+  private readonly deliver: BatchQueueOptions<Meta, Result>['deliver'];
+  private readonly retryLimitValue: number;
   private readonly onSettled: BatchQueueOptions<Meta, Result>['onSettled'];
   private concurrencyValue: number;
   private running = 0;
@@ -80,13 +104,18 @@ export class BatchQueue<Meta, Result> {
 
   constructor(options: BatchQueueOptions<Meta, Result>) {
     this.processor = options.processor;
-    this.retryLimit = Math.max(1, Math.floor(options.retryLimit ?? 3));
+    this.deliver = options.deliver;
+    this.retryLimitValue = normalizeInteger(options.retryLimit, 3, 1, MAX_RETRY_LIMIT);
     this.onSettled = options.onSettled;
-    this.concurrencyValue = Math.max(1, Math.floor(options.concurrency ?? 2));
+    this.concurrencyValue = normalizeInteger(options.concurrency, 2, 1, MAX_CONCURRENCY);
   }
 
   get concurrency(): number {
     return this.concurrencyValue;
+  }
+
+  get retryLimit(): number {
+    return this.retryLimitValue;
   }
 
   get isDestroyed(): boolean {
@@ -109,6 +138,8 @@ export class BatchQueue<Meta, Result> {
         cancelRequested: false,
         startedAt: null,
         finishedAt: null,
+        renderSucceeded: false,
+        deliveryError: '',
         controller: null,
       });
       this.pending.push(input.id);
@@ -122,8 +153,8 @@ export class BatchQueue<Meta, Result> {
   }
 
   /** Device profile changes (tab focus, memory pressure) can adjust the limit live. */
-  setConcurrency(value: number): void {
-    const next = Math.max(1, Math.floor(value));
+  setConcurrency(value: unknown): void {
+    const next = normalizeInteger(value, this.concurrencyValue, 1, MAX_CONCURRENCY);
     if (next === this.concurrencyValue) return;
     this.concurrencyValue = next;
     this.emit();
@@ -134,7 +165,7 @@ export class BatchQueue<Meta, Result> {
     const job = this.jobs.get(id);
     if (!job || this.destroyed) return false;
     if (job.status !== 'failed' && job.status !== 'cancelled') return false;
-    if (job.attempts >= this.retryLimit) return false;
+    if (job.attempts >= this.retryLimitValue) return false;
     job.status = 'queued';
     job.progress = 0;
     job.note = '';
@@ -142,6 +173,8 @@ export class BatchQueue<Meta, Result> {
     job.cancelRequested = false;
     job.startedAt = null;
     job.finishedAt = null;
+    job.renderSucceeded = false;
+    job.deliveryError = '';
     this.pending.push(id);
     this.outstanding++;
     this.emit();
@@ -190,10 +223,21 @@ export class BatchQueue<Meta, Result> {
 
   getSnapshot(): BatchSnapshot<Meta> {
     const jobs = [...this.jobs.values()].map((job) => this.view(job));
-    const counts: BatchCounts = { total: jobs.length, queued: 0, running: 0, succeeded: 0, failed: 0, cancelled: 0 };
+    const counts: BatchCounts = {
+      total: jobs.length,
+      queued: 0,
+      running: 0,
+      succeeded: 0,
+      failed: 0,
+      cancelled: 0,
+      rendered: 0,
+      deliveryFailed: 0,
+    };
     let weighted = 0;
     for (const job of jobs) {
       counts[job.status]++;
+      if (job.renderSucceeded) counts.rendered++;
+      if (job.deliveryError) counts.deliveryFailed++;
       weighted += job.status === 'running' ? job.progress : job.status === 'queued' ? 0 : 1;
     }
     return { jobs, counts, overallProgress: counts.total ? weighted / counts.total : 0, concurrency: this.concurrencyValue };
@@ -253,6 +297,8 @@ export class BatchQueue<Meta, Result> {
     job.cancelRequested = false;
     job.startedAt = Date.now();
     job.finishedAt = null;
+    job.renderSucceeded = false;
+    job.deliveryError = '';
     job.controller = controller;
     this.running++;
     this.emit();
@@ -271,21 +317,43 @@ export class BatchQueue<Meta, Result> {
     let outcome: SettleOutcome<Result> = { status: 'cancelled', error: 'cancelled' };
     try {
       const result = await this.processor({ id, meta: job.meta }, ctx);
-      if (controller.signal.aborted || this.destroyed) {
-        job.status = 'cancelled';
-        job.error = 'cancelled';
-        outcome = { status: 'cancelled', error: 'cancelled' };
-      } else {
-        job.status = 'succeeded';
-        job.progress = 1;
-        outcome = { status: 'succeeded', result };
+      const aborted = controller.signal.aborted || this.destroyed;
+      if (!aborted) {
+        job.renderSucceeded = true;
+        job.progress = 0.98;
+        this.emit();
+      }
+      if (!aborted && this.deliver) {
+        try {
+          await this.deliver(this.view(job), result);
+        } catch (error) {
+          job.status = 'failed';
+          job.error = `delivery failed: ${error instanceof Error ? error.message : String(error)}`;
+          job.deliveryError = job.error;
+          job.progress = 1;
+          outcome = { status: 'failed', error: job.error, renderSucceeded: true };
+        }
+      }
+      if (outcome.status !== 'failed') {
+        const cancelled = controller.signal.aborted || this.destroyed;
+        if (cancelled) {
+          job.status = 'cancelled';
+          job.error = 'cancelled';
+          outcome = { status: 'cancelled', error: 'cancelled', renderSucceeded: job.renderSucceeded };
+        } else {
+          job.status = 'succeeded';
+          job.progress = 1;
+          outcome = { status: 'succeeded', result };
+        }
       }
     } catch (error) {
       const aborted = controller.signal.aborted || this.destroyed;
       const message = aborted ? 'cancelled' : error instanceof Error ? error.message : String(error);
       job.status = aborted ? 'cancelled' : 'failed';
       job.error = message;
-      outcome = aborted ? { status: 'cancelled', error: message } : { status: 'failed', error: message };
+      outcome = aborted
+        ? { status: 'cancelled', error: message, renderSucceeded: job.renderSucceeded }
+        : { status: 'failed', error: message, renderSucceeded: job.renderSucceeded };
     } finally {
       job.controller = null;
       job.finishedAt = Date.now();
@@ -333,6 +401,8 @@ export class BatchQueue<Meta, Result> {
       cancelRequested: job.cancelRequested,
       startedAt: job.startedAt,
       finishedAt: job.finishedAt,
+      renderSucceeded: job.renderSucceeded,
+      deliveryError: job.deliveryError,
     };
   }
 }
