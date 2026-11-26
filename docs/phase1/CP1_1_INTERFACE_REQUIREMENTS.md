@@ -137,7 +137,7 @@ PoC는 `subscribe(snapshot)`/`overallProgress`를 제공하지만 UI는 구현�
 
 보강 (WO-CP2-01, 2026-11-27):
 
-- **IF-01 정정:** Q01 `ExportControl` 계약은 merge(21fd6dc)로 들어왔고 Q04 어댑터는 이를 전달하지만, `ExportModal` 배선 전까지 "해소"로 표기하지 않는다. Q01 배선 병합 시 `tests/q04Batch.test.ts`에 batch adapter 취소 경로 테스트를 추가하고 PR 본문을 갱신한다.
+- **IF-01 정정:** Q01 `ExportControl` 계약은 merge(21fd6dc)로 들어왔고 Q04 어댑터는 이를 전달하지만, `ExportModal` 배선 전까지 "해소"로 표기하지 않는다. Q01 배선 병합 시 `tests/q04Batch.test.ts`에 batch adapter 취소 경로 테스트를 추가하고 PR 본문을 갱신한다. `docs/HARNESS_GUIDE.md`의 "IF-01은 SC-01로 해소" 문구도 Q01 흡수 시 "부분/대기(`ExportModal` 배선 대기)"로 정정을 요청한다(Q04는 HARNESS를 직접 수정하지 않음).
 - **HARNESS 소유권:** `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. PR #19가 추가한 `npm test`/`test:perf`/`test:all` 행은 Q01이 흡수하며, Q04는 이후 HARNESS를 직접 수정하지 않고 이 문서와 PR 본문으로만 제안한다(CP2-01-P3-01).
 - **Recipe v8:** `geometry` 저장(v8 활성화)은 G1 이후 Q01 기하 체크포인트와 별도 PO 승인 전까지 금지한다. 어댑터는 v7 저장 정책을 유지한다.
 - **Q00 문서:** `docs/phase1/MASTER_STATUS.md`, `EXECUTION_ENVIRONMENT.md`는 Q00 소유이며 Q04는 수정하지 않는다.
