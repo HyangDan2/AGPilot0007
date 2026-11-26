@@ -338,6 +338,23 @@ describe('CORE-05 optical transform contract', () => {
       validateOpticalTransform({ version: 2, homography: [...identityOptical.homography] } as never),
     ).toThrow(/Invalid optical transform/);
   });
+
+  it('mirrors the Q02 invertibility gate for radial and tangential coefficients', () => {
+    const base = createOpticalTransform();
+    const withCoefficients = (distortion: Record<string, number>) => ({ ...base, distortion });
+
+    expect(() => validateOpticalTransform(withCoefficients({ k1: -0.5 }))).toThrow(/not invertible/);
+    expect(() => validateOpticalTransform(withCoefficients({ k1: -0.16 }))).toThrow(/not invertible/);
+    expect(() => validateOpticalTransform(withCoefficients({ k1: -0.1 }))).not.toThrow();
+    expect(() => validateOpticalTransform(withCoefficients({ k1: 1.5 }))).not.toThrow();
+    expect(() => validateOpticalTransform(withCoefficients({ k1: -0.2, k2: 0.1 }))).not.toThrow();
+    expect(() => validateOpticalTransform(withCoefficients({ k1: -0.5, k2: 0.02, k3: 0.01 }))).toThrow(
+      /not invertible/,
+    );
+    expect(() => validateOpticalTransform(withCoefficients({ k1: 0.5, p1: 0.2 }))).not.toThrow();
+    expect(() => validateOpticalTransform(withCoefficients({ k1: 1.5, p1: 0.5 }))).not.toThrow();
+    expect(() => validateOpticalTransform(withCoefficients({ k1: 0.5, p1: 0.5 }))).toThrow(/not invertible/);
+  });
 });
 
 describe('CORE-06 local adjustment contract', () => {
