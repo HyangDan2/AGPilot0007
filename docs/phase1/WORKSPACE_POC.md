@@ -51,6 +51,10 @@
   - `subscribe(listener)` → `unsubscribe`. `create|set|delete|clear` 변경을 동결 스냅샷(delete/clear는 null)과 함께 전달하고, 리스너 예외는 레지스트리 일관성을 깨지 않도록 격리한다. React `useSyncExternalStore`로 그대로 연결 가능한 형태다.
   - 결과는 항상 새 객체 — 원본 편집 상태의 비파괴성 보장.
 
+### 2.2a Q01 EditState(geometry) 어댑터 — `src/poc/q04/editStateAdapter.ts`
+
+Q01 canonical `EditState`는 v7 필드 + `geometry`를 갖는다. v8 저장은 아직 비활성이므로(`RECIPE_SCHEMA_MAX=7`) PoC는 구조적 어댑터로 수용한다: `toSharedEditState`/`fromSharedEditState`로 색·디테일 필드와 프레이밍을 분리하고, `recipeFromSharedEditState`는 **geometry를 저장하지 않는 v7 레시피**를 산출하며, `applyStoredRecipeToShared`는 레시피 적용 시 해당 사진의 프레이밍을 유지한다. `assertStoredRecipeV7`은 v8/geometry 포함 레시피 저장을 거부한다. 상세 절차는 [CP1_1_INTERFACE_REQUIREMENTS.md §5.1](CP1_1_INTERFACE_REQUIREMENTS.md).
+
 ### 2.3 가상화 — `src/poc/q04/virtualization.ts`
 
 - `computeVirtualWindow`는 기존 `virtualRange`를 그대로 호출한다(이중 구현 금지).

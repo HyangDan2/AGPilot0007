@@ -85,6 +85,23 @@ interface EditStateHost {
 
 **수용 기준**: 한 이미지 편집이 다른 이미지 상태에 반영되지 않고, 동결 스냅샷 제자리 수정이 TypeError로 거부된다.
 
+### 5.1 Q01 geometry 수용 계획 (SC-04)
+
+Q01의 canonical `EditState`(`feature/phase1-pro-engine`, `src/engine/contracts/editState.ts`)는 v7 필드에 `geometry: GeometryTransform`(rotation 0/90/180/270, straighten ±45, flip, 정규화 crop)을 더한다. Q04 PoC의 `EditState`는 v7 그대로이므로, Q01 계약 확정 전까지 **구조적 어댑터**로 수용한다.
+
+- 코드: `src/poc/q04/editStateAdapter.ts`
+  - `SharedEditState = EditState & { geometry: unknown }` — Q01 모듈 병합 전까지의 구조적 미러. geometry는 **불투명 값**이며 정규화/검증은 Q01 `normalizeGeometry`/`validateRecipeV8Geometry`가 단독 소유한다(Q04가 중복 구현하지 않는다).
+  - `toSharedEditState(edit, geometry)` / `fromSharedEditState(shared)`: 분리·병합. PoC 쪽으로 내려올 때 `createEditState`가 알려진 v7 필드만 복사하므로 geometry가 조용히 섞이지 않는다.
+  - `recipeFromSharedEditState(shared, meta)`: 항상 v7 레시피를 산출하며 **geometry를 저장하지 않는다**.
+  - `applyStoredRecipeToShared(shared, recipe)`: v7 레시피를 적용해도 그 사진의 geometry는 그대로 유지(레시피 적용이 프레이밍을 리셋하지 않음).
+  - `assertStoredRecipeV7(recipe)`: `schemaVersion` 1~7(또는 미지정 legacy)만 허용, `geometry` 속성이 있으면 저장 거부. Q01 `RECIPE_SCHEMA_MAX = 7` 정책과 일치.
+- 마이그레이션/활성화 순서:
+  1. Q01이 `EditStateHost`와 `GeometryTransform` 렌더 체크포인트를 확정하고 v8 저장 상한을 8로 올린다.
+  2. Q04는 어댑터의 구조적 타입을 Q01 `EditState`/`IDENTITY_GEOMETRY` import로 교체한다(공개 함수 시그니처 유지).
+  3. v8 활성 시 `recipeFromSharedEditState`를 `toRecipeV8` 호출로 바꾸되, 기존 v1~v7 import 경로는 Q01 정책(미승인 geometry 제거)을 그대로 따른다.
+- 비활성 기간 동안 geometry는 **사진별 UI 상태로만** 존재하며, 어떤 저장 경로(레시피 v1~v7, IndexedDB)에도 들어가지 않는다.
+- 검증: `tests/q04Workspace.test.ts`의 "Q04 EditState ↔ Q01 shared state adapter" — 분리/병합 보존, v7 레시피에 geometry 부재, 레시피 적용 시 프레이밍 유지, v8 및 geometry 포함 레시피 거부.
+
 ## 6. IF-05 필름 추천 메타데이터 레지스트리 (APP-05)
 
 **현재 PoC**: `recommendationRegistry.ts`의 `RecommendationMetadata` + `registerRecommendationMetadata`/`unregisterRecommendationMetadata`, 선언적 보너스 규칙, `deriveTargets` 폴백. 엔진에 필름 ID 분기 없음.
@@ -106,3 +123,14 @@ PoC는 `subscribe(snapshot)`/`overallProgress`를 제공하지만 UI는 구현�
 - 렌더/인코딩 중 취소(IF-01)는 공용 엔진 변경이 필요해 PoC에서 완결할 수 없다.
 - 저장 파일명 충돌 정책, 실기기(iOS/Android) 저장/공유 권한은 제품 UX와 함께 확정한다.
 - 추천 메타데이터의 UI 편집·검증 절차와 대표 사진 평가 세트 운영은 `.private/`에서 관리한다.
+
+## 9. IF 상태표 (SC-04 기준, 2026-11-27)
+
+| IF | CP1.1 PoC 상태 | 소유자 | 남은 의존/다음 단계 |
+| --- | --- | --- | --- |
+| IF-01 export signal/onStage | **어댑터만 준비** — 단계 전후 signal 검사 + 단계명 AbortError. 렌더/`toBlob` 중간 취소는 미지원 | Q01 | Q01 SC-01-5(공용 export signal/onStage) 결과 대기. Q04는 어댑터 유지만 |
+| IF-02 렌더/전달 분리 | **구현 완료**(PoC) — `deliver`, `renderSucceeded`/`deliveryError`, `disposePrepared`, `createDeliverySink` | Q01 (API 소유) | 공용 Export API에 동일 계약 반영, 저장 소유권 문구 확정 |
+| IF-03 active selection | **구현 완료**(PoC) — `anchor`/`active` 분리, `primarySelection` | Q01 (workspaceStore 소유) | `workspaceStore.activeId`와 선택 집합 원장 분리 통합 |
+| IF-04 EditStateHost | **어댑터 구현**(`editStateAdapter.ts`) + geometry 매핑/비저장 정책(§5.1) | Q01 | Q01 `EditStateHost` 확정 후 구조적 타입 → Q01 `EditState` import 교체. v8 저장은 Q01 기하 체크포인트 이후 |
+| IF-05 recommendation registry | **구현 완료**(PoC) — 런타임 등록/해제, 파생 타깃 | Q01/Q04 | 프로파일 레지스트리 변경 시 메타데이터 동반 등록 절차 합의 |
+| IF-06 batch UI hook | **연기** — 상태 API/`subscribe`만 제공 | Q01 (UI 소유) | 공통 진행 UI 확정 후 `subscribe` 연결 |

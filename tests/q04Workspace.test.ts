@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { clickSelection, clampSelection, createSelection, primarySelection, rangeBetween } from '../src/poc/q04/selection';
 import { EditStateRegistry, cloneEditState, createEditState, editStateFromRecipe, recipeFromEditState } from '../src/poc/q04/editState';
+import {
+  applyStoredRecipeToShared,
+  assertStoredRecipeV7,
+  fromSharedEditState,
+  recipeFromSharedEditState,
+  toSharedEditState,
+} from '../src/poc/q04/editStateAdapter';
+import type { CustomRecipe } from '../src/types/film';
 import { computeVirtualWindow, indexAtOffset, scrollOffsetForIndex } from '../src/poc/q04/virtualization';
 import { virtualRange } from '../src/engine/image/workspace';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
@@ -223,5 +231,62 @@ describe('Q04 thumbnail virtualization', () => {
     expect(indexAtOffset(0, 1000)).toBe(0);
     expect(indexAtOffset(1e9, 1000)).toBe(999);
     expect(indexAtOffset(0, 0)).toBeNull();
+  });
+});
+
+describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
+  const geometry = Object.freeze({
+    rotation: 90 as const,
+    straighten: 2.5,
+    flipHorizontal: true,
+    flipVertical: false,
+    crop: { x: 0.1, y: 0.2, width: 0.5, height: 0.6 },
+  });
+
+  const framedEdit = () =>
+    createEditState({
+      activeFilmId: 'FS-003',
+      adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 2, grain: 40 },
+      curves: { ...defaultCurves(), red: [[0, 0], [1, 0.5]] },
+    });
+
+  it('splits a shared state without copying or normalizing geometry', () => {
+    const shared = toSharedEditState(framedEdit(), geometry);
+    expect(shared.geometry).toBe(geometry);
+
+    const edit = fromSharedEditState(shared);
+    expect(Object.hasOwn(edit, 'geometry')).toBe(false);
+    expect(edit.activeFilmId).toBe('FS-003');
+    expect(edit.adjustments.exposure).toBe(2);
+    expect(shared.geometry).toBe(geometry);
+  });
+
+  it('never writes framing into a stored v7 recipe', () => {
+    const recipe = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-if04', name: 'Framed' });
+    expect(recipe.schemaVersion).toBe(7);
+    expect(Object.hasOwn(recipe, 'geometry')).toBe(false);
+    expect(recipe.adjustments.grain).toBe(40);
+    expect(() => assertStoredRecipeV7(recipe)).not.toThrow();
+  });
+
+  it('keeps the photo framing when applying a stored recipe', () => {
+    const shared = toSharedEditState(createEditState(), geometry);
+    const recipe = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-warm', name: 'Warm' });
+
+    const next = applyStoredRecipeToShared(shared, recipe);
+    expect(next.geometry).toBe(geometry);
+    expect(next.activeFilmId).toBe('FS-003');
+    expect(next.adjustments.exposure).toBe(2);
+    expect(shared.adjustments.exposure).toBe(0);
+    expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(false);
+  });
+
+  it('rejects v8 recipes and persisted geometry until Q01 activates v8 storage', () => {
+    const shared = toSharedEditState(createEditState(), geometry);
+    const v7 = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-v7', name: 'V7' });
+
+    expect(() => applyStoredRecipeToShared(shared, { ...v7, schemaVersion: 8 })).toThrow('Unsupported recipe version');
+    expect(() => assertStoredRecipeV7({ ...v7, geometry } as unknown as CustomRecipe)).toThrow('must not be persisted');
+    expect(() => applyStoredRecipeToShared(shared, v7)).not.toThrow();
   });
 });
