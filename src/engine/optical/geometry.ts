@@ -22,23 +22,23 @@ export interface GeometryOutputSize {
   height: number;
 }
 
-const GEOMETRY_EPSILON = 1e-9;
-
 function roundOutputDimension(value: number): number {
   return Math.max(1, Math.round(value));
 }
 
-/**
- * Canvas/export dimensions for an applied geometry transform. Quarter turns
- * swap the axes, straighten expands the rotated bounds, then crop multiplies.
- * Rounding happens once per axis after all continuous operations so repeated
- * calls with the same settings are stable.
- */
-export function geometryOutputSize(
-  geometry: GeometryTransform | null | undefined,
+function rotatedDimensions(
+  geometry: GeometryTransform,
   sourceWidth: number,
   sourceHeight: number,
 ): GeometryOutputSize {
+  const quarterTurn = geometry.rotation === 90 || geometry.rotation === 270;
+  return {
+    width: quarterTurn ? sourceHeight : sourceWidth,
+    height: quarterTurn ? sourceWidth : sourceHeight,
+  };
+}
+
+function assertSourceDimensions(sourceWidth: number, sourceHeight: number): void {
   if (
     !Number.isFinite(sourceWidth) ||
     !Number.isFinite(sourceHeight) ||
@@ -47,26 +47,28 @@ export function geometryOutputSize(
   ) {
     throw new Error('Invalid geometry source dimensions');
   }
+}
+
+/**
+ * Canvas/export dimensions for an applied geometry transform. Quarter turns
+ * swap the axes and crop multiplies; straighten is cover/auto-crop, so it never
+ * changes the size (expanding the canvas would stretch the image). Rounding
+ * happens once per axis so repeated calls are stable.
+ */
+export function geometryOutputSize(
+  geometry: GeometryTransform | null | undefined,
+  sourceWidth: number,
+  sourceHeight: number,
+): GeometryOutputSize {
+  assertSourceDimensions(sourceWidth, sourceHeight);
   const normalized = validateGeometryRenderable(geometry);
-  const quarterTurn = normalized.rotation === 90 || normalized.rotation === 270;
-  let width = quarterTurn ? sourceHeight : sourceWidth;
-  let height = quarterTurn ? sourceWidth : sourceHeight;
-
-  if (Math.abs(normalized.straighten) > GEOMETRY_EPSILON) {
-    const radians = (normalized.straighten * Math.PI) / 180;
-    const cos = Math.abs(Math.cos(radians));
-    const sin = Math.abs(Math.sin(radians));
-    const rotatedWidth = width * cos + height * sin;
-    const rotatedHeight = width * sin + height * cos;
-    width = rotatedWidth;
-    height = rotatedHeight;
-  }
-
+  const rotated = rotatedDimensions(normalized, sourceWidth, sourceHeight);
+  let width = rotated.width;
+  let height = rotated.height;
   if (normalized.crop) {
     width *= normalized.crop.width;
     height *= normalized.crop.height;
   }
-
   return { width: roundOutputDimension(width), height: roundOutputDimension(height) };
 }
 
@@ -163,3 +165,4 @@ vec2 q02_geometry_output_to_source(vec2 uv) {
   return p;
 }
 `;
+
