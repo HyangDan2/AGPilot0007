@@ -99,6 +99,13 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED + Q03 CP3-03 reported complete (retained 92.56 MB, parity mean 1.101/p99 7); approved for merge; Q01 wiring: `openRawForEditing` in store, `resolveDecodedImageOriginal` in exporter, no silent fallback |
 | batch resolver compatibility | Q03 → Q04 | `resolveDecodedImageOriginal(image)` available in `a18bc08`; Q04 to use it in batch |
 
+### Integration orders (Q01 — read before continuing)
+
+1. Merge `2e7e1b6` (02D/02E) with `--no-ff` after pushing `3da2368` and `6550aa0`.
+2. Renderer local stage: inject `LOCAL_STAGE_FRAGMENT` (`src/engine/local/maskRaster.ts`) after Color Lab and before detail; mask canvases bind to texture units starting at **5** (ruling), clamp groups to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8); upload `localStageAdjustmentUniforms`, `localStageBlendCode`, opacity and count; build the plan once per (`localAdjustments`, output size) via `planLocalStage({state,width,height,corrected})` — never per frame; null plan keeps the CP2 path byte-identical.
+3. Mount `GeometryOverlay` + `GeometryPanel` and `MasksWorkspace`/`MaskListPanel`/`MaskOverlay` (all currently unimported). Geometry: drag -> `setGeometry(next,false)`, release -> commit; optical likewise. Masks: `maskUiStore.local` edits commit via `setLocalAdjustments(next, commit)`; `editorStore.localAdjustments` changes (undo/recipe/`applyParameterGroups`) push back via `maskUiStore.setLocal` with an equality guard. Pass group masks into `RenderSettings.masks`.
+4. E2E 5173: rotate+crop+straighten+perspective edit -> export parity; radial mask + exposure -> export parity at mask center/edge; identity byte-equal regressions for both.
+
 ### Approved integrations
 
 | SHA | Branch | Scope | Approved | State |
