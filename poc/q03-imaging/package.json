@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port 5199",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --js-float16array --test tests/*.test.ts",
+    "test": "node --js-float16array --test tests/*.node-test.ts",
     "check:q01-sync": "node scripts/check-q01-sync.mjs",
     "verify": "npm run typecheck && npm test && npm run check:q01-sync"
   },

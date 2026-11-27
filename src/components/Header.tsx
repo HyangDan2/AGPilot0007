@@ -188,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,.cr2,.cr3,.nef,.arw,.raf,.orf,.dng,.rw2,.pef,.srw,.x3f"
           className="hidden"
         />
 

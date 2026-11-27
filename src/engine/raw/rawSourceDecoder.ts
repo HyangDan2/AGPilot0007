@@ -1,4 +1,7 @@
-import { FlashRaw, detectFormat, supportsFile, type RawFormatName } from 'flashraw';
+/// <reference types="vite/client" />
+import { FlashRaw, detectFormat, init, supportsFile, type RawFormatName } from 'flashraw';
+import flashRawSimdUrl from 'flashraw/wasm/simd?url';
+import flashRawSimdJxlUrl from 'flashraw/wasm/simd-jxl?url';
 import {
   assertDecodedSource,
   imageBufferByteLength,
@@ -54,6 +57,14 @@ export interface RawDecodeOptions {
 }
 
 let sourceCounter = 0;
+let flashRawInit: Promise<unknown> | null = null;
+
+/** Browsers need the bundled WASM URLs; Node resolves its own entry at import time. */
+function ensureRawEngine(): Promise<unknown> | undefined {
+  if (typeof window === 'undefined' && typeof self === 'undefined') return undefined;
+  flashRawInit ??= init({ wasm: flashRawSimdUrl, jpegxlWasm: flashRawSimdJxlUrl, threads: false });
+  return flashRawInit;
+}
 
 const abortError = (): DOMException => new DOMException('RAW decode cancelled', 'AbortError');
 
@@ -129,6 +140,12 @@ function mapDecodeError(error: unknown, stage: RawDecodeErrorDetails['stage']): 
  * source stage of the shared pipeline. LibRaw is intentionally not used.
  */
 export async function decodeRawToSource(input: RawSourceInput, options: RawDecodeOptions = {}): Promise<DecodedSource> {
+  throwIfAborted(options.signal);
+  try {
+    await ensureRawEngine();
+  } catch (error) {
+    return mapDecodeError(error, 'open');
+  }
   throwIfAborted(options.signal);
 
   const size = inputSize(input);
