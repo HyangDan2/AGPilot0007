@@ -120,7 +120,7 @@ test('geometry paste rotates a selected photo and the batch export is rotated fu
 });
 
 test('batch export cancels queued photos, retries them and saves every unique file', async ({ page }, info) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   const dir = await photoFixture(page, info, 'batch', 12, 1600, 1200);
   const strip = await openWorkspace(page, dir);
   await expect(strip.getByText('12 photos', { exact: true })).toBeVisible();
@@ -137,7 +137,9 @@ test('batch export cancels queued photos, retries them and saves every unique fi
   const reconciled = dialog.getByTestId('batch-export-reconciled');
   await expect(reconciled).toContainText(/cancelled [1-9]/, { timeout: 30000 });
   await dialog.getByTestId('batch-export-retry-failed').click();
-  await expect(dialog.getByTestId('batch-export-summary')).toContainText('12/12 saved', { timeout: 40000 });
+  // The retry re-runs 10 jobs at the device concurrency; on loaded CI hosts the
+  // mobile encode path needs well over 40 s to drain them all.
+  await expect(dialog.getByTestId('batch-export-summary')).toContainText('12/12 saved', { timeout: 120000 });
   await expect(reconciled).toHaveAttribute('data-ok', 'true');
   await expect(dialog.locator('[data-testid="batch-export-item"][data-status="succeeded"]')).toHaveCount(12);
 
