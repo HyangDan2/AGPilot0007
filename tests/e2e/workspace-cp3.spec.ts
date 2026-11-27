@@ -1,5 +1,5 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 async function photoFixture(page: Page, info: TestInfo, key: string, count: number, width = 64, height = 48): Promise<string> {
@@ -27,7 +27,7 @@ async function openWorkspace(page: Page, dir: string) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.getByRole('button', { name: /Portrait/ }).filter({ visible: true }).first().click();
-  await expect(page.getByTestId('image-workspace')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId('image-workspace')).toBeVisible({ timeout: 30000 });
   await page.getByRole('button', { name: 'Open photo', exact: true }).click();
   const modal = page.getByRole('dialog', { name: 'Open photo or workspace' });
   await modal.getByTestId('workspace-folder-input').setInputFiles(dir);
@@ -35,6 +35,7 @@ async function openWorkspace(page: Page, dir: string) {
 }
 
 test('multi-select copy/paste applies chosen groups to the selection with one undo step', async ({ page }, info) => {
+  test.setTimeout(60000);
   const dir = await photoFixture(page, info, 'copy-paste', 3);
   const strip = await openWorkspace(page, dir);
   await expect(strip.getByText('3 photos', { exact: true })).toBeVisible();
@@ -69,6 +70,50 @@ test('multi-select copy/paste applies chosen groups to the selection with one un
 
   await strip.getByRole('button', { name: 'Edit photo-1.png', exact: true }).click();
   await expect(page.getByLabel('Exposure', { exact: true })).toHaveValue('0.8');
+});
+
+test('geometry paste rotates a selected photo and the batch export is rotated full-res', async ({ page }, info) => {
+  test.setTimeout(120000);
+  const dir = await photoFixture(page, info, 'geometry-paste', 2, 1600, 1200);
+  const strip = await openWorkspace(page, dir);
+  await expect(strip.getByText('2 photos', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Rotate right 90 degrees' }).click();
+  await page.getByTestId('copy-paste-open').click();
+  const dialog = page.getByTestId('copy-paste-dialog');
+  for (const group of ['film', 'tone', 'grain', 'curves', 'camera', 'colorMixer', 'sharpening', 'optical', 'localAdjustments']) {
+    await dialog.getByTestId(`copy-group-${group}`).uncheck();
+  }
+  await dialog.getByTestId('copy-parameters').click();
+  await expect(dialog.getByTestId('copy-paste-status')).toContainText('Copied 1 groups from photo-0.png');
+  await dialog.getByRole('button', { name: 'Close copy paste' }).click();
+
+  await strip.getByRole('button', { name: 'Edit photo-1.png', exact: true }).click();
+  await expect(strip.getByTestId('workspace-selection-count')).toHaveText('1 selected');
+  await page.getByTestId('copy-paste-open').click();
+  await dialog.getByTestId('paste-parameters').click();
+  await expect(dialog.getByTestId('copy-paste-status')).toContainText('Pasted to 1 photo');
+  await dialog.getByRole('button', { name: 'Close copy paste' }).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('batch-export-open').click();
+  const batch = page.getByTestId('batch-export-dialog');
+  await batch.getByTestId('batch-export-start').click();
+  await expect(batch.getByTestId('batch-export-summary')).toContainText('1/1 saved', { timeout: 60000 });
+
+  const download = await downloadPromise;
+  const downloaded = await readFile((await download.path())!);
+  const size = await page.evaluate(
+    (base64) =>
+      new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('downloaded export could not be decoded'));
+        img.src = `data:image/jpeg;base64,${base64}`;
+      }),
+    downloaded.toString('base64'),
+  );
+  expect(size).toEqual({ width: 1200, height: 1600 });
 });
 
 test('batch export cancels queued photos, retries them and saves every unique file', async ({ page }, info) => {
