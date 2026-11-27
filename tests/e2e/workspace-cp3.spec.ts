@@ -1,6 +1,9 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
+const RAW_FIXTURE = path.resolve('.private/raw-fixtures/R0000357.DNG');
 
 async function photoFixture(page: Page, info: TestInfo, key: string, count: number, width = 64, height = 48): Promise<string> {
   const dir = path.resolve(`.private/workspace-cp3/fixtures/${info.project.name}/${key}`);
@@ -167,4 +170,52 @@ test('recommendation shows the top three films and applies one locally', async (
   await expect(dialog.getByTestId('recommend-card')).toHaveCount(3);
   await dialog.getByTestId('recommend-apply').first().click();
   await expect(dialog.getByTestId('recommend-status')).toContainText('applied to 1 photo');
+});
+
+test('RAW batch export decodes the full-resolution original, not the preview', async ({ page }, info) => {
+  test.skip(!existsSync(RAW_FIXTURE), `RAW fixture missing at ${RAW_FIXTURE}`);
+  test.setTimeout(300000);
+  const dir = path.resolve(`.private/workspace-cp3/fixtures/${info.project.name}/raw`);
+  await mkdir(dir, { recursive: true });
+  await copyFile(RAW_FIXTURE, path.join(dir, 'R0000357.DNG'));
+
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  const strip = await openWorkspace(page, dir);
+  await expect(strip.getByText('1 photos', { exact: true })).toBeVisible();
+  await strip.getByRole('button', { name: 'Edit R0000357.DNG', exact: true }).click();
+  await expect(strip.getByTestId('workspace-selection-count')).toHaveText('1 selected', { timeout: 120000 });
+
+  const started = Date.now();
+  const downloadPromise = page.waitForEvent('download', { timeout: 240000 });
+  await page.getByTestId('batch-export-open').click();
+  const batch = page.getByTestId('batch-export-dialog');
+  await batch.getByTestId('batch-export-start').click();
+  await expect(batch.getByTestId('batch-export-summary')).toContainText('1/1 saved', { timeout: 240000 });
+  const durationMs = Date.now() - started;
+
+  const download = await downloadPromise;
+  const downloaded = await readFile((await download.path())!);
+  const size = await page.evaluate(
+    (base64) =>
+      new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('downloaded RAW export could not be decoded'));
+        img.src = `data:image/jpeg;base64,${base64}`;
+      }),
+    downloaded.toString('base64'),
+  );
+
+  info.annotations.push(
+    { type: 'raw-export', description: `${size.width}x${size.height} · ${downloaded.byteLength} bytes · ${durationMs} ms` },
+    { type: 'console-errors', description: errors.length ? errors.join(' | ') : 'none' },
+  );
+  expect(size).toEqual({ width: 6000, height: 4000 });
+  expect(download.suggestedFilename()).toBe('R0000357.DNG');
+  expect(errors).toEqual([]);
 });
