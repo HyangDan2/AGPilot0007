@@ -47,10 +47,14 @@ describe('CP3 geometry output size', () => {
     });
   });
 
-  it('expands to the straighten bounding box and multiplies crop', () => {
+  it('keeps dimensions for straighten (cover) and multiplies crop', () => {
     expect(geometryOutputSize(normalizeGeometry({ straighten: 10 }), 4000, 3000)).toEqual({
-      width: 4460,
-      height: 3649,
+      width: 4000,
+      height: 3000,
+    });
+    expect(geometryOutputSize(normalizeGeometry({ straighten: -45 }), 4000, 3000)).toEqual({
+      width: 4000,
+      height: 3000,
     });
     expect(
       geometryOutputSize(
@@ -62,11 +66,7 @@ describe('CP3 geometry output size', () => {
         4000,
         3000,
       ),
-    ).toEqual({ width: 1825, height: 1784 });
-    expect(geometryOutputSize(normalizeGeometry({ straighten: -10 }), 4000, 3000)).toEqual({
-      width: 4460,
-      height: 3649,
-    });
+    ).toEqual({ width: 1500, height: 1600 });
   });
 
   it('rounds deterministically and never emits a zero dimension', () => {

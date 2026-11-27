@@ -2,7 +2,12 @@ import { geometryIsIdentity, type GeometryTransform } from '../contracts/geometr
 import type { OpticalTransform } from '../contracts/optical';
 import { validateImageBuffer, type ImageBuffer } from '../contracts/imageBuffer';
 import type { MaskData } from '../contracts/masks';
-import { geometryOutputToSource, geometryUniforms, GEOMETRY_SHADER_CHUNK, validateGeometryRenderable } from './geometry';
+import {
+  geometryOutputToSource,
+  geometryUniforms,
+  GEOMETRY_SHADER_CHUNK,
+  validateGeometryRenderable,
+} from './geometry';
 import { assertMaskBudget } from './modules';
 import {
   assertOpticalRenderable,
@@ -420,10 +425,10 @@ function renderCpu(
 ): boolean {
   const context = canvas.getContext('2d') as CanvasRenderingContext2D | null;
   if (!context) return false;
-  const sourceAspect = sourceWidth / sourceHeight;
   const pixels = sourcePixels(source, sourceWidth, sourceHeight);
   const image = context.createImageData(outputWidth, outputHeight);
   const out = image.data;
+  const sourceAspect = sourceWidth / sourceHeight;
 
   for (let y = 0; y < outputHeight; y++) {
     const v = (y + 0.5) / outputHeight;

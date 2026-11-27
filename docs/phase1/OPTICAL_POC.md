@@ -592,3 +592,22 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
   전체 스위트는 실행하지 않았다(Q05 1회 소관).
 - **한계**: 8192px를 넘는 source는 WebGL2 texture 한도를 넘으므로 현재 구현에서 업로드 오류로
   거부된다. 초대형 파노라마는 Q01 통합 시 tile 경로 또는 maxTextureSize 사전 검사가 필요하다.
+
+## 14. CP3-02A/B — perspective homography, cover sizing, derived preview/export sizes
+
+- **Perspective homography**: `homographyFromPerspectiveQuad(quad)`는 단위 정사각형(TL, TR, BR, BL)을
+  `PerspectiveQuad`로 옮기는 projective map을 row-major mat3로 풀고 `validateOpticalTransform`으로
+  invertibility를 강제한다(degenerate quad는 `Optical perspective quad is degenerate`).
+  `createPerspectiveTransform(vertical, horizontal)`은 동결 `createPerspectiveQuad(vertical, horizontal)`을
+  그대로 사용해 UI 슬라이더 값을 계약 shape으로 만든다. 두 함수는 `src/engine/optical/transform.ts`에서 export.
+- **Output size (Q00 delta 4 ruling)**: `geometryOutputSize(geometry, srcW, srcH)`는
+  **straighten을 cover/auto-crop으로 취급해 크기를 바꾸지 않는다**. 90/270은 축 swap,
+  crop은 폭·높이 각각 곱하고, 반올림은 축별 1회(`max(1, round(v))`). 02A 초기 bbox 확장은
+  이 ruling으로 폐기했고 관련 bbox shader/mapping도 제거했다.
+- **Preview/export parity**: sourceStage의 GPU 청크(`GEOMETRY_SHADER_CHUNK`)와 CPU mirror
+  (`geometryOutputToSource`) 모두 동결 cover 매핑을 쓰며, aspect는 `rotatedAspect`(90/270에서 swap)를
+  공유한다. fingerprint는 source/output 크기 + geometry + optical을 포함하므로 preview→export 크기
+  변화 시 캐시가 반드시 무효화된다.
+- **검증**: `tests/geometry-output-size-perspective.test.ts`(크기 ruling + homography),
+  `tests/e2e/source-stage-output-size.spec.ts`(rotation 90 + straighten + crop + perspective에서
+  preview/export 동일 NIS 샘플 ≤4/255, 매핑된 사각형의 직각/대변 보존, 크기별 fingerprint 상이).
