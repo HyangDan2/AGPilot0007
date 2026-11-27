@@ -32,6 +32,7 @@ export interface MetadataQuery {
   isoMin?: number;
   isoMax?: number;
   models?: string[];
+  lens?: string[];
   sort?: 'name' | 'date-asc' | 'date-desc' | 'iso-asc' | 'iso-desc';
   limit?: number;
 }
@@ -137,6 +138,7 @@ function compareOptionalDate(a: string | undefined, b: string | undefined, direc
 export function searchMetadata(records: readonly ImageMetadata[], query: MetadataQuery = {}): ImageMetadata[] {
   const needle = query.text?.trim().toLowerCase();
   const models = query.models?.map((model) => model.toLowerCase()).filter(Boolean);
+  const lenses = query.lens?.map((lens) => lens.toLowerCase()).filter(Boolean);
   const filtered = records.filter((record) => {
     if (needle && !haystackFor(record).includes(needle)) return false;
     if (query.dateFrom !== undefined || query.dateTo !== undefined) {
@@ -152,6 +154,10 @@ export function searchMetadata(records: readonly ImageMetadata[], query: Metadat
     if (models?.length) {
       const model = record.cameraModel?.toLowerCase() ?? '';
       if (!models.some((candidate) => model.includes(candidate))) return false;
+    }
+    if (lenses?.length) {
+      const lens = record.lens?.toLowerCase() ?? '';
+      if (!lenses.some((candidate) => lens.includes(candidate))) return false;
     }
     return true;
   });

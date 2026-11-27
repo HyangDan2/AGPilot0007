@@ -1,32 +1,27 @@
-import { CURRENT_SCHEMA_VERSION } from '../../stores/recipeStore';
-import { assertRecipeVersionSupported } from '../../engine/contracts/recipeValidation';
+import { assertRecipeVersionSupported, RECIPE_SCHEMA_MAX } from '../../engine/contracts/recipeValidation';
 import { validateRecipeV8Geometry } from '../../engine/contracts/recipeV8';
 import type { CustomRecipe } from '../../types/film';
 import { createEditState, editStateFromRecipe, recipeFromEditState } from './editState';
 import type { EditState } from './types';
 
 /**
- * Q01's canonical EditState (feature/phase1-pro-engine
- * src/engine/contracts/editState.ts) adds `geometry` to the v7 fields. The Q04
- * PoC cannot import that module before Q01 merges, so this adapter mirrors the
- * shape structurally and treats geometry as opaque: only Q01 normalizeGeometry
- * may inspect or clamp it.
+ * Q01's canonical EditState adds `geometry` to the v7 fields. The PoC now
+ * carries framing itself, so the shared shape only widens geometry to opaque:
+ * only Q01 normalizeGeometry may inspect or clamp a shared geometry value.
  */
-export interface SharedEditState extends EditState {
-  geometry: unknown;
-}
+export type SharedEditState = Omit<EditState, 'geometry'> & { geometry: unknown };
 
-/** Mirrors Q01 RECIPE_SCHEMA_MAX: v8 framing is persisted, older versions stay readable. */
-export const STORED_RECIPE_SCHEMA_MAX = CURRENT_SCHEMA_VERSION;
+/** Mirrors Q01 RECIPE_SCHEMA_MAX: highest storable schema; older versions stay readable. */
+export const STORED_RECIPE_SCHEMA_MAX = RECIPE_SCHEMA_MAX;
 
 /** Attaches framing to a PoC edit state without touching the shared reference. */
 export function toSharedEditState(edit: EditState, geometry: unknown): SharedEditState {
   return { ...edit, geometry };
 }
 
-/** Drops framing; createEditState copies only the known v7 fields. */
+/** Drops the shared framing back to neutral; the opaque value is never reinterpreted here. */
 export function fromSharedEditState(shared: SharedEditState): EditState {
-  return createEditState(shared);
+  return createEditState({ ...shared, geometry: undefined });
 }
 
 /**

@@ -257,7 +257,8 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(shared.geometry).toBe(geometry);
 
     const edit = fromSharedEditState(shared);
-    expect(Object.hasOwn(edit, 'geometry')).toBe(false);
+    expect(edit.geometry).toEqual(IDENTITY_GEOMETRY);
+    expect(edit.geometry).not.toBe(geometry);
     expect(edit.activeFilmId).toBe('FS-003');
     expect(edit.adjustments.exposure).toBe(2);
     expect(shared.geometry).toBe(geometry);
@@ -281,14 +282,15 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(next.activeFilmId).toBe('FS-003');
     expect(next.adjustments.exposure).toBe(2);
     expect(shared.adjustments.exposure).toBe(0);
-    expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(false);
+    expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(true);
+    expect(fromSharedEditState(next).geometry).toEqual(IDENTITY_GEOMETRY);
   });
 
   it('accepts v8 recipes, rejects future versions and malformed geometry', () => {
     const shared = toSharedEditState(createEditState(), geometry);
     const v8 = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-v8', name: 'V8' });
 
-    expect(() => applyStoredRecipeToShared(shared, { ...v8, schemaVersion: 9 })).toThrow('Unsupported recipe version');
+    expect(() => applyStoredRecipeToShared(shared, { ...v8, schemaVersion: 10 })).toThrow('Unsupported recipe version');
     const legacy = { ...v8, schemaVersion: 7 } as CustomRecipe;
     delete (legacy as { geometry?: unknown }).geometry;
     expect(() => applyStoredRecipeToShared(shared, legacy)).not.toThrow();
