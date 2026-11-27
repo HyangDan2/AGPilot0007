@@ -101,7 +101,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 
 ### Integration orders (Q01 — read before continuing)
 
-1. Push `3da2368` and `6550aa0`, then merge Q02 branch tip `cf0fe63` with `--no-ff` (contains `3f5f25d`, `ce06ccd`, `2e7e1b6`, docs-only `394a965`/`9c78983`, and test-only `cf0fe63`).
+1. Push `3da2368` and `6550aa0`, then merge Q02 branch tip `a08cbd2` with `--no-ff` (contains `3f5f25d`, `ce06ccd`, `2e7e1b6`, docs-only `394a965`/`9c78983`, tests `cf0fe63`, helpers `a08cbd2`). Optional but recommended: drop `localStageSeam.ts`'s duplicated base-5 constant in favour of `LOCAL_STAGE_TEXTURE_BASE` / `localStageTextureBudget` / `localStageCacheKey` from `src/engine/local/maskRaster.ts`; the renderer should use the budget helper for the `MAX_TEXTURE_IMAGE_UNITS - 5` clamp and append the output size to the cache key (key covers state only).
 1b. Merge Q04 branch tip `ff8a2a4` with `--no-ff` (adds the batch resolver guard test on top of `294990e`).
 2. Renderer local stage: inject `LOCAL_STAGE_FRAGMENT` (`src/engine/local/maskRaster.ts`) after Color Lab and before detail; mask canvases bind to texture units starting at **5** (ruling), clamp groups to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8); upload `localStageAdjustmentUniforms`, `localStageBlendCode`, opacity and count; build the plan once per (`localAdjustments`, output size) via `planLocalStage({state,width,height,corrected})` — never per frame; null plan keeps the CP2 path byte-identical.
 3. Mount the geometry and mask UI (all currently unimported). Exact exports at `cf0fe63` (verified by Q00 in source; no adapters needed):
@@ -125,7 +125,8 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `2e7e1b6` | cp3-q02-local | 02D masks + 02E local stage seam (maskRaster, mask UI, masks.ts delta 2) | 2026-11-27 | APPROVED — merge `--no-ff` |
 | `394a965` | cp3-q02-local | docs-only: crop comment (post-straighten output NIS) | 2026-11-27 | APPROVED — comment-only, no behavior change |
 | `9c78983` | cp3-q02-local | docs-only: mask texture base 5 ruling in `maskRaster`/POC doc | 2026-11-27 | APPROVED — comment/doc-only; branch tip for Q01 |
-| `cf0fe63` | cp3-q02-local | test-only: zero flow, stroke overlap union, feather scaling | 2026-11-27 | APPROVED — test-only; branch tip for Q01 |
+| `cf0fe63` | cp3-q02-local | test-only: zero flow, stroke overlap union, feather scaling | 2026-11-27 | APPROVED — test-only |
+| `a08cbd2` | cp3-q02-local | `LOCAL_STAGE_TEXTURE_BASE`/`localStageTextureBudget`/`localStageCacheKey` helpers + tests (additive exports only) | 2026-11-27 | APPROVED — merge `--no-ff`; branch tip for Q01 |
 | `ff8a2a4` | cp3-q04-workspace | CP3-04 test-only: batch must pass the decoded image to the shared exporter resolver (no preview read) | 2026-11-27 | APPROVED — merge `--no-ff`; Q04 branch tip |
 
 ### Ledger log
@@ -213,3 +214,4 @@ Independent fresh-clone QA at final integration SHA: full unit/perf/build, singl
 - 2026-11-27: Ledger §3 texture-budget line corrected to base unit 5 (`MAX_TEXTURE_IMAGE_UNITS - 5` clamp); it previously said units 2..9, contradicting the log ruling. Q02 spotted it; superseded text removed.
 - 2026-11-27: Q02 reported a prop-contract compatibility check against `6f363c1` (no code change). Q00 verified the signatures in source at `cf0fe63` (overlay onChange/onDragStart/onDragEnd; panel onGeometryChange/onOpticalChange/onCommitStart/onCommitEnd; reset perspective → `null`). Wiring table added to integration order 3 so Q01 does not need adapters. Q02's offer of a store-bound geometry wrapper declined — mounting is Q01's; Q02 stays standby.
 - 2026-11-27: Found and fixed two wiring errors in ledger order 3 before Q01 could hit them: (a) overlay prop is `hidden`, not `disabled`; (b) there is no `MasksWorkspace` export — public components are `MaskControls` (panel, store-bound) and `MaskEditingOverlay` (viewport, props `aspect/hidden/className/onDragStart/onDragEnd`). Added `geometryOverlayAspect` sizing requirement and an explicit mask history policy (commit=false during gestures; commit on drag end, discrete actions, 300–500 ms idle debounce; equality guards both directions).
+- 2026-11-27: Q02 `a08cbd2` verified by Q00 at SHA: tsc 0; `tests/local-mask-raster.test.ts` 18 PASS. Additive exports only (`LOCAL_STAGE_TEXTURE_BASE=5`, budget clamp `min(8, units-5)` with NaN→0, deterministic sorted-key cache key that filters disabled groups/masks and returns `null` when inert). No behavior change to existing seam. Approved; integration target now `a08cbd2`. Guidance: Q01 may import these instead of duplicating constants; `localStageCacheKey` covers state only, so append the output size for the per-(state,size) plan cache.
