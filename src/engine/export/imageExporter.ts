@@ -4,6 +4,8 @@ import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
 import type { RenderSettings } from '../pipeline/renderSettings';
 import { ExportOptions, PreparedExport } from '../../types/export';
 import { createAbortError, throwIfExportAborted, type ExportControl } from '../contracts/exportControl';
+import { assertRenderPlanParity, runRenderPipeline } from '../pipeline/renderPipeline';
+import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
 
 export type { ExportOptions, PreparedExport };
 
@@ -36,7 +38,7 @@ export async function prepareExportImage(
   control?: ExportControl
 ): Promise<PreparedExport> {
   throwIfExportAborted(control?.signal);
-  const { adjustments, camera, filmId, curves, colorMixer, sharpening } = settings;
+  assertRenderPlanParity(settings);
   onProgress?.(10, 'Initializing export pipeline...');
 
   // Target dimensions preserving exact aspect ratio
@@ -96,16 +98,24 @@ export async function prepareExportImage(
     throwIfExportAborted(control?.signal);
     control?.onStage?.('render');
     onProgress?.(75, 'Applying film color science and tone curves...');
-    renderer.render({
-      adjustments,
-      camera,
-      filmId,
-      curves,
-      colorMixer,sharpening,sourceWidth:image.originalWidth,sourceHeight:image.originalHeight,
-      compareMode: 'none',
-      splitPos: 1.0,
-      seed: 42.0,
-    });
+    await runRenderPipeline(
+      {
+        target: 'export',
+        width: exportWidth,
+        height: exportHeight,
+        dpr: 1,
+        settings,
+        signal: control?.signal,
+        extras: {
+          compareMode: 'none',
+          splitPos: 1,
+          seed: 42,
+          sourceWidth: image.originalWidth,
+          sourceHeight: image.originalHeight,
+        },
+      },
+      createWebGLPipelineBackend(renderer),
+    );
     throwIfExportAborted(control?.signal);
     control?.onStage?.('encode');
     throwIfExportAborted(control?.signal);

@@ -187,6 +187,7 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - `src/engine/contracts/resourceBudget.ts`의 `decideResourceAllocation`/`ResourceBroker`를 Batch Queue와 렌더러가 공유한다. `createRenderSession`의 `finish()`/`cancel()`은 멱등이며 grant를 한 번만 반환한다.
 - `src/engine/contracts/recipeValidation.ts`가 버전 판별·저장 키·저장 가드를 소유한다. 현재 상한은 7이며 Stable/Beta 키는 `RECIPE_STORAGE_KEYS`로 분리된다.
 - 회귀 게이트: `tests/engineContractCorrective.test.ts`(CORE-01~10), `tests/recipeCompat.test.ts`(v1~v7), `tests/e2e/render-parity.spec.ts`(실제 픽셀), `tests/e2e/geometry-contract.spec.ts`(CPU/GPU 매핑).
+- CP2-02 실행기: `src/engine/pipeline/renderPipeline.ts`가 `resolveRenderPlan` 순서대로 `EditModuleRegistry.execute`를 호출하고 RenderSession으로 리소스 수명을 소유한다. Preview는 동기(`runRenderPipelineSync`), Export는 비동기(`runRenderPipeline`) 경로이며 AbortSignal은 단계 경계마다 검사한다. `assertRenderPlanParity`가 Preview/Export 지문 불일치를 차단한다. 기존 WebGL 렌더러는 `src/engine/renderer/webglPipelineBackend.ts` 어댑터로 연결하며, geometry/optical 모듈이 없는 현재는 픽셀 경로가 이전과 같다. Recipe v8 상한은 7로 유지한다(ENGINE_CONTRACT §8.1).
 
 ## E2E 실행 격리 (WO-CP2-00)
 
