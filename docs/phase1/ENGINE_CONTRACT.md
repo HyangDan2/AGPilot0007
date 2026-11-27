@@ -217,24 +217,24 @@ interface EditState {
 
 ## 8. Recipe 버전·저장·v8 계약
 
-- `RECIPE_SCHEMA_MAX = 7`, `CURRENT_SCHEMA_VERSION = 7`이다. v8은 계약 정의만 존재한다.
+- `RECIPE_SCHEMA_MAX = 8`, `CURRENT_SCHEMA_VERSION = 8`이다. 새 레시피와 메모리 마이그레이션 결과는 v8로 쓰고, v1~v8 읽기를 모두 지원한다.
 - 버전 식별과 전체 검증을 분리한다.
   - `detectRecipeSchemaVersion(value)`: 선언된 정수 버전 또는 `null`(판별 전용).
-  - `assertRecipeVersionSupported(value, max=7)`: 누락은 현재 상한으로 간주하고, 0 이하·정수 아님·상한 초과는 `Unsupported recipe version`.
+  - `assertRecipeVersionSupported(value, max=8)`: 누락은 현재 상한으로 간주하고, 0 이하·정수 아님·상한 초과는 `Unsupported recipe version`.
   - `assertRecipePersistable(recipe, storageKey)`: 저장 키와 버전 상한을 함께 검사한다.
 - 저장 키는 `RECIPE_STORAGE_KEYS.stable`/`.beta`로 분리되며 `resolveRecipeStorageKey(baseUrl)`가 `/beta/` 여부로 선택한다. Stable과 Beta 레시피가 섞이지 않는다.
 - `persistRecipes`는 저장 전 `assertRecipePersistable`을 호출한다. 미래 스키마는 IndexedDB에 쓰지 않는다.
-- v1~v7 가져오기에서 `geometry` 등 미승인 필드는 `migrateRecipe`의 명시 필드 구성으로 제거된다.
+- v1~v7 가져오기·로드는 메모리에서 v8로 마이그레이션한다. `geometry`가 없는 레거시 레시피는 `IDENTITY_GEOMETRY`를 얻고, IndexedDB의 기존 v1~v7 레코드는 명시적 저장 전까지 변경되지 않는다. 유효한 `geometry`를 가진 v7 레시피는 무음 제거 없이 그대로 승격된다.
 - `RECIPE_SCHEMA_V8 = 8`, `RecipeV8 = CustomRecipe & { schemaVersion: 8; geometry }`.
-- `toRecipeV8(recipe)`는 기존 v1~v7 정규화 결과에 중립 기하를 추가한다. 8 이상 또는 0 이하 버전은 `Unsupported recipe version for v8 migration`으로 거부한다.
-- `normalizeRecipeV8Geometry`, `validateRecipeV8Geometry`를 제공한다. `validateRecipeV8Geometry`는 `geometry` 래퍼가 없는 flat 객체(`{rotation,...}`), `geometry: undefined/null`, 배열을 `Invalid recipe geometry wrapper`/`Invalid recipe geometry`로 거부한다. 래퍼가 유효해도 세부 오류는 `validateGeometry`가 던진다. flat 입력의 무음 identity 강등은 허용하지 않는다.
-- 실제 스키마 상향·저장 연결은 기하 렌더 구현 체크포인트에서 수행한다.
+- `toRecipeV8(recipe)`는 v1~v7 정규화 결과를 v8로 승격하며 입력을 변경하지 않는다. 8 이상 또는 0 이하 버전은 `Unsupported recipe version for v8 migration`으로 거부한다.
+- `normalizeRecipeV8Geometry`, `validateRecipeV8Geometry`를 제공한다. `validateRecipeV8Geometry`는 `geometry` 래퍼가 없는 flat 객체(`{rotation,...}`), `geometry: undefined/null`, 배열을 `Invalid recipe geometry wrapper`/`Invalid recipe geometry`로 거부하고, 미지의 geometry/crop 필드는 `Unknown recipe geometry field`로 거부한다. 래퍼가 유효해도 세부 오류는 `validateGeometry`가 던진다. flat 입력의 무음 identity 강등은 허용하지 않는다.
+- v8 저장은 `saveCurrentAsRecipe`/`migrateRecipe`에 연결됐다. 기하 UI가 아직 스토어에 없으므로 현재 저장값은 `IDENTITY_GEOMETRY`이며, 가져온 v8 기하 값은 저장·재내보내기에서 보존된다.
 - 마스크·로컬 보정은 v8에 포함하지 않는다.
 
-### 8.1 v8 활성화·롤백 (CP2-02 준비, 아직 비활성)
+### 8.1 v8 활성화·롤백 (2026-11-27 활성, Q00 승인)
 
-- `CURRENT_SCHEMA_VERSION`/`RECIPE_SCHEMA_MAX`는 Q02 geometry 단계가 병합되고 기하 렌더가 Preview/Export에서 검증될 때까지 7을 유지한다. CP2-02는 실행기·문서만 준비하며 상한을 올리지 않는다.
-- 활성화 조건: ① Q02 geometry 모듈이 core registry에 등록되고 Preview/Export 지문이 일치 ② `geometry-contract`·`render-parity` E2E 통과 ③ v7→v8 가져오기/저장 왕복 계약 테스트 통과 ④ Q00 승인. 네 조건이 모두 충족될 때만 상한 8과 저장 연결을 한 커밋에서 바꾼다.
+- `CURRENT_SCHEMA_VERSION`/`RECIPE_SCHEMA_MAX`는 8이다. ① Q02 geometry 모듈 등록·Preview/Export 지문 일치 ② `geometry-contract`·`render-parity` E2E ③ v7→v8 가져오기/저장 왕복 계약 테스트 ④ Q00 승인 — 네 조건을 모두 충족해 2026-11-27 활성화했다.
+- v7 이하 읽기·적용은 무손실이며, v8 가져오기는 geometry 래퍼·값 오류를 명시적으로 거부한다.
 - 롤백: 상한을 7로 되돌리면 `assertRecipeVersionSupported`가 v8 저장을 거부하고 `persistRecipes`는 IndexedDB에 쓰지 않는다. 이미 저장된 v8 레시피는 삭제·다운그레이드하지 않고 "지원하지 않는 버전"으로 남기며, UI 가져오기는 기존 future-version 거부 경로를 그대로 사용한다. `RECIPE_SCHEMA_V8` 타입과 `toRecipeV8`은 유지한다.
 
 ## 9. 리소스 수명과 예산

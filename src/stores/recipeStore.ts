@@ -5,8 +5,15 @@ import {
   RECIPE_SCHEMA_MAX,
   assertRecipePersistable,
   assertRecipeVersionSupported,
+  detectRecipeSchemaVersion,
   resolveRecipeStorageKey,
 } from '../engine/contracts/recipeValidation';
+import { IDENTITY_GEOMETRY } from '../engine/contracts/geometry';
+import {
+  RECIPE_SCHEMA_V8,
+  normalizeRecipeV8Geometry,
+  validateRecipeV8Geometry,
+} from '../engine/contracts/recipeV8';
 
 import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
@@ -19,8 +26,17 @@ export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
     const data = await get<CustomRecipe[]>(RECIPES_IDB_KEY);
     if (!Array.isArray(data)) return [];
-    // Migration handling if schema version changes
-    return data.map((r) => migrateRecipe(r));
+    // Migrate in memory only; stored v1-v7 records stay untouched until an
+    // explicit persistence action rewrites them as v8.
+    const migrated: CustomRecipe[] = [];
+    for (const entry of data) {
+      try {
+        migrated.push(migrateRecipe(entry));
+      } catch (err) {
+        console.error('Skipped invalid stored recipe:', err);
+      }
+    }
+    return migrated;
   } catch (err) {
     console.error('Failed to load recipes from IndexedDB:', err);
     return [];
@@ -37,6 +53,11 @@ export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
 }
 
 function migrateRecipe(recipe: any): CustomRecipe {
+  const declaredVersion = detectRecipeSchemaVersion(recipe);
+  const hasGeometry = !!recipe && typeof recipe === 'object' && Object.prototype.hasOwnProperty.call(recipe, 'geometry');
+  if (hasGeometry || (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V8)) {
+    validateRecipeV8Geometry(recipe);
+  }
   const baseFilmId: FilmId = Object.hasOwn(FILM_PROFILES, recipe.baseFilmId) ? recipe.baseFilmId : 'FS-001';
   const adjustments = { ...DEFAULT_ADJUSTMENTS };
   for (const def of ADJUSTMENT_DEFINITIONS) {
@@ -53,6 +74,7 @@ function migrateRecipe(recipe: any): CustomRecipe {
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
     schemaVersion: CURRENT_SCHEMA_VERSION,
+    geometry: hasGeometry ? normalizeRecipeV8Geometry(recipe) : IDENTITY_GEOMETRY,
     ...normalizeRecipeFeatures(recipe, adjustments),
   };
 }

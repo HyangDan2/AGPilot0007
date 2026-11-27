@@ -11,6 +11,7 @@ import type { CpuImageBuffer, DecodedSource } from '../engine/contracts/imageBuf
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
 import { loadSavedRecipes, persistRecipes, validateRecipeJSON, CURRENT_SCHEMA_VERSION } from './recipeStore';
+import { IDENTITY_GEOMETRY } from '../engine/contracts/geometry';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
 
@@ -494,6 +495,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       schemaVersion: CURRENT_SCHEMA_VERSION,
+      geometry: IDENTITY_GEOMETRY,
       sharpening:normalizeSharpening(state.sharpening),
       colorMixer:normalizeColorMixer(state.colorMixer),
       curves: normalizeCurves(state.curves),

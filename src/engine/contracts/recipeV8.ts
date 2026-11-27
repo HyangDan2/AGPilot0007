@@ -4,9 +4,10 @@ import { normalizeGeometry, validateGeometry, type GeometryTransform } from './g
 export const RECIPE_SCHEMA_V8 = 8;
 
 /**
- * Recipe v8 adds non-destructive framing. It is defined here ahead of the
- * recipeStore wiring so feature work orders can normalize/validate the same
- * shape; CURRENT_SCHEMA_VERSION stays at 7 until CP1 geometry is implemented.
+ * Recipe v8 adds non-destructive framing and is the schema written by the
+ * app. Reading stays backward compatible: v1-v7 records are migrated in
+ * memory, and a v8 record without a geometry wrapper is rejected rather than
+ * silently defaulted.
  */
 export interface RecipeV8 extends CustomRecipe {
   schemaVersion: 8;
@@ -31,6 +32,19 @@ export function validateRecipeV8Geometry(value: unknown): void {
   const geometry = (value as { geometry?: unknown }).geometry;
   if (geometry === null || typeof geometry !== 'object' || Array.isArray(geometry)) {
     throw new Error('Invalid recipe geometry');
+  }
+  const allowed = new Set(['rotation', 'straighten', 'flipHorizontal', 'flipVertical', 'crop']);
+  for (const key of Object.keys(geometry)) {
+    if (!allowed.has(key)) throw new Error(`Unknown recipe geometry field: ${key}`);
+  }
+  const crop = (geometry as { crop?: unknown }).crop;
+  if (crop !== undefined && crop !== null) {
+    if (typeof crop !== 'object' || Array.isArray(crop)) throw new Error('Invalid geometry crop');
+    for (const key of Object.keys(crop)) {
+      if (key !== 'x' && key !== 'y' && key !== 'width' && key !== 'height') {
+        throw new Error(`Unknown recipe geometry crop field: ${key}`);
+      }
+    }
   }
   validateGeometry(geometry);
 }

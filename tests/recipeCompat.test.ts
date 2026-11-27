@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { validateRecipeJSON } from '../src/stores/recipeStore';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
+import { IDENTITY_GEOMETRY, assertRecipeVersionSupported, toRecipeV8 } from '../src/engine/contracts';
+import type { CustomRecipe } from '../src/types/film';
 
-describe('Recipe feature registry compatibility (schemas 1-7)', () => {
+describe('Recipe feature registry compatibility (schemas 1-8)', () => {
   const base = {
     name: 'Compat recipe',
     baseFilmId: 'FS-001',
@@ -17,7 +19,8 @@ describe('Recipe feature registry compatibility (schemas 1-7)', () => {
   for (const version of [1, 2, 3, 4, 5, 6, 7]) {
     it(`migrates schema ${version} to the current version`, () => {
       const parsed = validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: version }));
-      expect(parsed.schemaVersion).toBe(7);
+      expect(parsed.schemaVersion).toBe(8);
+      expect(parsed.geometry).toEqual(IDENTITY_GEOMETRY);
       expect(parsed.adjustments.exposure).toBe(0.4);
       expect(parsed.curves?.white).toEqual([[0, 0], [0.5, 0.6], [1, 1]]);
       expect(parsed.sharpening?.amount).toBe(40);
@@ -45,7 +48,57 @@ describe('Recipe feature registry compatibility (schemas 1-7)', () => {
   });
 
   it('rejects future schema versions', () => {
-    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8 }))).toThrow(/Unsupported recipe version/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 9 }))).toThrow(/Unsupported recipe version/);
+  });
+
+  it('round-trips v8 framing through JSON without losing values', () => {
+    const geometry = {
+      rotation: 270,
+      straighten: -12.5,
+      flipHorizontal: true,
+      flipVertical: false,
+      crop: { x: 0.1, y: 0.2, width: 0.6, height: 0.5 },
+    };
+    const parsed = validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry }));
+    expect(parsed.schemaVersion).toBe(8);
+    expect(parsed.geometry).toEqual(geometry);
+    const reparsed = validateRecipeJSON(JSON.stringify(parsed));
+    expect(reparsed.schemaVersion).toBe(8);
+    expect(reparsed.geometry).toEqual(geometry);
+  });
+
+  it('keeps valid v7 framing when upgrading instead of stripping it', () => {
+    const geometry = { rotation: 90, straighten: 5, flipHorizontal: false, flipVertical: true, crop: null };
+    const parsed = validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 7, geometry }));
+    expect(parsed.schemaVersion).toBe(8);
+    expect(parsed.geometry).toEqual(geometry);
+  });
+
+  it('rejects missing, malformed and unknown geometry instead of silently dropping it', () => {
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8 }))).toThrow(/geometry wrapper/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry: null }))).toThrow(/Invalid recipe geometry/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry: [{ rotation: 90 }] }))).toThrow(/Invalid recipe geometry/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry: { rotation: 45 } }))).toThrow(/Invalid geometry rotation/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry: { rotation: 90, straigthen: 4 } }))).toThrow(/Unknown recipe geometry field/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 8, geometry: { crop: { x: 0.1, y: 0.1, width: 0.5, height: 0.5, rotation: 90 } } }))).toThrow(/Unknown recipe geometry crop field/);
+  });
+
+  it('never mutates a v7 payload or recipe while upgrading; older readers reject v8', () => {
+    const raw = JSON.stringify({ ...base, id: 'legacy-v7', schemaVersion: 7 });
+    const before = JSON.parse(raw);
+    const first = validateRecipeJSON(raw);
+    const second = validateRecipeJSON(raw);
+    expect(JSON.parse(raw)).toEqual(before);
+    expect(first).toEqual(second);
+    expect(first.schemaVersion).toBe(8);
+
+    const v7Recipe = { ...first, schemaVersion: 7, geometry: undefined } as CustomRecipe;
+    const copy = structuredClone(v7Recipe);
+    const upgraded = toRecipeV8(v7Recipe);
+    expect(v7Recipe).toEqual(copy);
+    expect(upgraded.schemaVersion).toBe(8);
+
+    expect(() => assertRecipeVersionSupported(8, 7)).toThrow(/Unsupported recipe version/);
   });
 
   it('rejects invalid camera, curve, sharpening and mixer payloads through the registry', () => {

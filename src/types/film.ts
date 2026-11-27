@@ -2,6 +2,7 @@ import {SharpeningSettings} from './sharpening';
 import type { ColorMixerSettings } from './colorMixer';
 import type { ToneCurves } from './curves';
 import type { CameraSettings, CameraEffect } from './camera';
+import type { GeometryTransform } from '../engine/contracts/geometry';
 export type FilmId =
   | 'identity'
   | 'FS-001'
@@ -72,6 +73,7 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 };
 
 export interface CustomRecipe {
+  geometry?: GeometryTransform;
   sharpening?:SharpeningSettings;
   colorMixer?: ColorMixerSettings;
   curves?: ToneCurves;
