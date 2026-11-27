@@ -107,6 +107,8 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 
 - 2026-11-27: 02A reviewed; homography PASS, straighten output sizing REJECTED; ruling §4 at `c4a6a85`; 02A.1 ordered.
 - 2026-11-27: Q04 pushed `a487591`, `f51fe99`, `1dda64e` (multi-select shared with batch, copy/paste, per-item retry/unique names/reconciliation). Review: scope OK; interim `commitEditStateToEditor` direct history write must be replaced by Q01's `applyParameterGroups`; geometry/optical/local groups, EXIF/recommend UI and E2E still pending.
+- 2026-11-27: Ledger published at `3473234`; distributed to Q01–Q04. Q01 told to publish `applyParameterGroups` signature early and to merge only ledger-listed SHAs (`git merge --no-ff`). Q02 ordered to run 02A.1 → 02B without separate approval. Q03 asked to push the develop API + `resolveOriginal` early. Q04 follow-ups: replace interim history write, add geometry/optical/local groups, EXIF/recommend UI + E2E, `uniqueFilename` consistency test, failed-open selection case.
+- 2026-11-27: Q04 reviewed scope accepted as interim; follow-up items 1–5 outstanding (see above log entry).
 
 ## File Allowlist (no out-of-list edits; request via Q00)
 
