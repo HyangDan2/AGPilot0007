@@ -37,6 +37,7 @@ test('batch export runs the workspace selection with per-photo edits and keeps t
 
   await page.getByLabel('Exposure', { exact: true }).fill('0.8');
   await strip.getByRole('button', { name: 'Edit photo-1.png', exact: true }).click();
+  await expect(page.getByLabel('Exposure', { exact: true })).toHaveValue('0');
   await page.getByLabel('Exposure', { exact: true }).fill('-0.5');
   await strip.getByRole('button', { name: 'Edit photo-0.png', exact: true }).click();
   await expect(page.getByLabel('Exposure', { exact: true })).toHaveValue('0.8');
