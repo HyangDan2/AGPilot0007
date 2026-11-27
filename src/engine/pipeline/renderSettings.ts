@@ -7,6 +7,7 @@ import type { GeometryTransform } from '../contracts/geometry';
 import type { OpticalTransform } from '../contracts/optical';
 import type { MaskData } from '../contracts/masks';
 import type { LocalAdjustmentState } from '../contracts/localAdjustments';
+import type { LocalStagePlan } from './localStageSeam';
 
 export type CompareMode = 'none' | 'original' | 'split';
 
@@ -27,6 +28,8 @@ export interface RenderSettings {
   optical?: OpticalTransform;
   masks?: readonly MaskData[];
   localAdjustments?: LocalAdjustmentState;
+  /** Q02's rasterized plan; null/undefined keeps the CP2 render path untouched. */
+  localStage?: LocalStagePlan | null;
 }
 
 /**
@@ -43,4 +46,17 @@ export interface RenderRequest extends RenderSettings {
   sharpeningDraft?: boolean;
   mixerReference?: boolean;
   mixerVisualize?: string | null;
+}
+
+/**
+ * Q03 develops RAW white balance and exposure into the linear source. When the
+ * develop is non-identity those shader controls must stay at their neutral
+ * defaults, otherwise they would be applied twice.
+ */
+export function withRawDevelopGuard<T extends RenderSettings>(
+  settings: T,
+  develop: { identity: boolean } | null | undefined,
+): T {
+  if (!develop || develop.identity) return settings;
+  return { ...settings, adjustments: { ...settings.adjustments, exposure: 0, temperature: 0, tint: 0 } };
 }

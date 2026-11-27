@@ -2,6 +2,7 @@ import { getMargarinePreset } from '../presets/margarine';
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { prepareExportImage, triggerSafeDownload } from '../engine/export/imageExporter';
+import { withRawDevelopGuard } from '../engine/pipeline/renderSettings';
 import { loadCubeLut } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { PreparedExport, ExportFormat } from '../types/export';
@@ -25,7 +26,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening, geometry, optical, localAdjustments } = useEditorStore();
+  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening, geometry, optical, localAdjustments, rawDevelop } = useEditorStore();
 
   const [stage, setStage] = useState<'config' | 'preparing' | 'ready'>('config');
   const [format, setFormat] = useState<ExportFormat>('image/jpeg');
@@ -127,7 +128,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       const result = await prepareExportImage(
         image,
         lut,
-        { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments },
+        withRawDevelopGuard(
+          { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments },
+          rawDevelop,
+        ),
         {
           format,
           quality: format === 'image/jpeg' ? quality : 1.0,

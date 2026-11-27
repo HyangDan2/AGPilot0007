@@ -1,6 +1,6 @@
 export type RotationQuarter = 0 | 90 | 180 | 270;
 
-/** Crop rectangle in normalized, post-rotation image coordinates (top-left origin). */
+/** Crop rectangle in corrected output NIS, applied post-straighten (last step). */
 export interface CropRect {
   x: number;
   y: number;
@@ -10,7 +10,7 @@ export interface CropRect {
 
 /**
  * Non-destructive framing applied before color processing:
- * quarter-turn rotation, fine straightening, flips, then crop.
+ * flips, quarter-turn rotation, fine straightening (cover/auto-crop), then crop.
  */
 export interface GeometryTransform {
   rotation: RotationQuarter;
