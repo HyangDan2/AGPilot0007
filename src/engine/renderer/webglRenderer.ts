@@ -33,6 +33,7 @@ export class WebGL2FilmRenderer {
   private localMaskTextures: (WebGLTexture | null)[] = [];
   private localPlan: LocalStagePlan | null = null;
   private localPlanMasks: HTMLCanvasElement[] = [];
+  private localGroupCount = 0;
   private warnedLocalBudget = false;
   private stampRect = [0,0,1,1];
   private quadBuffer: WebGLBuffer | null = null;
@@ -103,7 +104,7 @@ export class WebGL2FilmRenderer {
       this.stampTexture = null;
       this.stampKey = '';
       this.curveTexture = null; this.curveKey = '';
-      this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = [];
+      this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
       this.initContext();
       this.onContextRestoredCallback?.();
     });
@@ -453,13 +454,18 @@ export class WebGL2FilmRenderer {
 
   /**
    * Binds Q02 mask canvases from texture unit 5 upward and uploads the group
-   * uniforms. No plan keeps the CP2 path intact (group count stays 0).
+   * uniforms. Without an active plan the CP2 path stays untouched: the group
+   * count is only reset when it was raised before, so inert frames issue no
+   * local-stage GL calls at all.
    */
   private applyLocalStage(gl: WebGL2RenderingContext, plan: LocalStagePlan | null) {
     const countLocation = this.uniforms.u_q02_local_group_count;
     if (!countLocation) return;
     if (!plan || plan.groups.length === 0) {
-      gl.uniform1i(countLocation, 0);
+      if (this.localGroupCount !== 0) {
+        gl.uniform1i(countLocation, 0);
+        this.localGroupCount = 0;
+      }
       this.localPlan = null;
       return;
     }
@@ -470,7 +476,10 @@ export class WebGL2FilmRenderer {
         this.warnedLocalBudget = true;
         console.warn('Local stage skipped: this device has no texture units above the base pipeline.');
       }
-      gl.uniform1i(countLocation, 0);
+      if (this.localGroupCount !== 0) {
+        gl.uniform1i(countLocation, 0);
+        this.localGroupCount = 0;
+      }
       this.localPlan = null;
       return;
     }
@@ -517,6 +526,7 @@ export class WebGL2FilmRenderer {
       adjustC.set(values.c, index * 4);
     }
     gl.uniform1i(countLocation, count);
+    this.localGroupCount = count;
     gl.uniform1fv(this.uniforms['u_q02_local_group_opacity[0]'], opacity);
     gl.uniform1iv(this.uniforms['u_q02_local_group_blend[0]'], blend);
     gl.uniform4fv(this.uniforms['u_q02_local_adjust_a[0]'], adjustA);
@@ -556,7 +566,7 @@ export class WebGL2FilmRenderer {
     if (this.stampTexture) { gl.deleteTexture(this.stampTexture); this.stampTexture = null; }
     if (this.curveTexture) { gl.deleteTexture(this.curveTexture); this.curveTexture = null; }
     for (const texture of this.localMaskTextures) { if (texture) gl.deleteTexture(texture); }
-    this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = [];
+    this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
     if (this.quadBuffer) { gl.deleteBuffer(this.quadBuffer); this.quadBuffer = null; }
     if (this.vao) { gl.deleteVertexArray(this.vao); this.vao = null; }
     if (this.program) {
