@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalAdjustmentState } from '../src/engine/contracts/localAdjustments';
-import type { BrushMask, ColorMask, LinearMask, LuminanceMask, RadialMask } from '../src/engine/contracts/masks';
+import type { BrushMask, ColorMask, LinearMask, LuminanceMask, MaskData, RadialMask } from '../src/engine/contracts/masks';
 import {
   LOCAL_STAGE_FRAGMENT,
+  LOCAL_STAGE_TEXTURE_BASE,
   composeMaskStack,
   localStageAdjustmentUniforms,
   localStageBlendCode,
+  localStageCacheKey,
+  localStageTextureBudget,
   planLocalStage,
   rasterizeMask,
   type CorrectedPixels,
@@ -294,8 +297,52 @@ describe('local stage plan seam', () => {
     expect(localStageBlendCode('intersect')).toBe(2);
   });
 
-  it('publishes a GLSL ES 3.00 fragment with unrolled group sampling', () => {
-    expect(LOCAL_STAGE_FRAGMENT).toContain('uniform sampler2D u_q02_local_masks[8]');
+  const activeState = (
+    adjustment: Record<string, number> = {},
+    mask: MaskData = linear(),
+  ): LocalAdjustmentState => ({
+    enabled: true,
+    groups: [
+      { id: 'g', name: 'Group', enabled: true, masks: [mask], adjustment, opacity: 1, blend: 'add' },
+    ],
+  });
+
+  it('clamps the mask texture budget from base 5', () => {
+    expect(LOCAL_STAGE_TEXTURE_BASE).toBe(5);
+    expect(localStageTextureBudget(16)).toEqual({ base: 5, groupLimit: 8 });
+    expect(localStageTextureBudget(40)).toEqual({ base: 5, groupLimit: 8 });
+    expect(localStageTextureBudget(12)).toEqual({ base: 5, groupLimit: 7 });
+    expect(localStageTextureBudget(8)).toEqual({ base: 5, groupLimit: 3 });
+    expect(localStageTextureBudget(4)).toEqual({ base: 5, groupLimit: 0 });
+    expect(localStageTextureBudget(Number.NaN)).toEqual({ base: 5, groupLimit: 0 });
+  });
+
+  it('derives a stable cache key from active groups', () => {
+    expect(localStageCacheKey({ enabled: false, groups: [] })).toBeNull();
+
+    const first = localStageCacheKey(activeState({ exposure: 0.5 }));
+    expect(first).not.toBeNull();
+    expect(localStageCacheKey(activeState({ exposure: 0.5 }))).toBe(first);
+    expect(localStageCacheKey(activeState({ exposure: 0.7 }))).not.toBe(first);
+    expect(localStageCacheKey(activeState({}, { ...linear(), enabled: false }))).toBeNull();
+
+    const baseMask = linear();
+    const reorderedMask = {
+      feather: baseMask.feather,
+      kind: baseMask.kind,
+      end: { y: baseMask.end.y, x: baseMask.end.x },
+      start: { y: baseMask.start.y, x: baseMask.start.x },
+      blend: baseMask.blend,
+      opacity: baseMask.opacity,
+      inverted: baseMask.inverted,
+      enabled: baseMask.enabled,
+      name: baseMask.name,
+      id: baseMask.id,
+    } as typeof baseMask;
+    expect(localStageCacheKey(activeState({}, reorderedMask))).toBe(localStageCacheKey(activeState()));
+  });
+
+  it('publishes a GLSL ES 3.00 fragment with unrolled group sampling', () => {    expect(LOCAL_STAGE_FRAGMENT).toContain('uniform sampler2D u_q02_local_masks[8]');
     expect(LOCAL_STAGE_FRAGMENT).toContain('uniform int u_q02_local_group_count');
     expect(LOCAL_STAGE_FRAGMENT).toContain('vec3 q02_local_stage(vec3 color, vec2 uv)');
     expect(LOCAL_STAGE_FRAGMENT.match(/texture\(u_q02_local_masks\[\d\]/g)).toHaveLength(8);

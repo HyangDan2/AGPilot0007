@@ -356,6 +356,55 @@ export interface LocalStageAdjustmentUniforms {
   c: [number, number, number, number];
 }
 
+/** First texture unit owned by the local stage (image 0, LUT 1, date 2, curves 3, detail 4). */
+export const LOCAL_STAGE_TEXTURE_BASE = 5;
+
+export interface LocalStageTextureBudget {
+  base: number;
+  groupLimit: number;
+}
+
+/**
+ * Groups the renderer may bind without exceeding the device texture limit.
+ * Planning still produces every active group; the renderer clamps binding.
+ */
+export function localStageTextureBudget(maxTextureImageUnits: number): LocalStageTextureBudget {
+  const units = Number.isFinite(maxTextureImageUnits) ? Math.floor(maxTextureImageUnits) : 0;
+  return {
+    base: LOCAL_STAGE_TEXTURE_BASE,
+    groupLimit: Math.max(0, Math.min(MAX_LOCAL_GROUPS, units - LOCAL_STAGE_TEXTURE_BASE)),
+  };
+}
+
+function sortObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (value && typeof value === 'object') {
+    const source = value as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(source).sort()) sorted[key] = sortObjectKeys(source[key]);
+    return sorted;
+  }
+  return value;
+}
+
+/**
+ * Deterministic key for renderer-side plan caching (state + output size).
+ * Call on state changes, not per frame; returns null when the stage is inert.
+ */
+export function localStageCacheKey(state: LocalAdjustmentState): string | null {
+  if (!localAdjustmentsActive(state)) return null;
+  const groups = state.groups
+    .filter((group) => group.enabled)
+    .map((group) => ({
+      id: group.id,
+      opacity: group.opacity,
+      blend: group.blend,
+      adjustment: group.adjustment,
+      masks: group.masks.filter((mask) => mask.enabled),
+    }));
+  return JSON.stringify(sortObjectKeys(groups));
+}
+
 /** Maps a group's adjustment values to the three vec4 uniform slots. */
 export function localStageAdjustmentUniforms(values: LocalAdjustmentValues): LocalStageAdjustmentUniforms {
   return {

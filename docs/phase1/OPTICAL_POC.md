@@ -666,6 +666,12 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
   adjustment vec4 매핑은 `localStageAdjustmentUniforms`가 담당한다. 텍스처 유닛은 Q00 ruling대로
   **base 5**(그룹 8개면 5..12)에서 시작하고 Q01은 `MAX_TEXTURE_IMAGE_UNITS - 5`로 그룹 수를 clamp한다
   (min-16 기기는 8그룹 허용). 바인딩/cache는 Q01 renderer 통합 소관이다.
+- **Integration helpers (additive, Q00 invite)**: `LOCAL_STAGE_TEXTURE_BASE = 5`와
+  `localStageTextureBudget(maxTextureImageUnits) -> { base, groupLimit }`가 디바이스별 바인딩 한도를
+  `min(MAX_LOCAL_GROUPS, units - 5)`로 계산한다(계획은 항상 전 그룹을 만들고 renderer가 clamp).
+  `localStageCacheKey(state) -> string | null`은 활성 그룹의 id/opacity/blend/adjustment/활성 마스크를
+  key-sort한 JSON으로 직렬화한 결정적 캐시 키이며 비활성 상태는 `null`. 프레임마다가 아니라
+  state 변경 시 1회 계산하고 output 크기와 함께 cache key로 쓴다.
 - **검증**: `tests/e2e/local-stage-contract.spec.ts`가 headless WebGL2에서 chunk를 컴파일·링크하고
   count/coverage/exposure/blend 조합 6종의 픽셀을 CPU 기대값과 ≤2/255로 비교한다. tsc 0, vitest
-  38 files / 341 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
+  38 files / 343 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
