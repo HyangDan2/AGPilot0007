@@ -4,7 +4,7 @@
 - 작업 브랜치: `feature/phase1-q02-optical`
 - 기준 Commit: `b850f82e0eb3fc33c76619f5dee9eec3e8a4890a` (`origin/main`)
 - CP1 Commit: `0b5e6caa6aa19b34d778ed8f36886e8cb7434384`
-- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 완료 + G1 최종 동기화 + CP2-03 모듈 경계 구현 완료.**
+- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 완료 + G1 최종 동기화 + CP2-03 모듈 경계·sourceStage 구현 완료.**
   OPT-01~05 교정, OPT-06~07 기술 검증·본개발 설계, Q01 `OpticalTransform` 어댑터·예산 측정 완료. Q01
   `feature/phase1-pro-engine`을 `21fd6dc` → G1 `4dea9b6` → CP2 `37a3796`까지 병합해 계약 소스를 직접
   교차 검증한다. P2-02(하네스 한도 문구), P2-03(계수 정책 **Closed**: Q01 `c67d533` 계약 채택), Silent
@@ -532,3 +532,63 @@ CP2-03 기준 `37a3796`을 `cceb863`으로 병합한 뒤, Q01 공통 파일을 �
   Q02는 registry/module/uniform 청크까지 제공하며, runner가 `execute`에서 이 청크를 바인딩하면
   Preview/Export 동일 경로가 된다. `RenderSettings.optical` 필드 추가도 공유 파일 변경이므로 Q01
   통합 시점에 맞춘다.
+
+### 13.1 CP2-03 seam (a) — `sourceStage.ts`
+
+Q00 승인(seam (a))에 따라 Q02 소유 파일 하나와 테스트만 추가했다. 동결 계약(`src/engine/contracts/*`)
+5개 blob과 Q01 shared 파일(`renderPipeline.ts`, `webglPipelineBackend.ts`, `Viewport.tsx`,
+`imageExporter.ts`, `renderSettings.ts`)은 수정하지 않았다.
+
+| 파일 | 역할 |
+|------|------|
+| `src/engine/optical/sourceStage.ts` | 동기 `renderSourceStage(input)` + `sourceStageFingerprint`, optical→geometry 역매핑, WebGL2/2D fallback, source+fingerprint 캐시 |
+| `tests/source-stage.test.ts` | 5 unit tests: identity null, geometry/optical/mask 게이트 3종, fingerprint 안정성 |
+| `tests/e2e/source-stage.spec.ts` | 64×48 합성 그라디언트 5점 CPU 매핑 일치, 캐시 재계산 없음(texImage2D 계수) |
+| `tests/e2e/source-stage-budget.spec.ts` | 12MP/24MP 1회 warp 시간·픽셀 메모리·캐시 시간 측정 |
+
+API(동결 시그니처):
+
+```ts
+renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
+// input: { source, sourceWidth, sourceHeight, output: {width,height}, geometry?, optical?, masks? }
+// result: { canvas: OffscreenCanvas | HTMLCanvasElement, width, height, fingerprint }
+```
+
+- **동기**: Q01 preview의 `runRenderPipelineSync` 안에서 호출할 수 있고 Promise를 반환하지 않는다.
+- **순서**: 출력 NIS → `geometryOutputToSource` → `opticalCorrectedToSource` → 원본 텍셀 샘플.
+  광학이 먼저 적용된 corrected NIS를 기하가 자르고 회전하는 파이프라인 순서(optical → geometry)의
+  역매핑이다. Geometry aspect는 원본 `sourceWidth/sourceHeight`를 쓰고, 내부 rotate aspect는 동결
+  `rotatedAspect`가 처리한다.
+- **게이트**: warp 전에 `validateGeometryRenderable` → `assertOpticalRenderable` → `assertMaskBudget(product)`
+  를 호출하므로 실패 메시지는 기존 모듈과 동일하다(`Invalid geometry straighten`,
+  `Optical distortion is not invertible in the image domain`, `Invalid masks: at most 16 masks`).
+- **identity**: geometry·optical이 모두 identity면 `null`. 유효한 마스크만 있는 경우도 `null`이며
+  기존 `setImage` 경로가 픽셀 비용 0으로 유지된다.
+- **결정성/캐시**: fingerprint는 source/output 크기 + 정규화된 geometry + optical만 해시한다(FNV-1a 2-lane).
+  마스크는 budget 검증만 하고 corrected NIS 메타데이터로 남기므로 source 픽셀을 바꾸지 않아 fingerprint에서
+  제외했다. 캐시는 마지막 1건을 `source` 객체 identity + fingerprint로 키잉하고, hit이면 동일 canvas를
+  그대로 반환한다(추가 텍스처 업로드 0회).
+- **출력**: `OffscreenCanvas` 우선, 없으면 `document.createElement('canvas')`. WebGL2가 없으면 CPU
+  bilinear warp + `ImageData` 2D fallback, 둘 다 없으면 명시 예외. rgba8 CPU `ImageBuffer`를 받고
+  float/GPU 버퍼는 8-bit canvas 결과와 색공간이 달라 조용히 변환하지 않고 거부한다.
+- **예산 실측**(Chromium/SwiftShader, 8192 max texture): 12MP warp **83.9–88.5ms**, 24MP
+  **157.8–174.2ms**, 캐시 hit **0.1–0.5ms**. 픽셀 메모리 추정은 12MP **144MB**, 24MP **288MB**
+  (source texture + output canvas, source canvas backing 제외). JS heap 증가는 0으로 측정됐고 canvas
+  backing은 heap 밖이다. 24MP single warp는 60fps 예산을 넘으므로 **드래그 중 half-res preview**는
+  필요 시 제안 단계로만 남긴다. Export는 항상 full-resolution이며 무단 다운스케일하지 않는다.
+- **Q01 통합 훅(제안, Q01 소유)**:
+  - `src/engine/export/imageExporter.ts:94` `renderer.setImage(image.originalElement, ...)` 직전에
+    `import { renderSourceStage } from '../optical/sourceStage';` 후
+    `output: { width: exportWidth, height: exportHeight }`, `source`는 `image.originalElement`.
+  - `src/components/Viewport.tsx:329`(이미지 변경) / `:279`(renderer 초기화) / `:260`(context 복구)의
+    `renderer.setImage(...)` 직전에 preview canvas/치수로 동일 호출.
+  - 결과가 `null`이면 기존 `setImage` 인자를 그대로 사용하고, 결과가 있으면
+    `renderer.setImage(result.canvas, result.width, result.height)`로 교체한다.
+  - source stage가 기하·광학을 이미 적용하므로 Q01은 이 경로에서 `settings.geometry`/`optical`을
+    컬러 파이프라인에 다시 넘기지 않아야 이중 변환이 없다. 마스크는 계속 corrected NIS로 local
+    stage에 전달한다.
+- **검증(직렬, `E2E_PORT=5273`, `--project=chromium`)**: `tsc` 0 errors, `npm test` **25 files/221 tests**,
+  선택 E2E **24 passed**(기존 광학 17 + optical-stage 2 + geometry-contract + render-parity + 신규 3).
+  전체 스위트는 실행하지 않았다(Q05 1회 소관).
+- **한계**: 8192px를 넘는 source는 WebGL2 texture 한도를 넘으므로 현재 구현에서 업로드 오류로
+  거부된다. 초대형 파노라마는 Q01 통합 시 tile 경로 또는 maxTextureSize 사전 검사가 필요하다.
