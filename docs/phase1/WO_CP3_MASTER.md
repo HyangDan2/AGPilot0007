@@ -79,6 +79,35 @@ export const LOCAL_STAGE_FRAGMENT: string; // GLSL ES 3.00, shared by preview an
 
 PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine only after Q00 approval. No engineer merges another branch.
 
+## Shared Ledger Rules (PO directive 2026-11-27)
+
+- This file is the common ledger when cross-session messaging is limited. Every engineer fetches pro-engine and reads the latest version **before starting work that depends on another agent**.
+- Q00 alone appends/updates this ledger. Engineers do not edit it.
+- Only SHAs listed under **Approved integrations** may be merged into pro-engine, by Q01 with `git merge --no-ff <sha>`, without further approval (PO directive: Q00 manages integration autonomously).
+- A report claiming a push is not integration approval; Q00 verifies the remote SHA and code first.
+
+### Dependencies
+
+| Dependency | Route | State |
+| --- | --- | --- |
+| geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A `bd0d352` rejected for straighten sizing; 02A.1 in progress |
+| `applyParameterGroups` + new edit groups | Q01 → Q04 | Q01 in progress; Q04 interim direct history write must be replaced |
+| geometry/optical/localAdjustments state + actions | Q01 → Q02 | Q01 in progress |
+| `planLocalStage` + GLSL chunk | Q02 → Q01 | pending (02E) |
+| RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | Q03 in progress |
+| batch resolver compatibility | Q03 → Q04 | pending |
+
+### Approved integrations
+
+| SHA | Branch | Scope | Approved | State |
+| --- | --- | --- | --- | --- |
+| `bd0d352` | cp3-q02-local | 02A homography only | 2026-11-27 | NOT mergeable until 02A.1 (straighten sizing superseded) |
+
+### Ledger log
+
+- 2026-11-27: 02A reviewed; homography PASS, straighten output sizing REJECTED; ruling §4 at `c4a6a85`; 02A.1 ordered.
+- 2026-11-27: Q04 pushed `a487591`, `f51fe99`, `1dda64e` (multi-select shared with batch, copy/paste, per-item retry/unique names/reconciliation). Review: scope OK; interim `commitEditStateToEditor` direct history write must be replaced by Q01's `applyParameterGroups`; geometry/optical/local groups, EXIF/recommend UI and E2E still pending.
+
 ## File Allowlist (no out-of-list edits; request via Q00)
 
 - **Q01:** `src/stores/editorStore.ts`, `src/stores/recipeStore.ts`, `src/engine/contracts/recipeV8.ts`, `recipeValidation.ts`, new `recipeV9.ts`, `src/types/film.ts`, `src/components/Viewport.tsx`, `ExportModal.tsx`, `AdjustmentPanel.tsx`, `src/engine/pipeline/*`, `src/engine/renderer/*`, `src/engine/export/imageExporter.ts`, `src/engine/contracts/renderPlan.ts` (local stage id only if required).
