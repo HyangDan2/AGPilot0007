@@ -34,8 +34,9 @@ const MOUNT_HARNESS = async () => {
 const localState = (page: any) =>
   page.evaluate(() => (window as any).__maskStore.getState().local);
 
-test('mask panel creates masks, edits adjustments and drags handles', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Mask editing runs in Chromium');
+test('mask panel creates masks, edits adjustments and drags handles', async ({ page }) => {
+  // The harness is a fixed 756px desktop layout; mobile-chromium also reports browserName chromium.
+  test.skip(test.info().project.name !== 'chromium', 'Desktop mask harness runs in Chromium');
   await page.goto('/');
   await page.evaluate(MOUNT_HARNESS);
   await expect(page.getByTestId('mask-panel')).toBeVisible();
@@ -200,8 +201,9 @@ test('planLocalStage matches preview and export at geometry-scaled sizes', async
   expect(result.preview[1].value).toBe(0);
 });
 
-test('mask capacity is blocked with explicit messages and overlay hides in compare', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Mask capacity UI runs in Chromium');
+test('mask capacity is blocked with explicit messages and overlay hides in compare', async ({ page }) => {
+  // Same fixed-width harness; mobile-chromium also reports browserName chromium.
+  test.skip(test.info().project.name !== 'chromium', 'Desktop mask harness runs in Chromium');
   await page.goto('/');
   await page.evaluate(MOUNT_HARNESS);
 

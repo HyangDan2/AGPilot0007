@@ -47,3 +47,16 @@ export interface RenderRequest extends RenderSettings {
   mixerReference?: boolean;
   mixerVisualize?: string | null;
 }
+
+/**
+ * Q03 develops RAW white balance and exposure into the linear source. When the
+ * develop is non-identity those shader controls must stay at their neutral
+ * defaults, otherwise they would be applied twice.
+ */
+export function withRawDevelopGuard<T extends RenderSettings>(
+  settings: T,
+  develop: { identity: boolean } | null | undefined,
+): T {
+  if (!develop || develop.identity) return settings;
+  return { ...settings, adjustments: { ...settings.adjustments, exposure: 0, temperature: 0, tint: 0 } };
+}

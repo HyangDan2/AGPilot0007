@@ -8,8 +8,8 @@ import type { RenderSettings } from '../../src/engine/pipeline/renderSettings';
  * documented tolerance allows resampling only (mean ≤ 6, max p99 ≤ 24).
  * Identity geometry must stay pixel-exact against the CP2 path.
  */
-test('preview and export agree for rotated, cropped and straightened geometry at derived sizes', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'WebGL2 parity runs in Chromium');
+test('preview and export agree for rotated, cropped and straightened geometry at derived sizes', async ({ page }) => {
+  test.skip(test.info().project.name !== 'chromium', 'WebGL2 parity runs in desktop Chromium');
   test.slow();
   await page.goto('/');
 

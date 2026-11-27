@@ -8,12 +8,14 @@ import { ToneCurveOverlay, Histogram } from './ToneCurve';
 import { histogramFromPixels } from '../engine/color/userCurves';
 import { getMargarinePreset } from '../presets/margarine';
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
-import { useEditorStore } from '../stores/editorStore';
+import { useEditorStore, startMaskBridge } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
 import { createWebGLPipelineBackend, type WebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
 import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
+import { withRawDevelopGuard } from '../engine/pipeline/renderSettings';
 import { geometryOutputSize } from '../engine/optical/geometry';
 import { GeometryOverlay } from './geometry/GeometryOverlay';
+import { MaskEditingOverlay } from './masks/MasksWorkspace';
 import { createQ02RenderRegistry } from '../engine/optical/modules';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
@@ -67,6 +69,7 @@ export const Viewport: React.FC = () => {
     geometry,
     optical,
     localAdjustments,
+    rawDevelop,
     isCropEditing,
     setGeometry,
     compareMode,
@@ -140,12 +143,18 @@ export const Viewport: React.FC = () => {
   cameraRef.current = camera;
   const adjustmentsRef = useRef(adjustments);
   adjustmentsRef.current = adjustments;
+  const rawDevelopRef = useRef(rawDevelop);
+  rawDevelopRef.current = rawDevelop;
   const compareModeRef = useRef(compareMode);
   compareModeRef.current = compareMode;
   const splitPosRef = useRef(splitPos);
   splitPosRef.current = splitPos;
   const isPressHoldingRef = useRef(isPressHolding);
   isPressHoldingRef.current = isPressHolding;
+
+  useEffect(() => {
+    startMaskBridge();
+  }, []);
 
   // Persistent ResizeObserver observing container size
   useEffect(() => {
@@ -227,7 +236,7 @@ export const Viewport: React.FC = () => {
           sourceWidth:current.previewWidth,
           sourceHeight:current.previewHeight,
           registry:renderRegistryRef.current,
-          settings:{
+          settings: withRawDevelopGuard({
             adjustments: adjustmentsRef.current,
             camera: cameraRef.current,
             curves: curvesRef.current,
@@ -237,7 +246,7 @@ export const Viewport: React.FC = () => {
             geometry: geometryRef.current,
             optical: opticalRef.current ?? undefined,
             localAdjustments: localRef.current,
-          },
+          }, rawDevelopRef.current),
           extras:{
             sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
             mixerVisualize:visualizeRef.current,
@@ -639,7 +648,7 @@ export const Viewport: React.FC = () => {
     const rect=canvas.getBoundingClientRect(),u=(clientX-rect.left)/rect.width,v=(clientY-rect.top)/rect.height;
     if(u<0||u>1||v<0||v>1)return null;
     const x=Math.min(canvas.width-1,Math.floor(u*canvas.width)),y=Math.min(canvas.height-1,Math.floor(v*canvas.height));
-    const options={sharpening:state.sharpening,sharpeningMask:state.sharpeningMask,sourceWidth:state.image?.originalWidth,sourceHeight:state.image?.originalHeight,adjustments:state.adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
+    const options={sharpening:state.sharpening,sharpeningMask:state.sharpeningMask,sourceWidth:state.image?.originalWidth,sourceHeight:state.image?.originalHeight,adjustments:withRawDevelopGuard({adjustments:state.adjustments},state.rawDevelop).adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
     try{
       renderer.render({...options,compareMode:'none',mixerReference:true,mixerVisualize:null});
       const sx=Math.max(0,x-1),sy=Math.max(0,canvas.height-1-y-1),w=Math.min(3,canvas.width-sx),h=Math.min(3,canvas.height-sy);
@@ -703,40 +712,49 @@ export const Viewport: React.FC = () => {
           <ImageDropzone />
         ) : (
           <>
-            {/* Render container with pan/zoom transform */}
+            {/* Render container with pan/zoom transform. The canvas stays its
+                direct child so canvas.parentElement is the scaled element. */}
             <div
               style={{
+                width: `${displaySize.width}px`,
+                height: `${displaySize.height}px`,
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: 'center center',
                 transition: isPanning || isDraggingSplit || activeTouchesRef.current.size > 1 ? 'none' : 'transform 0.05s ease-out',
               }}
-              className="relative flex items-center justify-center shadow-2xl flex-shrink-0 touch-none"
+              className="relative shadow-2xl flex-shrink-0 touch-none"
             >
-              <div
-                className="relative"
-                style={{ width: `${displaySize.width}px`, height: `${displaySize.height}px` }}
-              >
-                <canvas
-                  ref={handleCanvasRef}
-                  style={{
-                    width: `${displaySize.width}px`,
-                    height: `${displaySize.height}px`,
+              <canvas
+                ref={handleCanvasRef}
+                style={{
+                  width: `${displaySize.width}px`,
+                  height: `${displaySize.height}px`,
+                }}
+                className="rounded border border-[color:var(--ui-border-1e2430)] bg-[var(--ui-bg-11141a)] block shadow-lg"
+              />
+              {isCropEditing && image && (
+                <GeometryOverlay
+                  className="absolute inset-0 z-10"
+                  geometry={geometry}
+                  hidden={isPressHolding || compareMode === 'original'}
+                  onChange={(patch) => setGeometry({ ...useEditorStore.getState().geometry, ...patch }, false)}
+                  onDragEnd={() => {
+                    const state = useEditorStore.getState();
+                    state.setGeometry(state.geometry, true);
                   }}
-                  className="rounded border border-[color:var(--ui-border-1e2430)] bg-[var(--ui-bg-11141a)] block shadow-lg"
                 />
-                {isCropEditing && image && (
-                  <GeometryOverlay
-                    className="absolute inset-0 z-10"
-                    geometry={geometry}
-                    hidden={isPressHolding || compareMode === 'original'}
-                    onChange={(patch) => setGeometry({ ...useEditorStore.getState().geometry, ...patch }, false)}
-                    onDragEnd={() => {
-                      const state = useEditorStore.getState();
-                      state.setGeometry(state.geometry, true);
-                    }}
-                  />
-                )}
-              </div>
+              )}
+              {image && (
+                <MaskEditingOverlay
+                  className="absolute inset-0 z-10"
+                  aspect={displaySize.width / Math.max(1, displaySize.height)}
+                  hidden={isPressHolding || compareMode === 'original'}
+                  onDragEnd={() => {
+                    const state = useEditorStore.getState();
+                    state.setLocalAdjustments(state.localAdjustments, true);
+                  }}
+                />
+              )}
 
               {/* Interactive Split Divider Handle (placed over actual image display rect) */}
               {compareMode === 'split' && (

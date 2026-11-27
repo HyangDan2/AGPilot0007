@@ -3,11 +3,12 @@ import { ColorMixerButton } from './ColorMixer';
 import { ToneCurveButton } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
 import { GeometryPanel } from './geometry/GeometryPanel';
+import { MaskControls } from './masks/MasksWorkspace';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { ADJUSTMENT_DEFINITIONS, AdjustmentCategory, CATEGORY_LABELS } from '../types/adjustments';
-import { Sun, Droplets, Sparkles, Sliders, X, ChevronDown, Crop } from 'lucide-react';
+import { Sun, Droplets, Sparkles, Sliders, X, ChevronDown, Crop, Layers } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<AdjustmentCategory, React.ReactNode> = {
   film: <Sliders className="w-3.5 h-3.5" />,
@@ -22,6 +23,7 @@ interface AdjustmentPanelProps {
 
 export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => {
   const {
+    image,
     adjustments,
     setAdjustment,
     resetAdjustments,
@@ -69,34 +71,45 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
       {/* Adjustments Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
         <p className="text-[10px] text-[color:var(--ui-text-slate400)]">{RESET_VALUE_HINT}</p>
-        <section className="space-y-2">
-          <div className="flex items-center gap-1.5 border-b border-[color:var(--ui-border-1b212c)] pb-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-amber-400)]/90">
-            <Crop className="w-3.5 h-3.5" />
-            <span className="flex-1">Geometry</span>
-            <button
-              type="button"
-              aria-pressed={isCropEditing}
-              aria-label="Toggle crop editing"
-              onClick={() => setCropEditing(!isCropEditing)}
-              className={`rounded border px-2 py-0.5 text-[10px] normal-case tracking-normal transition-colors ${isCropEditing ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]' : 'border-[color:var(--ui-border-1e2430)] text-[color:var(--ui-text-c8cfda)] hover:border-[color:var(--ui-accent)]'}`}
-            >
-              Crop
-            </button>
-          </div>
-          <GeometryPanel
-            className="p-0"
-            geometry={geometry}
-            optical={optical}
-            onGeometryChange={(patch) =>
-              setGeometry({ ...useEditorStore.getState().geometry, ...patch }, false)
-            }
-            onOpticalChange={(next) => setOptical(next, false)}
-            onCommitEnd={() => {
-              const state = useEditorStore.getState();
-              state.applyParameterGroups({ geometry: state.geometry, optical: state.optical });
-            }}
-          />
-        </section>
+        {image && (
+          <section className="space-y-2">
+            <div className="flex items-center gap-1.5 border-b border-[color:var(--ui-border-1b212c)] pb-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-amber-400)]/90">
+              <Crop className="w-3.5 h-3.5" />
+              <span className="flex-1">Geometry</span>
+              <button
+                type="button"
+                aria-pressed={isCropEditing}
+                aria-label="Toggle crop editing"
+                onClick={() => setCropEditing(!isCropEditing)}
+                className={`rounded border px-2 py-0.5 text-[10px] normal-case tracking-normal transition-colors ${isCropEditing ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]' : 'border-[color:var(--ui-border-1e2430)] text-[color:var(--ui-text-c8cfda)] hover:border-[color:var(--ui-accent)]'}`}
+              >
+                Crop
+              </button>
+            </div>
+            <GeometryPanel
+              className="p-0"
+              geometry={geometry}
+              optical={optical}
+              onGeometryChange={(patch) =>
+                setGeometry({ ...useEditorStore.getState().geometry, ...patch }, false)
+              }
+              onOpticalChange={(next) => setOptical(next, false)}
+              onCommitEnd={() => {
+                const state = useEditorStore.getState();
+                state.applyParameterGroups({ geometry: state.geometry, optical: state.optical });
+              }}
+            />
+          </section>
+        )}
+        {image && (
+          <section className="space-y-2">
+            <div className="flex items-center gap-1.5 border-b border-[color:var(--ui-border-1b212c)] pb-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-amber-400)]/90">
+              <Layers className="w-3.5 h-3.5" />
+              <span className="flex-1">Masks</span>
+            </div>
+            <MaskControls className="max-w-full" />
+          </section>
+        )}
         {categories.map((cat) => {
           const items = ADJUSTMENT_DEFINITIONS.filter((d) => d.category === cat && d.key !== 'sharpness');
           return (

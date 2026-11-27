@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedImage } from '../src/engine/image/decoder';
 import type { DecodedSource } from '../src/engine/contracts/imageBuffer';
-import { decodeEditorImage } from '../src/stores/editorStore';
+import { decodeEditorImage, useEditorStore } from '../src/stores/editorStore';
 import { decodeImageFile } from '../src/engine/image/decoder';
-import { openRawForEditing } from '../src/engine/raw';
+import { getRawDevelopInfo, openRawForEditing } from '../src/engine/raw';
+import { withRawDevelopGuard } from '../src/engine/pipeline/renderSettings';
+import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 
 vi.mock('../src/engine/image/decoder', () => ({ decodeImageFile: vi.fn() }));
-vi.mock('../src/engine/raw', () => ({ openRawForEditing: vi.fn() }));
+vi.mock('../src/engine/raw', () => ({ openRawForEditing: vi.fn(), getRawDevelopInfo: vi.fn() }));
 
 const fakeSource = {
   id: 'raw-test',
@@ -56,6 +58,7 @@ let originalCreateObjectURL: typeof URL.createObjectURL;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getRawDevelopInfo).mockReturnValue(null);
   originalCreateObjectURL = URL.createObjectURL;
   URL.createObjectURL = vi.fn(() => 'blob:raw-test');
 });
@@ -113,5 +116,32 @@ describe('decodeEditorImage routing', () => {
 
     await expect(decodeEditorImage(file)).rejects.toThrow(/memory budget/);
     expect(decodeImageFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('RAW develop state and shader guard', () => {
+  it('exposes the develop info with the opened source and drops it for non-RAW images', async () => {
+    const info = { settings: {}, report: {}, identity: false, width: 6000, height: 4000 } as never;
+    vi.mocked(openRawForEditing).mockResolvedValue(opened);
+    vi.mocked(getRawDevelopInfo).mockReturnValue(info);
+    const file = new File(['raw'], 'sample.cr3', { type: 'image/x-cr3' });
+
+    const result = await decodeEditorImage(file);
+    useEditorStore.getState().setImage(result.image, result.rawSource);
+    expect(useEditorStore.getState().rawDevelop).toBe(info);
+
+    const plain = { name: 'photo.jpg', sourceUrl: 'blob:jpeg' } as DecodedImage;
+    useEditorStore.getState().setImage(plain);
+    expect(useEditorStore.getState().rawDevelop).toBeNull();
+  });
+
+  it('neutralizes shader exposure and white balance only when the develop is non-identity', () => {
+    const settings = { adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1.2, temperature: 30, tint: -12 } };
+
+    expect(withRawDevelopGuard(settings, null)).toBe(settings);
+    expect(withRawDevelopGuard(settings, { identity: true })).toBe(settings);
+    const guarded = withRawDevelopGuard(settings, { identity: false });
+    expect(guarded.adjustments).toMatchObject({ exposure: 0, temperature: 0, tint: 0 });
+    expect(guarded.adjustments.contrast).toBe(DEFAULT_ADJUSTMENTS.contrast);
   });
 });

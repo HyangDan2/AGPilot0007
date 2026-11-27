@@ -61,8 +61,9 @@ const MOUNT_HARNESS = async () => {
   return true;
 };
 
-test('crop overlay drives geometry with pointer and keyboard', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Overlay interaction runs in Chromium');
+test('crop overlay drives geometry with pointer and keyboard', async ({ page }) => {
+  // The harness is a fixed desktop layout; mobile-chromium also reports browserName chromium.
+  test.skip(test.info().project.name !== 'chromium', 'Desktop overlay harness runs in Chromium');
   await page.goto('/');
   await page.evaluate(MOUNT_HARNESS);
   const overlay = page.getByTestId('geometry-overlay');
@@ -130,8 +131,9 @@ test('overlay is hidden in compare/original mode', async ({ page, browserName })
   await expect(page.locator('#hidden-overlay-host')).toBeEmpty();
 });
 
-test('geometry panel rotate, flip, straighten and perspective controls commit real state', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Panel interaction runs in Chromium');
+test('geometry panel rotate, flip, straighten and perspective controls commit real state', async ({ page }) => {
+  // The harness is a fixed desktop layout; mobile-chromium also reports browserName chromium.
+  test.skip(test.info().project.name !== 'chromium', 'Desktop overlay harness runs in Chromium');
   await page.goto('/');
   await page.evaluate(MOUNT_HARNESS);
   await expect(page.getByTestId('geometry-panel').first()).toBeVisible();
