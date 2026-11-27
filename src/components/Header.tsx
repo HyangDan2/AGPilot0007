@@ -15,7 +15,7 @@ import {
   AppWindow,
   ExternalLink,
 } from 'lucide-react';
-import { useEditorStore } from '../stores/editorStore';
+import { decodeEditorImage, useEditorStore } from '../stores/editorStore';
 import { decodeImageFile } from '../engine/image/decoder';
 import { getAssetUrl } from '../utils/assets';
 
@@ -47,8 +47,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenRecipes, onOpenExport }) =
     if (!file) return;
     e.target.value='';
     try {
-      const decoded = await decodeImageFile(file);
-      setImage(decoded);
+      const { image: decoded, rawSource } = await decodeEditorImage(file);
+      setImage(decoded, rawSource);
       setView('editor');
       setIsMenuOpen(false);
     } catch (err) {
