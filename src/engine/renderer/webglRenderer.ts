@@ -40,6 +40,7 @@ export class WebGL2FilmRenderer {
   private currentLutSize: number = 33;
   private isContextLost = false;
   private isInitialized = false;
+  private destroyed = false;
 
   private onContextRestoredCallback?: () => void;
 
@@ -54,20 +55,21 @@ export class WebGL2FilmRenderer {
   }
 
   public isReady(): boolean {
-    return this.isInitialized && !this.isContextLost && this.gl !== null && this.program !== null;
+    return !this.destroyed && this.isInitialized && !this.isContextLost && this.gl !== null && this.program !== null;
   }
 
   public getMaxTextureSize(): number {
-    if (!this.gl || this.isContextLost) return 4096;
+    if (this.destroyed || !this.gl || this.isContextLost) return 4096;
     return this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE) || 4096;
   }
 
   public getMaxRenderbufferSize(): number {
-    if (!this.gl || this.isContextLost) return 4096;
+    if (this.destroyed || !this.gl || this.isContextLost) return 4096;
     return this.gl.getParameter(this.gl.MAX_RENDERBUFFER_SIZE) || 4096;
   }
 
   private initContext(): boolean {
+    if (this.destroyed) return false;
     const gl = this.canvas.getContext('webgl2', {
       alpha: true,
       antialias: false,
@@ -91,12 +93,14 @@ export class WebGL2FilmRenderer {
   private setupContextLossHandling() {
     this.canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
+      if (this.destroyed) return;
       console.warn('WebGL2 context lost.');
       this.isContextLost = true;
       this.isInitialized = false;
     });
 
     this.canvas.addEventListener('webglcontextrestored', () => {
+      if (this.destroyed) return;
       console.log('WebGL2 context restored. Reinitializing pipeline...');
       this.detailTarget?.dispose();this.detailTarget=null;
       this.imageTexture = null;
@@ -552,6 +556,8 @@ export class WebGL2FilmRenderer {
   }
 
   public destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     const gl = this.gl;
     if (!gl) return;
     if(this.detailTarget){this.detailTarget.dispose();this.detailTarget=null;}
@@ -573,6 +579,12 @@ export class WebGL2FilmRenderer {
       gl.deleteProgram(this.program);
       this.program = null;
     }
+    // Export canvases are single-use and detached; without an explicit loss
+    // Chromium keeps the context alive and repeated export/cancel cycles
+    // exhaust the page's budget. Attached canvases (viewport, loupe) may be
+    // reused by a new renderer, so their context must stay restorable.
+    const lose = gl.getExtension('WEBGL_lose_context');
+    if (lose && !this.canvas.isConnected) lose.loseContext();
     this.isInitialized = false;
     this.gl = null;
   }
