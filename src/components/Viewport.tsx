@@ -12,6 +12,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
 import { createWebGLPipelineBackend, type WebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
 import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
+import { geometryOutputSize } from '../engine/optical/geometry';
 import { createQ02RenderRegistry } from '../engine/optical/modules';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
@@ -177,8 +178,7 @@ export const Viewport: React.FC = () => {
     const availW = Math.max(10, availContainerW - pad * 2);
     const availH = Math.max(10, availContainerH - pad * 2);
 
-    const imgW = image.previewWidth;
-    const imgH = image.previewHeight;
+    const { width: imgW, height: imgH } = geometryOutputSize(geometry, image.previewWidth, image.previewHeight);
 
     const fitScale = Math.min(availW / imgW, availH / imgH);
     const fittedW = Math.max(1, Math.round(imgW * fitScale));
@@ -207,7 +207,8 @@ export const Viewport: React.FC = () => {
         const effectiveMode = isPressHoldingRef.current ? 'original' : compareModeRef.current;
         const current=imageRef.current,canvas=canvasRef.current;
         const draft=draftRef.current&&sharpRef.current.mode==='advanced'&&(sharpRef.current.amount>0||maskRef.current)&&effectiveMode!=='original';
-        const target=sharpeningPreviewSize(current.previewWidth,current.previewHeight,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
+        const out=geometryOutputSize(geometryRef.current,current.previewWidth,current.previewHeight);
+        const target=sharpeningPreviewSize(out.width,out.height,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
         if(canvas&&(canvas.width!==target.width||canvas.height!==target.height)){canvas.width=target.width;canvas.height=target.height;}
         const pipelineBackend=pipelineBackendRef.current??(pipelineBackendRef.current=createWebGLPipelineBackend(renderer));
         runRenderPipelineSync({
@@ -294,8 +295,9 @@ export const Viewport: React.FC = () => {
 
     const curImg = imageRef.current;
     if (curImg) {
-      node.width = curImg.previewWidth;
-      node.height = curImg.previewHeight;
+      const out = geometryOutputSize(geometryRef.current, curImg.previewWidth, curImg.previewHeight);
+      node.width = out.width;
+      node.height = out.height;
       renderer.setImage(curImg.previewCanvas, curImg.previewWidth, curImg.previewHeight);
     }
 
@@ -341,8 +343,9 @@ export const Viewport: React.FC = () => {
     const renderer = rendererRef.current;
 
     if (canvas) {
-      canvas.width = image.previewWidth;
-      canvas.height = image.previewHeight;
+      const out = geometryOutputSize(useEditorStore.getState().geometry, image.previewWidth, image.previewHeight);
+      canvas.width = out.width;
+      canvas.height = out.height;
     }
 
     if (renderer && renderer.isReady()) {
