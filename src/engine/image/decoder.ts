@@ -11,6 +11,17 @@ export interface DecodedImage {
   previewWidth: number;
   previewHeight: number;
   originalElement: HTMLImageElement;
+  /**
+   * RAW sources resolve the full-resolution original lazily (develop + demosaic
+   * at export size). JPEG/PNG/WebP images leave this undefined and use
+   * `originalElement` directly.
+   */
+  resolveOriginal?: () => Promise<HTMLImageElement>;
+}
+
+/** Exporters call this so RAW originals are developed only when actually rendered. */
+export function resolveDecodedImageOriginal(image: DecodedImage): Promise<HTMLImageElement> {
+  return image.resolveOriginal ? image.resolveOriginal() : Promise.resolve(image.originalElement);
 }
 
 export async function decodeImageFile(file: File | Blob, name = 'photo.jpg', signal?:AbortSignal): Promise<DecodedImage> {
