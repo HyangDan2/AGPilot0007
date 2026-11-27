@@ -626,3 +626,45 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 - **모드**: `hidden` prop이면 렌더하지 않으므로 compare/original에서 host가 그대로 내리면 된다.
 - **검증**: `tests/cropGeometry.test.ts` 7개, E2E 실브라우저에서 실제 컴포넌트를 마운트해 드래그/키보드/
   패널 조작 3개(`tests/e2e/geometry-overlay.spec.ts`). tsc 0.
+
+## 16. CP3-02D — Mask engine, mask UI, capacity reporting
+
+- **Rasterizer** (`src/engine/local/maskRaster.ts`): brush/linear/radial는 기하학만으로, luminance/color는
+  corrected 픽셀을 받아 coverage(0..1)를 만든다. 반경·feather·stroke 거리는 **short-side 정규화 좌표**
+  (`toShortSide`: 중심 기준, 긴 축을 짧은 축으로 스케일)를 쓰므로 preview(96×72)와 export(192×144)에서
+  같은 NIS 지점의 coverage가 ≤8/255 이내로 일치한다(E2E로 확인). brush는 `hardness` 내부 plateau +
+  `smoothstep` feather, stroke 단위 A-buffer union, `flow` 스탬프 배율. invert는 마스크 단위 마지막에 적용.
+- **Stack compose**: 배열 순서대로 `add`(union), `subtract`(`base*(1-v)`), `intersect`(`base*v`)에
+  마스크 opacity를 곱해 합성한다. 비활성 마스크는 건너뛴다.
+- **계약 delta 2 (authorized)**: `src/engine/contracts/masks.ts`에 `MASK_LIMITS`와
+  `normalizeMasksDetailed(value) -> { masks, dropped }`를 추가하고 `normalizeMasks`는 위임만 한다.
+  `validateMasks`는 그대로 strict(초과 시 throw). 잘림은 machinery가 보고하고 UI가 표면화한다.
+- **UI**: `src/stores/maskUiStore.ts`(그룹/마스크 CRUD, 용량 가드, import 시 dropped 집계),
+  `src/components/masks/MaskListPanel.tsx`(그룹/마스크 목록·이름·enable·invert·blend·opacity +
+  `LOCAL_ADJUSTMENT_KEYS` 슬라이더, 8그룹/16마스크 초과 시 명시적 notice),
+  `MaskOverlay.tsx`(corrected-NIS 핸들: linear start/end, radial center/radius, brush point; 드래그/키보드,
+  compare/original용 `hidden`), `MasksWorkspace.tsx`(store 바인딩된 `MaskControls`/`MaskEditingOverlay`).
+  Q01은 controlled props 또는 store 바인딩 컴포넌트를 Viewport/사이드바에 그대로 배치하면 된다.
+- **검증**: `tests/masks-limits.test.ts`(masks/strokes/points dropped 수, normalize 위임, strict 유지),
+  `tests/local-mask-raster.test.ts`(hardness/flow/feather, 해상도 독립, invert, compose 3종, plan 게이트),
+  E2E `tests/e2e/mask-editor.spec.ts`(실컴포넌트로 마스크 생성·조정·핸들 드래그, preview/export parity,
+  16마스크/8그룹 초과 메시지, hidden 모드).
+
+## 17. CP3-02E — Frozen local stage seam
+
+- **API**: `planLocalStage({ state, width, height, corrected }) -> LocalStagePlan | null`.
+  `LocalStagePlan = { width, height, groups: LocalStageGroup[], masks: HTMLCanvasElement[] }`,
+  `LocalStageGroup = { adjustment, opacity, blend }`이며 groups는 `state.groups`와 같은 순서(활성 그룹만),
+  masks는 그룹당 1장, RGB에 coverage를 담는다. 비활성 상태면 `null` → renderer는 CP2 경로와 byte-identical.
+  크기는 integer>0 이어야 하고(아니면 throw), 8그룹 초과는 `Too many local adjustment groups`로 막는다.
+- **좌표/실행 순서**: basis `corrected-nis`, `LOCAL_ADJUSTMENT_EXECUTION_ORDER = ['colorLab','local','detail']`.
+  luminance/color 마스크가 있을 때만 corrected 픽셀을 읽는다(`needsPixels`).
+- **GLSL ES 3.00**: `LOCAL_STAGE_FRAGMENT`는 `u_q02_local_masks[8]`, count/opacity/blend,
+  `u_q02_local_adjust_a/b/c[8]` 슬롯을 노출하고 `q02_local_stage(color, uv)`를 제공한다. sampler 배열은
+  드라이버 호환을 위해 8회 unroll(constant index)했고, `dFdx/dFdy`는 비분기 prologue에서 1회 계산해
+  `q02_local_adjust`에 scalar로 넘긴다. blend int는 `localStageBlendCode`(add=0/subtract=1/intersect=2),
+  adjustment vec4 매핑은 `localStageAdjustmentUniforms`가 담당한다. 텍스처 유닛은 image=0, LUT=1일 때
+  2..9(최대 8장)이며 Q01 renderer 통합 소관이다.
+- **검증**: `tests/e2e/local-stage-contract.spec.ts`가 headless WebGL2에서 chunk를 컴파일·링크하고
+  count/coverage/exposure/blend 조합 6종의 픽셀을 CPU 기대값과 ≤2/255로 비교한다. tsc 0, vitest
+  38 files / 341 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
