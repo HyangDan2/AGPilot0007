@@ -13,6 +13,7 @@ import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
 import { createWebGLPipelineBackend, type WebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
 import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
 import { geometryOutputSize } from '../engine/optical/geometry';
+import { GeometryOverlay } from './geometry/GeometryOverlay';
 import { createQ02RenderRegistry } from '../engine/optical/modules';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
@@ -66,6 +67,8 @@ export const Viewport: React.FC = () => {
     geometry,
     optical,
     localAdjustments,
+    isCropEditing,
+    setGeometry,
     compareMode,
     setCompareMode,
     splitPos,
@@ -76,6 +79,10 @@ export const Viewport: React.FC = () => {
     setZoomAndPan,
     resetZoomPan,
   } = useEditorStore();
+
+  // Crop editing shows the uncropped corrected frame so the overlay and canvas
+  // share one coordinate space; the committed render applies the crop again.
+  const frameGeometry = isCropEditing ? { ...geometry, crop: null } : geometry;
 
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
     width: 0,
@@ -122,7 +129,7 @@ export const Viewport: React.FC = () => {
   },[mixerTool,image]);
   const isToneCurveOpenRef = useRef(isToneCurveOpen); isToneCurveOpenRef.current = isToneCurveOpen;
   const curvesRef = useRef(curves); curvesRef.current = curves;
-  const geometryRef = useRef(geometry); geometryRef.current = geometry;
+  const geometryRef = useRef(frameGeometry); geometryRef.current = frameGeometry;
   const opticalRef = useRef(optical); opticalRef.current = optical;
   const localRef = useRef(localAdjustments); localRef.current = localAdjustments;
   const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -178,7 +185,7 @@ export const Viewport: React.FC = () => {
     const availW = Math.max(10, availContainerW - pad * 2);
     const availH = Math.max(10, availContainerH - pad * 2);
 
-    const { width: imgW, height: imgH } = geometryOutputSize(geometry, image.previewWidth, image.previewHeight);
+    const { width: imgW, height: imgH } = geometryOutputSize(frameGeometry, image.previewWidth, image.previewHeight);
 
     const fitScale = Math.min(availW / imgW, availH / imgH);
     const fittedW = Math.max(1, Math.round(imgW * fitScale));
@@ -360,7 +367,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, geometry, optical, localAdjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, geometry, optical, localAdjustments, isCropEditing, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -705,14 +712,31 @@ export const Viewport: React.FC = () => {
               }}
               className="relative flex items-center justify-center shadow-2xl flex-shrink-0 touch-none"
             >
-              <canvas
-                ref={handleCanvasRef}
-                style={{
-                  width: `${displaySize.width}px`,
-                  height: `${displaySize.height}px`,
-                }}
-                className="rounded border border-[color:var(--ui-border-1e2430)] bg-[var(--ui-bg-11141a)] block shadow-lg"
-              />
+              <div
+                className="relative"
+                style={{ width: `${displaySize.width}px`, height: `${displaySize.height}px` }}
+              >
+                <canvas
+                  ref={handleCanvasRef}
+                  style={{
+                    width: `${displaySize.width}px`,
+                    height: `${displaySize.height}px`,
+                  }}
+                  className="rounded border border-[color:var(--ui-border-1e2430)] bg-[var(--ui-bg-11141a)] block shadow-lg"
+                />
+                {isCropEditing && image && (
+                  <GeometryOverlay
+                    className="absolute inset-0 z-10"
+                    geometry={geometry}
+                    hidden={isPressHolding || compareMode === 'original'}
+                    onChange={(patch) => setGeometry({ ...useEditorStore.getState().geometry, ...patch }, false)}
+                    onDragEnd={() => {
+                      const state = useEditorStore.getState();
+                      state.setGeometry(state.geometry, true);
+                    }}
+                  />
+                )}
+              </div>
 
               {/* Interactive Split Divider Handle (placed over actual image display rect) */}
               {compareMode === 'split' && (

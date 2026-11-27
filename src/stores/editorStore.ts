@@ -148,6 +148,8 @@ interface EditorState extends MixerUI {
   geometry: GeometryTransform;
   optical: OpticalTransform | null;
   localAdjustments: LocalAdjustmentState;
+  isCropEditing: boolean;
+  setCropEditing: (value: boolean) => void;
   setGeometry: (value: GeometryTransform, commit?: boolean) => void;
   setOptical: (value: OpticalTransform | null, commit?: boolean) => void;
   setLocalAdjustments: (value: LocalAdjustmentState, commit?: boolean) => void;
@@ -229,6 +231,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   colorMixer: defaultColorMixer(),
   isColorMixerOpen: false,
+  isCropEditing: false,
   mixerTab: 'mixer', mixerView: 'color', mixerAxis: 'hue', mixerColor: 'red', mixerPointId: null,
   mixerTool: 'none', mixerVisualize: false, mixerMessage: '',
   setMixerUI: patch => set(patch),
@@ -342,6 +345,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const history=[...state.history.slice(0,state.historyIndex+1),snapshot].slice(-50);
     set({...snapshot,history,historyIndex:history.length-1,canUndo:history.length>1,canRedo:false});
   },
+  setCropEditing: (value) => set({ isCropEditing: value }),
   setGeometry: (value, commit = true) => {
     const state=get(), geometry=normalizeGeometry(value);
     if(!commit){set({geometry});return;}
@@ -411,6 +415,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       camera, geometry, optical, localAdjustments,
       history: [snapshot], historyIndex: 0, canUndo: false, canRedo: false,
       isColorMixerOpen:false,mixerPointId:null,
+      isCropEditing:false,
       sharpeningMask:false,isSharpeningDragging:false,detailZoomReturn:null,
       image: img,
       rawSource,
