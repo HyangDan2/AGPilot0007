@@ -101,7 +101,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 
 ### Integration orders (Q01 — read before continuing)
 
-1. Merge `2e7e1b6` (02D/02E) with `--no-ff` after pushing `3da2368` and `6550aa0`.
+1. Push `3da2368` and `6550aa0`, then merge Q02 branch tip `9c78983` with `--no-ff` (contains `3f5f25d`, `ce06ccd`, `2e7e1b6` + docs-only `394a965`, `9c78983`).
 2. Renderer local stage: inject `LOCAL_STAGE_FRAGMENT` (`src/engine/local/maskRaster.ts`) after Color Lab and before detail; mask canvases bind to texture units starting at **5** (ruling), clamp groups to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8); upload `localStageAdjustmentUniforms`, `localStageBlendCode`, opacity and count; build the plan once per (`localAdjustments`, output size) via `planLocalStage({state,width,height,corrected})` — never per frame; null plan keeps the CP2 path byte-identical.
 3. Mount `GeometryOverlay` + `GeometryPanel` and `MasksWorkspace`/`MaskListPanel`/`MaskOverlay` (all currently unimported). Geometry: drag -> `setGeometry(next,false)`, release -> commit; optical likewise. Masks: `maskUiStore.local` edits commit via `setLocalAdjustments(next, commit)`; `editorStore.localAdjustments` changes (undo/recipe/`applyParameterGroups`) push back via `maskUiStore.setLocal` with an equality guard. Pass group masks into `RenderSettings.masks`.
 4. E2E 5173: rotate+crop+straighten+perspective edit -> export parity; radial mask + exposure -> export parity at mask center/edge; identity byte-equal regressions for both.
@@ -116,6 +116,8 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `ce06ccd` | cp3-q02-local | 02C crop overlay + geometry/perspective panel (new components only) | 2026-11-27 | APPROVED — merge `--no-ff`; NOT yet user-visible until Q01 mounts |
 | `294990e` | cp3-q04-workspace | CP3-04 follow-ups on `applyParameterGroups`, 10 groups, batch/handler fixes | 2026-11-27 | APPROVED — merge `--no-ff` after Q01's current push |
 | `2e7e1b6` | cp3-q02-local | 02D masks + 02E local stage seam (maskRaster, mask UI, masks.ts delta 2) | 2026-11-27 | APPROVED — merge `--no-ff` |
+| `394a965` | cp3-q02-local | docs-only: crop comment (post-straighten output NIS) | 2026-11-27 | APPROVED — comment-only, no behavior change |
+| `9c78983` | cp3-q02-local | docs-only: mask texture base 5 ruling in `maskRaster`/POC doc | 2026-11-27 | APPROVED — comment/doc-only; branch tip for Q01 |
 
 ### Ledger log
 
@@ -131,6 +133,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 - 2026-11-27: Q03 CP3-03 report: `a18bc08`, no blocker; fixtures local-only/untracked; bundle index 543.93 kB, lazy raw 61.35 kB; integration steps in PR #23 body. Q03 now idle, on standby for exporter E2E after Q01 wiring.
 - 2026-11-27: Q01 pushed `6f363c1` to pro-engine (state/history/v9/`applyParameterGroups`, render settings + backend source stage). Verified locally at `36813a7`: tsc 0, 89 tests PASS (cp3Core 12, recipeCompat 15, q04Workspace 20, engineContractCorrective 32, retro90 10). Gaps ordered: preview/export dims from `geometryOutputSize`, exporter resolver must not swallow failures, use typed `resolveDecodedImageOriginal`, RAW open via `openRawForEditing`, local stage inert until 02E. Accepted cross-owner edit `src/poc/q04/editStateAdapter.ts` (schema max 9); Q04 must not revert.
 - 2026-11-27: Q03 `a18bc08` verified by Q00 at SHA: tsc 0; `rawDevelop`/`rawColorMatrix`/`rawMemory`/`rawParity` 13 tests PASS incl. real 6000x4000 DNG retained set ≤128 MiB and preview/full parity (mean 1.10, p99 7). Approved for merge as engine seam; Q01 owns `openRawForEditing` wiring and exporter resolver use.
+- 2026-11-27: Q02 tips `394a965` (crop comment) and `9c78983` (texture-base-5 comment in `maskRaster` + POC doc) verified docs-only (`2e7e1b6..9c78983` = 3 files, comment/doc lines only). No behavior change; approval carries. Integration order updated: Q01 merges Q02 branch tip `9c78983`. Q02 standby for integration defects.
 
 ## File Allowlist (no out-of-list edits; request via Q00)
 
