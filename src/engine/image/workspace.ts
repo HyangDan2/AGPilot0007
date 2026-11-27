@@ -1,5 +1,6 @@
 export interface WorkspaceEntry { id:string; name:string; path:string; getFile:()=>Promise<File> }
-export const isWorkspacePhoto=(name:string)=>/\.(jpe?g|png|webp)$/i.test(name);
+/** Static regex only: this module is in the eager bundle and must never reach engine/raw (flashraw/wasm). */
+export const isWorkspacePhoto=(name:string)=>/\.(jpe?g|png|webp|cr2|cr3|nef|arw|raf|orf|dng|rw2|pef|srw|x3f)$/i.test(name);
 export function entriesFromFiles(files:File[],includeSubfolders=false):WorkspaceEntry[]{
  return [...files].sort((a,b)=>(a.webkitRelativePath||a.name).localeCompare(b.webkitRelativePath||b.name,undefined,{numeric:true})).filter(f=>isWorkspacePhoto(f.name)&&(includeSubfolders||!f.webkitRelativePath||f.webkitRelativePath.split('/').length<=2)).map((f,i)=>({id:f.webkitRelativePath||`${i}/${f.name}`,name:f.name,path:f.webkitRelativePath||f.name,getFile:async()=>f}));
 }

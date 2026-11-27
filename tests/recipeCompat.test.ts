@@ -84,7 +84,8 @@ describe('Recipe feature registry compatibility (schemas 1-8)', () => {
   });
 
   it('never mutates a v7 payload or recipe while upgrading; older readers reject v8', () => {
-    const raw = JSON.stringify({ ...base, id: 'legacy-v7', schemaVersion: 7 });
+    // Explicit createdAt: the Date.now() default would make two parses differ by 1 ms.
+    const raw = JSON.stringify({ ...base, id: 'legacy-v7', schemaVersion: 7, createdAt: 1700000000000 });
     const before = JSON.parse(raw);
     const first = validateRecipeJSON(raw);
     const second = validateRecipeJSON(raw);
