@@ -54,7 +54,15 @@ export const LOCAL_STAGE_FRAGMENT: string; // GLSL ES 3.00, shared by preview an
 - Preview builds the plan at preview size; export at export size; identical math and mask basis (`corrected-nis`).
 - Max 8 group textures (units 2..9 if image=0, LUT=1); Q01 verifies the budget.
 
-### 4. RAW develop seam — Q03 implements, Q01/Q04 integrate
+### 4. Geometry sizing semantics — Q00 ruling on CP3-02A
+
+- Straighten is **cover / auto-crop**: it must NOT change output dimensions. The CP2 shader zooms (`scale` divisor) so no empty borders appear; expanding the canvas would stretch the image.
+- `geometryOutputSize = (rotation 90/270 ? swapped source dims : source dims) × crop`, rounded once per axis.
+- Crop is applied in post-straighten output NIS (forward order: flip → rotate → straighten → crop), matching `q02_geometry_output_to_source`.
+- Straighten uses the **post-rotation aspect** (swap aspect for 90/270) in both the GLSL chunk and the CPU mirror. Parity tests must cover rotation 90 + straighten + crop.
+- `contracts/geometry.ts`'s crop comment may be clarified (comment-only change, approved).
+
+### 5. RAW develop seam — Q03 implements, Q01/Q04 integrate
 
 - No `imageBuffer` contract change. RAW metadata/file handle is kept inside `src/engine/raw/*` (WeakMap keyed by `DecodedSource`).
 - `DecodedImage` gains optional `resolveOriginal?: () => Promise<HTMLImageElement>`; RAW sets `originalElement` to the preview canvas and provides a full-res resolver. JPEG path unchanged.
@@ -70,6 +78,43 @@ export const LOCAL_STAGE_FRAGMENT: string; // GLSL ES 3.00, shared by preview an
 | Q04 | `feature/phase1-cp3-q04-workspace` | pro-engine | new Draft |
 
 PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine only after Q00 approval. No engineer merges another branch.
+
+## Shared Ledger Rules (PO directive 2026-11-27)
+
+- This file is the common ledger when cross-session messaging is limited. Every engineer fetches pro-engine and reads the latest version **before starting work that depends on another agent**.
+- Q00 alone appends/updates this ledger. Engineers do not edit it.
+- Only SHAs listed under **Approved integrations** may be merged into pro-engine, by Q01 with `git merge --no-ff <sha>`, without further approval (PO directive: Q00 manages integration autonomously).
+- A report claiming a push is not integration approval; Q00 verifies the remote SHA and code first.
+
+### Dependencies
+
+| Dependency | Route | State |
+| --- | --- | --- |
+| geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A.1 `3f5f25d` VERIFIED (cover sizing, rotated-aspect CPU/GPU mirror, e2e at derived sizes); approved for merge |
+| `applyParameterGroups` + new edit groups | Q01 → Q04 | AVAILABLE at `6f363c1` (`ParameterGroupsPatch`); Q04 must switch off its interim history write |
+| geometry/optical/localAdjustments state + actions | Q01 → Q02 | `6f363c1` on pro-engine (state, history, v9, `applyParameterGroups`); UI wiring by Q02 02C |
+| `planLocalStage` + GLSL chunk | Q02 → Q01 | pending (02E) |
+| RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED + Q03 CP3-03 reported complete (retained 92.56 MB, parity mean 1.101/p99 7); approved for merge; Q01 wiring: `openRawForEditing` in store, `resolveDecodedImageOriginal` in exporter, no silent fallback |
+| batch resolver compatibility | Q03 → Q04 | `resolveDecodedImageOriginal(image)` available in `a18bc08`; Q04 to use it in batch |
+
+### Approved integrations
+
+| SHA | Branch | Scope | Approved | State |
+| --- | --- | --- | --- | --- |
+| `bd0d352` | cp3-q02-local | 02A homography only | 2026-11-27 | Superseded by `3f5f25d`; do not merge separately |
+| `3f5f25d` | cp3-q02-local | 02A + 02A.1 (perspective homography, cover sizing, derived-size parity) | 2026-11-27 | APPROVED — merge `--no-ff` |
+| `a18bc08` | cp3-q03-raw | CP3-03 RAW develop seam, memory accounting, matrix validation | 2026-11-27 | APPROVED — merge `--no-ff` (engine only; app wiring is Q01) |
+
+### Ledger log
+
+- 2026-11-27: 02A reviewed; homography PASS, straighten output sizing REJECTED; ruling §4 at `c4a6a85`; 02A.1 ordered.
+- 2026-11-27: Q04 pushed `a487591`, `f51fe99`, `1dda64e` (multi-select shared with batch, copy/paste, per-item retry/unique names/reconciliation). Review: scope OK; interim `commitEditStateToEditor` direct history write must be replaced by Q01's `applyParameterGroups`; geometry/optical/local groups, EXIF/recommend UI and E2E still pending.
+- 2026-11-27: Ledger published at `3473234`; distributed to Q01–Q04. Q01 told to publish `applyParameterGroups` signature early and to merge only ledger-listed SHAs (`git merge --no-ff`). Q02 ordered to run 02A.1 → 02B without separate approval. Q03 asked to push the develop API + `resolveOriginal` early. Q04 follow-ups: replace interim history write, add geometry/optical/local groups, EXIF/recommend UI + E2E, `uniqueFilename` consistency test, failed-open selection case.
+- 2026-11-27: Q04 reviewed scope accepted as interim; follow-up items 1–5 outstanding (see above log entry).
+- 2026-11-27: Q02 `3f5f25d` (02A.1) verified by Q00: no straighten expansion, rotated-aspect mapping in `geometryMappings` reused by uniforms + CPU mirror, `tests/e2e/source-stage-output-size.spec.ts` covers rotation 90 + straighten + crop + perspective with parity and no-stretch checks; 8 unit tests re-run PASS. Approved for Q01 merge.
+- 2026-11-27: Q03 CP3-03 report: `a18bc08`, no blocker; fixtures local-only/untracked; bundle index 543.93 kB, lazy raw 61.35 kB; integration steps in PR #23 body. Q03 now idle, on standby for exporter E2E after Q01 wiring.
+- 2026-11-27: Q01 pushed `6f363c1` to pro-engine (state/history/v9/`applyParameterGroups`, render settings + backend source stage). Verified locally at `36813a7`: tsc 0, 89 tests PASS (cp3Core 12, recipeCompat 15, q04Workspace 20, engineContractCorrective 32, retro90 10). Gaps ordered: preview/export dims from `geometryOutputSize`, exporter resolver must not swallow failures, use typed `resolveDecodedImageOriginal`, RAW open via `openRawForEditing`, local stage inert until 02E. Accepted cross-owner edit `src/poc/q04/editStateAdapter.ts` (schema max 9); Q04 must not revert.
+- 2026-11-27: Q03 `a18bc08` verified by Q00 at SHA: tsc 0; `rawDevelop`/`rawColorMatrix`/`rawMemory`/`rawParity` 13 tests PASS incl. real 6000x4000 DNG retained set ≤128 MiB and preview/full parity (mean 1.10, p99 7). Approved for merge as engine seam; Q01 owns `openRawForEditing` wiring and exporter resolver use.
 
 ## File Allowlist (no out-of-list edits; request via Q00)
 

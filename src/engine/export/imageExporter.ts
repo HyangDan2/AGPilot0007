@@ -43,6 +43,13 @@ export async function prepareExportImage(
   assertRenderPlanParity(settings, registry);
   onProgress?.(10, 'Initializing export pipeline...');
 
+  // RAW keeps a preview canvas in originalElement; render from the full-res source.
+  // Q03 adds the optional resolver; read structurally until it lands.
+  const resolved = await (image as DecodedImage & { resolveOriginal?: () => Promise<HTMLImageElement> })
+    .resolveOriginal?.()
+    .catch(() => null);
+  const source = resolved ?? image.originalElement;
+
   // Target dimensions preserving exact aspect ratio
   const origW = image.originalWidth;
   const origH = image.originalHeight;
@@ -93,7 +100,7 @@ export async function prepareExportImage(
   };
 
   onProgress?.(50, 'Uploading image textures and 3D LUT...');
-  renderer.setImage(image.originalElement, exportWidth, exportHeight);
+  renderer.setImage(source, exportWidth, exportHeight);
   renderer.setLut(lut);
 
   try {
@@ -107,7 +114,7 @@ export async function prepareExportImage(
         height: exportHeight,
         dpr: 1,
         settings,
-        source: image.originalElement,
+        source,
         sourceWidth: image.originalWidth,
         sourceHeight: image.originalHeight,
         registry,

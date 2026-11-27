@@ -3,6 +3,8 @@ import type { ColorMixerSettings } from './colorMixer';
 import type { ToneCurves } from './curves';
 import type { CameraSettings, CameraEffect } from './camera';
 import type { GeometryTransform } from '../engine/contracts/geometry';
+import type { OpticalTransform } from '../engine/contracts/optical';
+import type { LocalAdjustmentState } from '../engine/contracts/localAdjustments';
 export type FilmId =
   | 'identity'
   | 'FS-001'
@@ -74,6 +76,8 @@ export const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
 
 export interface CustomRecipe {
   geometry?: GeometryTransform;
+  optical?: OpticalTransform;
+  localAdjustments?: LocalAdjustmentState;
   sharpening?:SharpeningSettings;
   colorMixer?: ColorMixerSettings;
   curves?: ToneCurves;
