@@ -3,7 +3,7 @@ import { clickSelection, clampSelection, createSelection, primarySelection, rang
 import { EditStateRegistry, cloneEditState, createEditState, editStateFromRecipe, recipeFromEditState } from '../src/poc/q04/editState';
 import {
   applyStoredRecipeToShared,
-  assertStoredRecipeV7,
+  assertStoredRecipe,
   fromSharedEditState,
   recipeFromSharedEditState,
   toSharedEditState,
@@ -14,6 +14,7 @@ import { virtualRange } from '../src/engine/image/workspace';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 import { DEFAULT_CAMERA } from '../src/types/camera';
 import { defaultCurves } from '../src/types/curves';
+import { IDENTITY_GEOMETRY } from '../src/engine/contracts/geometry';
 
 const ids = ['a', 'b', 'c', 'd', 'e'];
 
@@ -190,10 +191,11 @@ describe('Q04 per-image edit state and selective copy/paste', () => {
     expect(registry.get('src')!.adjustments.exposure).toBe(2);
   });
 
-  it('round-trips a Recipe v7 snapshot without touching stores', () => {
+  it('round-trips a Recipe v8 snapshot without touching stores', () => {
     const source = sourceState();
     const recipe = recipeFromEditState(source, { id: 'rcp-1', name: 'Warm' });
-    expect(recipe.schemaVersion).toBe(7);
+    expect(recipe.schemaVersion).toBe(8);
+    expect(recipe.geometry).toEqual(IDENTITY_GEOMETRY);
     expect(recipe.baseFilmId).toBe('FS-003');
     expect(recipe.adjustments.grain).toBe(40);
     const restored = editStateFromRecipe(recipe);
@@ -261,12 +263,13 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(shared.geometry).toBe(geometry);
   });
 
-  it('never writes framing into a stored v7 recipe', () => {
+  it('stores neutral v8 framing instead of copying the per-photo geometry', () => {
     const recipe = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-if04', name: 'Framed' });
-    expect(recipe.schemaVersion).toBe(7);
-    expect(Object.hasOwn(recipe, 'geometry')).toBe(false);
+    expect(recipe.schemaVersion).toBe(8);
+    expect(recipe.geometry).toEqual(IDENTITY_GEOMETRY);
+    expect(recipe.geometry).not.toBe(geometry);
     expect(recipe.adjustments.grain).toBe(40);
-    expect(() => assertStoredRecipeV7(recipe)).not.toThrow();
+    expect(() => assertStoredRecipe(recipe)).not.toThrow();
   });
 
   it('keeps the photo framing when applying a stored recipe', () => {
@@ -281,12 +284,18 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(false);
   });
 
-  it('rejects v8 recipes and persisted geometry until Q01 activates v8 storage', () => {
+  it('accepts v8 recipes, rejects future versions and malformed geometry', () => {
     const shared = toSharedEditState(createEditState(), geometry);
-    const v7 = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-v7', name: 'V7' });
+    const v8 = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-v8', name: 'V8' });
 
-    expect(() => applyStoredRecipeToShared(shared, { ...v7, schemaVersion: 8 })).toThrow('Unsupported recipe version');
-    expect(() => assertStoredRecipeV7({ ...v7, geometry } as unknown as CustomRecipe)).toThrow('must not be persisted');
-    expect(() => applyStoredRecipeToShared(shared, v7)).not.toThrow();
+    expect(() => applyStoredRecipeToShared(shared, { ...v8, schemaVersion: 9 })).toThrow('Unsupported recipe version');
+    const legacy = { ...v8, schemaVersion: 7 } as CustomRecipe;
+    delete (legacy as { geometry?: unknown }).geometry;
+    expect(() => applyStoredRecipeToShared(shared, legacy)).not.toThrow();
+    const noFraming = { ...v8 } as CustomRecipe;
+    delete (noFraming as { geometry?: unknown }).geometry;
+    expect(() => applyStoredRecipeToShared(shared, { ...noFraming, schemaVersion: 8 })).toThrow(/geometry wrapper/);
+    expect(() => assertStoredRecipe({ ...v8, geometry: { rotation: 45 } } as unknown as CustomRecipe)).toThrow(/Invalid geometry rotation/);
+    expect(() => applyStoredRecipeToShared(shared, v8)).not.toThrow();
   });
 });

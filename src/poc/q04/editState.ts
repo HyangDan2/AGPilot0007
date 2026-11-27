@@ -6,6 +6,7 @@ import { defaultColorMixer, normalizeColorMixer } from '../../types/colorMixer';
 import { DEFAULT_SHARPENING, normalizeSharpening } from '../../types/sharpening';
 import { FILM_PROFILES } from '../../films/registry';
 import { CURRENT_SCHEMA_VERSION } from '../../stores/recipeStore';
+import { IDENTITY_GEOMETRY } from '../../engine/contracts/geometry';
 import type { EditState, ParameterClip, ParameterGroup } from './types';
 
 const TONE_KEYS = [
@@ -71,7 +72,7 @@ export function editStateFromRecipe(recipe: CustomRecipe): EditState {
   );
 }
 
-/** Inverse of editStateFromRecipe for saving one image's edit as a Recipe v7. */
+/** Inverse of editStateFromRecipe for saving one image's edit as a Recipe v8. */
 export function recipeFromEditState(
   state: EditState,
   meta: { id: string; name: string; profileVersion?: string; createdAt?: number; updatedAt?: number },
@@ -87,6 +88,7 @@ export function recipeFromEditState(
     createdAt: meta.createdAt ?? now,
     updatedAt: meta.updatedAt ?? now,
     schemaVersion: CURRENT_SCHEMA_VERSION,
+    geometry: IDENTITY_GEOMETRY,
     sharpening: { ...state.sharpening },
     colorMixer: JSON.parse(JSON.stringify(state.colorMixer)),
     curves: JSON.parse(JSON.stringify(state.curves)),
