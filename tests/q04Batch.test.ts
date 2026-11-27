@@ -650,6 +650,35 @@ describe('Q04 batch export adapter', () => {
     expect(revoke).toHaveBeenCalledTimes(1);
   });
 
+  it('renders through the decoded image resolver without reading the preview element', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const fullRes = new Image();
+    const resolveOriginal = vi.fn(async () => fullRes);
+    const rawImage = {
+      sourceUrl: 'blob:decoded-raw.dng',
+      name: 'raw.dng',
+      originalWidth: 6000,
+      originalHeight: 4000,
+      previewWidth: 1024,
+      previewHeight: 683,
+      previewCanvas: document.createElement('canvas'),
+      // RAW keeps the preview canvas in originalElement; reading it here would
+      // silently render at preview size instead of the resolver's full-res image.
+      get originalElement(): HTMLImageElement {
+        throw new Error('batch read the preview element');
+      },
+      resolveOriginal,
+    };
+    const deps = makeDeps({ decode: vi.fn(async () => rawImage) });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    await handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: new AbortController().signal, report: vi.fn() });
+
+    expect((deps.prepare as any).mock.calls[0][0]).toBe(rawImage);
+    // Resolution belongs to the shared exporter, which batch calls unchanged.
+    expect(resolveOriginal).not.toHaveBeenCalled();
+    expect(revoke).toHaveBeenCalledWith('blob:decoded-raw.dng');
+  });
+
   it('renames duplicates so prepared.file.name and filename agree without mutating the original', () => {
     const used = new Set<string>();
     const original = prepared('same.png');
