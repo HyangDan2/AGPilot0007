@@ -167,6 +167,9 @@ export function createExportProcessor(options: ExportProcessorOptions): ExportPr
           camera: edit.camera,
           colorMixer: edit.colorMixer,
           sharpening: edit.sharpening,
+          geometry: edit.geometry,
+          optical: edit.optical ?? undefined,
+          localAdjustments: edit.localAdjustments,
         },
         options.exportOptions,
         (progress, stage) => {

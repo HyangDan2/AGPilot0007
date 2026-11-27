@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Images, X } from 'lucide-react';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { BatchExportController, type BatchExportView } from '../../poc/q04/integration/batchController';
-import { EditorEditStateBridge } from '../../poc/q04/integration/editStateBridge';
+import { readEditState } from '../../poc/q04/integration/parameterPaste';
 
 const STATUS_LABEL: Record<string, string> = {
   queued: 'Queued',
@@ -22,11 +22,10 @@ export function BatchExportHost() {
   const selection = useWorkspaceStore((state) => state.selection);
   const stripHeight = useWorkspaceStore((state) => (state.collapsed ? 34 : state.height));
   const [open, setOpen] = useState(false);
-  const { controller, bridge } = useMemo(() => {
-    const bridgeInstance = new EditorEditStateBridge();
+  const { controller } = useMemo(() => {
     const controllerInstance = new BatchExportController();
     controllerInstance.setEntries(useWorkspaceStore.getState().entries);
-    return { controller: controllerInstance, bridge: bridgeInstance };
+    return { controller: controllerInstance };
   }, []);
   const [view, setView] = useState<BatchExportView | null>(null);
 
@@ -35,9 +34,8 @@ export function BatchExportHost() {
     return () => {
       unsubscribe();
       controller.destroy();
-      bridge.dispose();
     };
-  }, [controller, bridge]);
+  }, [controller]);
 
   useEffect(() => {
     controller.setEntries(entries);
@@ -90,7 +88,7 @@ export function BatchExportHost() {
               <button
                 type="button"
                 data-testid="batch-export-start"
-                onClick={() => controller.start(selected, (id) => bridge.editFor(id))}
+                onClick={() => controller.start(selected, (id) => readEditState(id))}
                 disabled={running || selected.length === 0}
                 className="rounded bg-amber-600 px-3 py-1 font-semibold text-white disabled:opacity-40"
               >

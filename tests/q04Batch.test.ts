@@ -6,6 +6,10 @@ import { createEditState } from '../src/poc/q04/editState';
 import { throwIfExportAborted, type ExportControl } from '../src/engine/contracts/exportControl';
 import type { PreparedExport } from '../src/types/export';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
+import { normalizeGeometry } from '../src/engine/contracts/geometry';
+import { IDENTITY_OPTICAL_HOMOGRAPHY } from '../src/engine/contracts/optical';
+import { normalizeOpticalTransform } from '../src/engine/optical/transform';
+import { normalizeLocalAdjustments } from '../src/engine/contracts/localAdjustments';
 import { FILM_PROFILES } from '../src/films/registry';
 import type { WorkspaceEntry } from '../src/engine/image/workspace';
 
@@ -383,7 +387,16 @@ describe('Q04 device-aware concurrency', () => {
 
 describe('Q04 batch export adapter', () => {
   const exportOptions = { format: 'image/jpeg' as const, quality: 0.9, scale: 0.5 };
-  const edit = createEditState({ activeFilmId: 'FS-006', adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1 } });
+  const edit = createEditState({
+    activeFilmId: 'FS-006',
+    adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1 },
+    geometry: normalizeGeometry({ rotation: 90 }),
+    optical: normalizeOpticalTransform({ version: 1, homography: IDENTITY_OPTICAL_HOMOGRAPHY, distortion: { k1: 0.25 } }),
+    localAdjustments: normalizeLocalAdjustments({
+      enabled: true,
+      groups: [{ id: 'g1', name: 'Sky', enabled: true, masks: [], adjustment: { exposure: 0.4 }, opacity: 1, blend: 'add' }],
+    }),
+  });
   const entry: WorkspaceEntry = { id: 'p', name: 'p.jpg', path: 'p.jpg', getFile: async () => new File(['img'], 'p.jpg') };
   const preparedBlob = new Blob(['x']);
 
@@ -436,13 +449,16 @@ describe('Q04 batch export adapter', () => {
     expect(deps.decode).toHaveBeenCalledWith(expect.any(File), 'p.jpg', ctx.signal);
     expect(deps.loadLut).toHaveBeenCalledWith(FILM_PROFILES['FS-006'].lutFile);
     const args = deps.prepare.mock.calls[0] as unknown[];
-    const settings = args[2] as { filmId: string; adjustments: unknown; curves: unknown; camera: unknown; colorMixer: unknown; sharpening: unknown };
+    const settings = args[2] as { filmId: string; adjustments: unknown; curves: unknown; camera: unknown; colorMixer: unknown; sharpening: unknown; geometry: unknown; optical: unknown; localAdjustments: unknown };
     expect(settings.filmId).toBe('FS-006');
     expect(settings.adjustments).toBe(edit.adjustments);
     expect(settings.curves).toBe(edit.curves);
     expect(settings.camera).toBe(edit.camera);
     expect(settings.colorMixer).toBe(edit.colorMixer);
     expect(settings.sharpening).toBe(edit.sharpening);
+    expect(settings.geometry).toBe(edit.geometry);
+    expect(settings.optical).toBe(edit.optical);
+    expect(settings.localAdjustments).toBe(edit.localAdjustments);
     expect(args[3]).toEqual(exportOptions);
     expect(typeof args[4]).toBe('function');
     expect((args[5] as { signal: AbortSignal }).signal).toBe(ctx.signal);
