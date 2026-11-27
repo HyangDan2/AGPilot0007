@@ -4,12 +4,13 @@
 - 작업 브랜치: `feature/phase1-q02-optical`
 - 기준 Commit: `b850f82e0eb3fc33c76619f5dee9eec3e8a4890a` (`origin/main`)
 - CP1 Commit: `0b5e6caa6aa19b34d778ed8f36886e8cb7434384`
-- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 완료 + G1 최종 동기화 완료.** OPT-01~05 교정,
-  OPT-06~07 기술 검증·본개발 설계, Q01 `OpticalTransform` 어댑터·예산 측정 완료. Q01
-  `feature/phase1-pro-engine`을 `21fd6dc` → G1 `4dea9b6`까지 병합해 계약 소스를 직접 교차 검증한다.
-  P2-02(하네스 한도 문구), P2-03(계수 정책 **Closed**: Q01 `c67d533` 계약 채택), Silent Truncation
-  금지 원칙을 반영했다. **Q01/Q00 `src/`·소유 문서는 병합으로만 수용했고 Q02가 수정하지 않았다.**
-  CP2-03 구현은 G1 종료 승인 후 착수한다.
+- 상태: **CP1.1 교정 + SC-02 Q01 계약 정합 + WO-CP2-01 완료 + G1 최종 동기화 + CP2-03 모듈 경계 구현 완료.**
+  OPT-01~05 교정, OPT-06~07 기술 검증·본개발 설계, Q01 `OpticalTransform` 어댑터·예산 측정 완료. Q01
+  `feature/phase1-pro-engine`을 `21fd6dc` → G1 `4dea9b6` → CP2 `37a3796`까지 병합해 계약 소스를 직접
+  교차 검증한다. P2-02(하네스 한도 문구), P2-03(계수 정책 **Closed**: Q01 `c67d533` 계약 채택), Silent
+  Truncation 금지 원칙을 반영했다. **Q01/Q00 `src/`·소유 문서는 병합으로만 수용했고 Q02가 수정하지
+  않았다.** CP2-03은 `src/engine/optical/**` 모듈 경계로 구현했으며 공유 App/pipeline 파일은 수정하지
+  않았다.
 - 범위: WO-08~WO-21 (Geometry & Local Adjustment), WO-37~WO-40 (Optical Effects)
 
 ## 0. CP1.1 교정 요약 (검토 Commit `0b5e6ca`)
@@ -496,3 +497,38 @@ Q01 정본 상한(16마스크 × 64스트로크 × 1024포인트)을 전량 수�
 - `docs/HARNESS_GUIDE.md`는 Q01 단독 소유다. 이번 병합에서는 충돌이 없었고 Q02는 해당 문서를 수정하지 않았다.
 - 지원 주장 범위: 이 PoC가 실제로 검증한 것은 8마스크·1024선분/마스크·8bit 중간 버퍼까지다. 16/64/1024와
   RGBA16F, 모바일 실기기는 본 구현/통합 단계에서 별도 검증 대상이다.
+
+## 13. CP2-03 Geometry & Optical stage modules (Lean v1.1)
+
+CP2-03 기준 `37a3796`을 `cceb863`으로 병합한 뒤, Q01 공통 파일을 수정하지 않고 Q02 소유 경계
+(`src/engine/optical/**`)에 스테이지 모듈과 GLSL 청크를 추가했다.
+
+| 파일 | 역할 |
+|------|------|
+| `src/engine/optical/geometry.ts` | 동결 `geometryMappings` 순서의 CPU 정/역매핑 래퍼, uniform, inverse GLSL 청크 |
+| `src/engine/optical/transform.ts` | `OpticalTransform` 정규화·가역성 게이트, Brown–Conrady + homography CPU/GLSL, column-major uniform |
+| `src/engine/optical/modules.ts` | `q02.geometry.transform`, `q02.optical.lens` EditModule 및 `createQ02RenderRegistry`, 마스크 예산 |
+| `tests/optical-stage.test.ts` | 9 unit tests (registry/order/fingerprint, round-trip, 게이트, uniform, 16/64/1024, 하네스 8) |
+| `tests/e2e/optical-stage-contract.spec.ts` | CPU↔GPU geometry/optical chunk parity, preview/export plan fingerprint |
+
+- 등록: `createQ02RenderRegistry()`가 `createCoreRenderRegistry()` 복사본에 두 모듈을 추가한다.
+  `q02.optical.lens`(stage `optical`, `requires: ['core.source']`)가 `q02.geometry.transform`(stage
+  `geometry`)보다 먼저 실행되며, `renderPlan.ts`와 동결 계약은 수정하지 않았다.
+- Geometry: flip→rotate→straighten→crop 순서의 출력 NIS→소스 NIS inverse를 GPU 청크와 CPU 래퍼가
+  동일하게 계산한다. 경계 4점과 내부점 왕복은 1e-12 이내, 64×48 격자 CPU↔GPU 최대 오차 < 0.012(8bit).
+- Optical: `normalizeOpticalTransform`/`assertOpticalRenderable`이 Q01 `validateOpticalTransform`을
+  그대로 호출하므로 `k1=-0.5` 같은 비가역 계수는 렌더 전에 거부된다. Perspective quad는 provenance로
+  유지하고 샘플링은 해결된 homography를 사용한다. 64×64 격자 CPU↔GPU 최대 오차 < 0.012(8bit).
+- Preview/Export: 두 target의 `renderPlanFingerprint`가 동일하고, 동일 `opticalUniforms`/GLSL 경로를
+  사용한다. 광학 모듈은 `floatIntermediate: true`, 두 모듈은 각각 `textures: 2`를 보고한다.
+- 마스크: 제품 경로는 raw 배열에 `validateMasks`를 먼저 호출해 16/64/1024 초과를 명시 거부하며
+  `normalizeMasks`의 slice보다 앞선다. 하네스 8마스크 상한은 `assertMaskBudget(..., 'harness')`로
+  분리했고, 16/17·8/9·1024/1025·64/65 경계를 테스트로 고정했다. §12.2/§12.3의 uniform·선분·해상도
+  예산은 그대로 유효하다.
+- 검증(직렬, `E2E_PORT=5273`, `--project=chromium`): `tsc` 0 errors, `npm test` 23 files/208 tests,
+  선택 E2E 21 passed(신규 2 + 기존 광학 17 + `geometry-contract` + `render-parity`). 전체 스위트는
+  실행하지 않았다(Q05 1회 소관).
+- 한계: 실제 픽셀 패스 실행기는 아직 `resolveRenderPlan`을 소비하지 않는다(Q01 CP2 runner 소관).
+  Q02는 registry/module/uniform 청크까지 제공하며, runner가 `execute`에서 이 청크를 바인딩하면
+  Preview/Export 동일 경로가 된다. `RenderSettings.optical` 필드 추가도 공유 파일 변경이므로 Q01
+  통합 시점에 맞춘다.
