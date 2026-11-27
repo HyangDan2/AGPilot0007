@@ -90,7 +90,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 
 | Dependency | Route | State |
 | --- | --- | --- |
-| geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A.1 `3f5f25d` VERIFIED; approved for merge ||
+| geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A.1 `3f5f25d` VERIFIED; approved for merge |
 | Geometry/mask UI mounting | Q02 → Q01 | Q02 ships prop-driven components (`ce06ccd` verified); only Q01 can mount them in Viewport/AdjustmentPanel |
 | `applyParameterGroups` + new edit groups | Q01 → Q04 | AVAILABLE at `6f363c1` (`ParameterGroupsPatch`); Q04 must switch off its interim history write |
 | geometry/optical/localAdjustments state + actions | Q01 → Q02 | `6f363c1` on pro-engine (state, history, v9, `applyParameterGroups`); UI wiring by Q02 02C |
