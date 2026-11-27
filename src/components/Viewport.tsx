@@ -10,6 +10,8 @@ import { getMargarinePreset } from '../presets/margarine';
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
+import { createWebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
+import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { Columns, Eye, ZoomIn, ZoomOut, Maximize2, Sparkles, AlertCircle } from 'lucide-react';
@@ -198,18 +200,27 @@ export const Viewport: React.FC = () => {
         const draft=draftRef.current&&sharpRef.current.mode==='advanced'&&(sharpRef.current.amount>0||maskRef.current)&&effectiveMode!=='original';
         const target=sharpeningPreviewSize(current.previewWidth,current.previewHeight,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
         if(canvas&&(canvas.width!==target.width||canvas.height!==target.height)){canvas.width=target.width;canvas.height=target.height;}
-        renderer.render({
-          adjustments: adjustmentsRef.current,
-          camera: cameraRef.current,
-          curves: curvesRef.current,
-          colorMixer:mixerRef.current,
-          sharpening:sharpRef.current,sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
-          mixerVisualize:visualizeRef.current,
-          filmId: filmIdRef.current,
-          compareMode: effectiveMode,
-          splitPos: splitPosRef.current,
-          seed: 42.0,
-        });
+        runRenderPipelineSync({
+          target:'preview',
+          width:canvas?.width??1,
+          height:canvas?.height??1,
+          dpr:typeof window!=='undefined'?window.devicePixelRatio||1:1,
+          settings:{
+            adjustments: adjustmentsRef.current,
+            camera: cameraRef.current,
+            curves: curvesRef.current,
+            colorMixer:mixerRef.current,
+            sharpening:sharpRef.current,
+            filmId: filmIdRef.current,
+          },
+          extras:{
+            sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
+            mixerVisualize:visualizeRef.current,
+            compareMode: effectiveMode,
+            splitPos: splitPosRef.current,
+            seed: 42.0,
+          },
+        },createWebGLPipelineBackend(renderer));
         window.dispatchEvent(new Event('film-preview-rendered'));
         if (isToneCurveOpenRef.current && !histogramTimer.current) histogramTimer.current = setTimeout(()=>{
           histogramTimer.current = null;
