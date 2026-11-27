@@ -13,12 +13,13 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /**
- * CP2-05 product entry for the CP1 batch queue. Selection is local to this
- * surface (IF-03 stays deferred); per-photo edits come from the bridge, and
- * cancellation/progress/retry ride on the shared BatchQueue + ExportControl.
+ * CP2-05/CP3 product entry for the batch queue. The workspace selection is the
+ * single source of truth for what runs; per-photo edits come from the bridge,
+ * and cancellation/progress/retry ride on the shared BatchQueue + ExportControl.
  */
 export function BatchExportHost() {
   const entries = useWorkspaceStore((state) => state.entries);
+  const selection = useWorkspaceStore((state) => state.selection);
   const stripHeight = useWorkspaceStore((state) => (state.collapsed ? 34 : state.height));
   const [open, setOpen] = useState(false);
   const { controller, bridge } = useMemo(() => {
@@ -45,7 +46,7 @@ export function BatchExportHost() {
   if (!entries.length) return null;
 
   const jobs = new Map((view?.snapshot?.jobs ?? []).map((job) => [job.id, job]));
-  const selected = view?.selected ?? [];
+  const selected = selection.ids;
   const running = view?.running ?? false;
   const summary = view?.summary ?? null;
   const progress = Math.round((view?.snapshot?.overallProgress ?? 0) * 100);
@@ -84,12 +85,12 @@ export function BatchExportHost() {
             </div>
 
             <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-              <button type="button" data-testid="batch-export-select-all" onClick={() => controller.selectAll()} disabled={running} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Select all</button>
-              <button type="button" data-testid="batch-export-clear" onClick={() => controller.clearSelection()} disabled={running} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Clear</button>
+              <button type="button" data-testid="batch-export-select-all" onClick={() => useWorkspaceStore.getState().selectAllPhotos()} disabled={running} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Select all</button>
+              <button type="button" data-testid="batch-export-clear" onClick={() => useWorkspaceStore.getState().clearSelection()} disabled={running} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Clear</button>
               <button
                 type="button"
                 data-testid="batch-export-start"
-                onClick={() => controller.start((id) => bridge.editFor(id))}
+                onClick={() => controller.start(selected, (id) => bridge.editFor(id))}
                 disabled={running || selected.length === 0}
                 className="rounded bg-amber-600 px-3 py-1 font-semibold text-white disabled:opacity-40"
               >
@@ -118,13 +119,20 @@ export function BatchExportHost() {
                 const checked = selected.includes(entry.id);
                 return (
                   <li key={entry.id} data-testid="batch-export-item" data-status={job?.status ?? 'idle'} className="flex items-center gap-3 border-b border-[color:var(--ui-border-slate700)]/60 px-3 py-1.5 text-xs last:border-b-0">
-                    <input type="checkbox" aria-label={`Select ${entry.name}`} checked={checked} disabled={running} onChange={() => controller.toggle(entry.id)} />
+                    <input type="checkbox" aria-label={`Select ${entry.name}`} checked={checked} disabled={running} onChange={() => useWorkspaceStore.getState().toggleSelection(entry.id)} />
                     <span className="min-w-0 flex-1 truncate" title={entry.path}>{entry.name}</span>
                     {job && (
                       <>
-                        <span className="shrink-0 text-[color:var(--ui-text-slate400)]">{STATUS_LABEL[job.status] ?? job.status}{job.error ? `: ${job.error}` : ''}</span>
+                        <span className="shrink-0 text-[color:var(--ui-text-slate400)]" data-progress={Math.round(job.progress * 100)}>
+                          {STATUS_LABEL[job.status] ?? job.status}
+                          {job.status === 'running' && ` ${Math.round(job.progress * 100)}%`}
+                          {job.error ? `: ${job.error}` : ''}
+                        </span>
                         {(job.status === 'running' || job.status === 'queued') && (
                           <button type="button" aria-label={`Cancel ${entry.name}`} onClick={() => controller.cancel(entry.id)} className="shrink-0 text-red-300">×</button>
+                        )}
+                        {(job.status === 'failed' || job.status === 'cancelled') && (
+                          <button type="button" aria-label={`Retry ${entry.name}`} onClick={() => controller.retry(entry.id)} className="shrink-0 text-amber-300">↻</button>
                         )}
                       </>
                     )}
@@ -134,9 +142,14 @@ export function BatchExportHost() {
             </ul>
 
             {summary && (
-              <p data-testid="batch-export-summary" className="mt-3 text-xs text-[color:var(--ui-text-slate300)]">
-                {summary.succeeded}/{summary.total} saved · failed {summary.failed} · cancelled {summary.cancelled} · delivery failed {summary.deliveryFailed}
-              </p>
+              <div className="mt-3 text-xs text-[color:var(--ui-text-slate300)]">
+                <p data-testid="batch-export-summary">
+                  {summary.succeeded}/{summary.total} saved · failed {summary.failed} · cancelled {summary.cancelled} · delivery failed {summary.deliveryFailed}
+                </p>
+                <p data-testid="batch-export-reconciled" data-ok={summary.reconciled ? 'true' : 'false'} className={summary.reconciled ? 'text-[color:var(--ui-text-slate400)]' : 'text-red-300'}>
+                  selected {summary.total} = saved {summary.succeeded} + failed {summary.failed} + cancelled {summary.cancelled}{summary.reconciled ? '' : ' · mismatch'}
+                </p>
+              </div>
             )}
           </div>
         </div>

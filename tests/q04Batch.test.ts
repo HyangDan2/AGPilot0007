@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BatchQueue, MAX_CONCURRENCY } from '../src/poc/q04/batchQueue';
 import { recommendedConcurrency } from '../src/poc/q04/resources';
-import { createDeliverySink, createExportProcessor, disposePrepared, type ExportJobMeta } from '../src/poc/q04/batchExport';
+import { createDeliverySink, createExportProcessor, disposePrepared, renamePrepared, uniqueFilename, type ExportJobMeta } from '../src/poc/q04/batchExport';
 import { createEditState } from '../src/poc/q04/editState';
 import { throwIfExportAborted, type ExportControl } from '../src/engine/contracts/exportControl';
 import type { PreparedExport } from '../src/types/export';
@@ -636,8 +636,7 @@ describe('Q04 batch export adapter', () => {
     queue.destroy();
   });
 
-  it('delivers results through a sink and always releases the object URL', async () => {
-    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  it('delivers results through a sink and always releases the object URL', async () => {    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     const saved: string[] = [];
     const sink = createDeliverySink((result, job) => {
       saved.push(`${job.id}:${result.filename}`);
@@ -649,6 +648,55 @@ describe('Q04 batch export adapter', () => {
     expect(revoke).toHaveBeenCalledWith('blob:prepared-shot.jpg');
     disposePrepared(result);
     expect(revoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders through the decoded image resolver without reading the preview element', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const fullRes = new Image();
+    const resolveOriginal = vi.fn(async () => fullRes);
+    const rawImage = {
+      sourceUrl: 'blob:decoded-raw.dng',
+      name: 'raw.dng',
+      originalWidth: 6000,
+      originalHeight: 4000,
+      previewWidth: 1024,
+      previewHeight: 683,
+      previewCanvas: document.createElement('canvas'),
+      // RAW keeps the preview canvas in originalElement; reading it here would
+      // silently render at preview size instead of the resolver's full-res image.
+      get originalElement(): HTMLImageElement {
+        throw new Error('batch read the preview element');
+      },
+      resolveOriginal,
+    };
+    const deps = makeDeps({ decode: vi.fn(async () => rawImage) });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    await handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: new AbortController().signal, report: vi.fn() });
+
+    expect((deps.prepare as any).mock.calls[0][0]).toBe(rawImage);
+    // Resolution belongs to the shared exporter, which batch calls unchanged.
+    expect(resolveOriginal).not.toHaveBeenCalled();
+    expect(revoke).toHaveBeenCalledWith('blob:decoded-raw.dng');
+  });
+
+  it('renames duplicates so prepared.file.name and filename agree without mutating the original', () => {
+    const used = new Set<string>();
+    const original = prepared('same.png');
+    const first = renamePrepared(original, uniqueFilename(original.filename, used));
+    expect(first).toBe(original);
+
+    const second = renamePrepared(original, uniqueFilename(original.filename, used));
+    expect(second.filename).toBe('same-2.png');
+    expect(second.file.name).toBe('same-2.png');
+    expect(second.blob).toBe(original.blob);
+    expect(second.objectUrl).toBe(original.objectUrl);
+    expect(original.filename).toBe('same.png');
+    expect(original.file.name).toBe('same.png');
+
+    const renamedExisting = renamePrepared(second, 'other.jpg');
+    expect(renamedExisting.filename).toBe('other.jpg');
+    expect(renamedExisting.file.name).toBe('other.jpg');
+    expect(second.filename).toBe('same-2.png');
   });
 
   it('propagates save failures after releasing the object URL', async () => {

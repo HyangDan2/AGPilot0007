@@ -122,16 +122,17 @@ describe('Q04 EXIF indexing', () => {
 
 describe('Q04 metadata search', () => {
   const records = [
-    record({ id: 'a', name: 'a.jpg', captureDate: '2020-01-01', cameraModel: 'Canon EOS R5', iso: 100 }),
-    record({ id: 'b', name: 'b.jpg', captureDate: '2021-06-01', cameraModel: 'Fujifilm X-T5', iso: 800 }),
+    record({ id: 'a', name: 'a.jpg', captureDate: '2020-01-01', cameraModel: 'Canon EOS R5', lens: 'RF 50mm F1.8', iso: 100 }),
+    record({ id: 'b', name: 'b.jpg', captureDate: '2021-06-01', cameraModel: 'Fujifilm X-T5', lens: 'XF 35mm F1.4', iso: 800 }),
     record({ id: 'c', name: 'c.jpg', cameraModel: 'Canon EOS R6', iso: 3200 }),
   ];
 
-  it('filters by text, date range, ISO and camera model', () => {
+  it('filters by text, date range, ISO, camera model and lens', () => {
     expect(searchMetadata(records, { text: 'canon' }).map((r) => r.id)).toEqual(['a', 'c']);
     expect(searchMetadata(records, { dateFrom: '2020-06-01', dateTo: '2022-01-01' }).map((r) => r.id)).toEqual(['b']);
     expect(searchMetadata(records, { isoMin: 500 }).map((r) => r.id)).toEqual(['b', 'c']);
     expect(searchMetadata(records, { models: ['x-t5'] }).map((r) => r.id)).toEqual(['b']);
+    expect(searchMetadata(records, { lens: ['rf 50'] }).map((r) => r.id)).toEqual(['a']);
     expect(searchMetadata(records, { isoMax: 500, dateFrom: '2020-01-01' }).map((r) => r.id)).toEqual(['a']);
   });
 

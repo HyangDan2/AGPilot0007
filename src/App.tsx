@@ -15,6 +15,9 @@ import { MobileControls } from './components/MobileControls';
 import { RecipeModal } from './components/RecipeModal';
 import { ExportModal } from './components/ExportModal';
 import { BatchExportHost } from './components/q04/BatchExportHost';
+import { CopyPasteHost } from './components/q04/CopyPasteHost';
+import { ExifFilterHost } from './components/exif/ExifFilterHost';
+import { RecommendHost } from './components/recommend/RecommendHost';
 import { useEditorStore } from './stores/editorStore';
 import { MargarineModal } from './components/MargarineModal';
 import { Sliders, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -150,6 +153,9 @@ export const App: React.FC = () => {
         onClose={() => setIsExportModalOpen(false)}
       />
       <BatchExportHost />
+      <CopyPasteHost />
+      <ExifFilterHost />
+      <RecommendHost />
       {/* Floating Light/Dark toggle (Navy & Lavender) */}
       <ThemeFab />
     </div>
