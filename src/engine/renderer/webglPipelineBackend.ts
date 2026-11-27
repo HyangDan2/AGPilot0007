@@ -1,4 +1,5 @@
 import { renderSourceStage } from '../optical/sourceStage';
+import { hasLocalStagePlan } from '../pipeline/localStageSeam';
 import type { PreviewRequestFlags, RenderPipelineBackend, RenderPipelineFrame } from '../pipeline/renderPipeline';
 import type { RenderRequest } from '../pipeline/renderSettings';
 import type { WebGL2FilmRenderer } from './webglRenderer';
@@ -27,8 +28,11 @@ export interface WebGLPipelineBackend extends RenderPipelineBackend {
 
 export function buildRenderRequest(frame: RenderPipelineFrame): RenderRequest {
   const extras = frame.extras ?? DEFAULT_EXTRAS;
+  // A null plan must not add a key to the request; only a real plan travels.
+  const { localStage, ...settings } = frame.settings;
   return {
-    ...frame.settings,
+    ...settings,
+    ...(localStage ? { localStage } : {}),
     compareMode: extras.compareMode,
     splitPos: extras.splitPos,
     seed: extras.seed ?? 42,
@@ -60,6 +64,7 @@ function intrinsicSize(frame: RenderPipelineFrame): { width: number; height: num
 export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options: { warn?: (message: string) => void } = {}): WebGLPipelineBackend {
   let appliedCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
   let warnedOversize = false;
+  let warnedLocalStage = false;
   const warn = options.warn ?? ((message: string) => console.warn(message));
 
   return {
@@ -67,6 +72,10 @@ export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options
       appliedCanvas = null;
     },
     render(frame) {
+      if (hasLocalStagePlan(frame.settings.localStage) && !warnedLocalStage) {
+        warnedLocalStage = true;
+        warn('Local stage plan ignored: the 02E local fragment is not integrated yet.');
+      }
       const source = frame.source;
       if (source) {
         const size = intrinsicSize(frame);

@@ -7,6 +7,7 @@ import type { GeometryTransform } from '../contracts/geometry';
 import type { OpticalTransform } from '../contracts/optical';
 import type { MaskData } from '../contracts/masks';
 import type { LocalAdjustmentState } from '../contracts/localAdjustments';
+import type { LocalStagePlan } from './localStageSeam';
 
 export type CompareMode = 'none' | 'original' | 'split';
 
@@ -27,6 +28,8 @@ export interface RenderSettings {
   optical?: OpticalTransform;
   masks?: readonly MaskData[];
   localAdjustments?: LocalAdjustmentState;
+  /** Q02's rasterized plan; null/undefined keeps the CP2 render path untouched. */
+  localStage?: LocalStagePlan | null;
 }
 
 /**
