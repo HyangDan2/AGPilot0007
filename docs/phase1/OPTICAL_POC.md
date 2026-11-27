@@ -611,3 +611,18 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 - **검증**: `tests/geometry-output-size-perspective.test.ts`(크기 ruling + homography),
   `tests/e2e/source-stage-output-size.spec.ts`(rotation 90 + straighten + crop + perspective에서
   preview/export 동일 NIS 샘플 ≤4/255, 매핑된 사각형의 직각/대변 보존, 크기별 fingerprint 상이).
+
+## 15. CP3-02C — Geometry overlay and controls (prop-driven, new files only)
+
+- **구성**: `src/components/geometry/GeometryOverlay.tsx`(자르기 오버레이), `GeometryPanel.tsx`(회전/플립/
+  straighten/원근 슬라이더+리셋), `cropGeometry.ts`(순수 클램프/키보드 로직). 모두 controlled props로
+  Q01 `editorStore` 액션에 의존하지 않는다. Q00 지시대로 store 액션은 수정하지 않았다.
+- **좌표계**: 오버레이는 잘리지 않은 corrected 프레임 위에 놓인다. host는
+  `geometryOverlayAspect(geometry, sourceAspect)`(90/270에서 swap)로 프레임 종횡비를 맞추고,
+  `geometry.crop`은 계약대로 post-straighten 출력 NIS를 그대로 쓴다.
+- **조작**: 8개 핸들 + move 영역 드래그(pointer/touch, `touch-action:none`), 핸들/이동 영역 포커스 후
+  방향키(±0.5%, Shift ±5%). 모든 엣지는 `MIN_CROP_EDGE`로 막고 프레임을 벗어나지 않는다. full-frame은
+  `null` crop으로 정규화된다.
+- **모드**: `hidden` prop이면 렌더하지 않으므로 compare/original에서 host가 그대로 내리면 된다.
+- **검증**: `tests/cropGeometry.test.ts` 7개, E2E 실브라우저에서 실제 컴포넌트를 마운트해 드래그/키보드/
+  패널 조작 3개(`tests/e2e/geometry-overlay.spec.ts`). tsc 0.
