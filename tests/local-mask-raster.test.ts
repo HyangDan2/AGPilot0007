@@ -105,8 +105,49 @@ describe('mask rasterization', () => {
     expect(sample(half, 40, 40, 0.5, 0.5)).toBeCloseTo(0.5, 5);
   });
 
-  it('keeps brush coverage resolution independent', () => {
-    const mask = pointBrush('b', 0.4, 0.6, {
+  it('treats zero flow as no paint and unions overlapping strokes', () => {
+    const zero = rasterizeMask(
+      pointBrush('b', 0.5, 0.5, {
+        strokes: [{ points: [{ x: 0.5, y: 0.5 }], radius: 0.2, hardness: 1, flow: 0 }],
+      }),
+      60,
+      60,
+    );
+    expect(sample(zero, 60, 60, 0.5, 0.5)).toBe(0);
+
+    const overlap = rasterizeMask(
+      pointBrush('b', 0.5, 0.5, {
+        strokes: [
+          { points: [{ x: 0.5, y: 0.5 }], radius: 0.2, hardness: 1, flow: 0.5 },
+          { points: [{ x: 0.65, y: 0.5 }], radius: 0.2, hardness: 1, flow: 0.5 },
+        ],
+      }),
+      60,
+      60,
+    );
+    expect(sample(overlap, 60, 60, 0.5, 0.5)).toBeCloseTo(0.75, 5);
+    expect(sample(overlap, 60, 60, 0.35, 0.5)).toBeCloseTo(0.5, 5);
+    expect(sample(overlap, 60, 60, 0.8, 0.5)).toBeCloseTo(0.5, 5);
+  });
+
+  it('widens transition bands as feather scales', () => {
+    const narrow = rasterizeMask(linear({ feather: 0.25 }), 100, 20);
+    const wide = rasterizeMask(linear({ feather: 0.6 }), 100, 20);
+    const narrowValue = sample(narrow, 100, 20, 0.63, 0.5);
+    const wideValue = sample(wide, 100, 20, 0.63, 0.5);
+    expect(narrowValue).toBeGreaterThan(0.9);
+    expect(wideValue).toBeGreaterThan(0.5);
+    expect(wideValue).toBeLessThan(narrowValue);
+
+    const tight = rasterizeMask(radial({ radiusX: 0.4, radiusY: 0.4, feather: 0.5 }), 100, 100);
+    const soft = rasterizeMask(radial({ radiusX: 0.4, radiusY: 0.4, feather: 1 }), 100, 100);
+    const tightValue = sample(tight, 100, 100, 0.8, 0.5);
+    const softValue = sample(soft, 100, 100, 0.8, 0.5);
+    expect(tightValue).toBeGreaterThan(softValue);
+    expect(softValue).toBeGreaterThan(0);
+  });
+
+  it('keeps brush coverage resolution independent', () => {    const mask = pointBrush('b', 0.4, 0.6, {
       strokes: [{ points: [{ x: 0.4, y: 0.6 }], radius: 0.15, hardness: 0.3, flow: 0.8 }],
     });
     const small = rasterizeMask(mask, 50, 50);
