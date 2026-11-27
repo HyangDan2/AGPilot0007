@@ -91,10 +91,10 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | Dependency | Route | State |
 | --- | --- | --- |
 | geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A.1 `3f5f25d` VERIFIED (cover sizing, rotated-aspect CPU/GPU mirror, e2e at derived sizes); approved for merge |
-| `applyParameterGroups` + new edit groups | Q01 → Q04 | Q01 in progress; Q04 interim direct history write must be replaced |
-| geometry/optical/localAdjustments state + actions | Q01 → Q02 | Q01 in progress |
+| `applyParameterGroups` + new edit groups | Q01 → Q04 | AVAILABLE at `6f363c1` (`ParameterGroupsPatch`); Q04 must switch off its interim history write |
+| geometry/optical/localAdjustments state + actions | Q01 → Q02 | `6f363c1` on pro-engine (state, history, v9, `applyParameterGroups`); UI wiring by Q02 02C |
 | `planLocalStage` + GLSL chunk | Q02 → Q01 | pending (02E) |
-| RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED (13 tests at SHA incl. real 24MP DNG ≤128 MiB, parity p99=7, tsc 0); approved for merge; Q01 must wire `openRawForEditing` + `resolveDecodedImageOriginal` |
+| RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED (13 tests at SHA incl. real 24MP DNG ≤128 MiB, parity p99=7, tsc 0); approved for merge; Q01 pending wiring (`openRawForEditing`, typed resolver, no silent preview fallback) |
 | batch resolver compatibility | Q03 → Q04 | `resolveDecodedImageOriginal(image)` available in `a18bc08`; Q04 to use it in batch |
 
 ### Approved integrations
@@ -112,6 +112,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 - 2026-11-27: Ledger published at `3473234`; distributed to Q01–Q04. Q01 told to publish `applyParameterGroups` signature early and to merge only ledger-listed SHAs (`git merge --no-ff`). Q02 ordered to run 02A.1 → 02B without separate approval. Q03 asked to push the develop API + `resolveOriginal` early. Q04 follow-ups: replace interim history write, add geometry/optical/local groups, EXIF/recommend UI + E2E, `uniqueFilename` consistency test, failed-open selection case.
 - 2026-11-27: Q04 reviewed scope accepted as interim; follow-up items 1–5 outstanding (see above log entry).
 - 2026-11-27: Q02 `3f5f25d` (02A.1) verified by Q00: no straighten expansion, rotated-aspect mapping in `geometryMappings` reused by uniforms + CPU mirror, `tests/e2e/source-stage-output-size.spec.ts` covers rotation 90 + straighten + crop + perspective with parity and no-stretch checks; 8 unit tests re-run PASS. Approved for Q01 merge.
+- 2026-11-27: Q01 pushed `6f363c1` to pro-engine (state/history/v9/`applyParameterGroups`, render settings + backend source stage). Verified locally at `36813a7`: tsc 0, 89 tests PASS (cp3Core 12, recipeCompat 15, q04Workspace 20, engineContractCorrective 32, retro90 10). Gaps ordered: preview/export dims from `geometryOutputSize`, exporter resolver must not swallow failures, use typed `resolveDecodedImageOriginal`, RAW open via `openRawForEditing`, local stage inert until 02E. Accepted cross-owner edit `src/poc/q04/editStateAdapter.ts` (schema max 9); Q04 must not revert.
 - 2026-11-27: Q03 `a18bc08` verified by Q00 at SHA: tsc 0; `rawDevelop`/`rawColorMatrix`/`rawMemory`/`rawParity` 13 tests PASS incl. real 6000x4000 DNG retained set ≤128 MiB and preview/full parity (mean 1.10, p99 7). Approved for merge as engine seam; Q01 owns `openRawForEditing` wiring and exporter resolver use.
 
 ## File Allowlist (no out-of-list edits; request via Q00)
