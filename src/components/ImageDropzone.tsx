@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, ShieldCheck, Cpu, ArrowRight, Sparkles, Image as ImageIcon } from 'lucide-react';
-import { useEditorStore } from '../stores/editorStore';
+import { RAW_FILE_ACCEPT, decodeEditorImage, useEditorStore } from '../stores/editorStore';
 import { decodeImageFile } from '../engine/image/decoder';
 import { getAssetUrl } from '../utils/assets';
 import { FILM_PROFILES } from '../films/registry';
@@ -13,8 +13,8 @@ export const ImageDropzone: React.FC = () => {
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     try {
-      const decoded = await decodeImageFile(files[0]);
-      setImage(decoded);
+      const { image: decoded, rawSource } = await decodeEditorImage(files[0]);
+      setImage(decoded, rawSource);
     } catch (err) {
       alert(`Error loading image: ${err}`);
     }
@@ -56,7 +56,7 @@ export const ImageDropzone: React.FC = () => {
         type="file"
         ref={fileInputRef}
         onChange={(e) => handleFiles(e.target.files)}
-        accept="image/jpeg,image/png,image/webp"
+        accept={`image/jpeg,image/png,image/webp,${RAW_FILE_ACCEPT}`}
         className="hidden"
       />
 

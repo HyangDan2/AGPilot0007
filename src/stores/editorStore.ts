@@ -5,12 +5,126 @@ import { getCameraEffects, supportsCameraEffects } from '../films/cameraEffects'
 import { CameraSettings, DateStampSettings, OpticalSettings, normalizeCamera } from '../types/camera';
 import { RETRO90 } from '../films/retro90';
 import { create } from 'zustand';
-import { DecodedImage } from '../engine/image/decoder';
+import { decodeImageFile, type DecodedImage } from '../engine/image/decoder';
+import { readCaptureDate } from '../engine/image/captureDate';
+import type { CpuImageBuffer, DecodedSource } from '../engine/contracts/imageBuffer';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
 import { loadSavedRecipes, persistRecipes, validateRecipeJSON, CURRENT_SCHEMA_VERSION } from './recipeStore';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
+
+const RAW_EXTENSIONS = new Set(['.cr2','.cr3','.crw','.nef','.nrw','.arw','.sr2','.srf','.raf','.rw2','.orf','.pef','.iiq','.mos','.3fr','.fff','.mrw','.srw','.x3f','.kdc','.dcr','.dcs','.erf','.mef','.mdc','.raw','.ari','.dng']);
+export const RAW_FILE_ACCEPT = '.cr2,.cr3,.nef,.arw,.raf,.orf,.dng,.rw2,.pef,.srw,.x3f';
+
+export function isRawImageFile(file: { name?: string }): boolean {
+  const name = file.name ?? '';
+  const dot = name.lastIndexOf('.');
+  return dot >= 0 && RAW_EXTENSIONS.has(name.slice(dot).toLowerCase());
+}
+
+let halfSrgbLut: Uint8Array | null = null;
+function linearToSrgbByte(value: number): number {
+  if (!(value > 0)) return 0;
+  if (value >= 1) return 255;
+  const encoded = value <= 0.0031308 ? 12.92 * value : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
+  return Math.round(encoded * 255);
+}
+function linearLut(): Uint8Array {
+  if (halfSrgbLut) return halfSrgbLut;
+  const lut = new Uint8Array(65536);
+  for (let bits = 0; bits < 65536; bits += 1) {
+    const sign = bits & 0x8000 ? -1 : 1;
+    const exponent = (bits >> 10) & 0x1f;
+    const fraction = bits & 0x3ff;
+    const value = exponent === 0
+      ? sign * Math.pow(2, -14) * (fraction / 1024)
+      : exponent === 31
+        ? (fraction ? NaN : sign * Infinity)
+        : sign * Math.pow(2, exponent - 15) * (1 + fraction / 1024);
+    lut[bits] = linearToSrgbByte(value);
+  }
+  halfSrgbLut = lut;
+  return lut;
+}
+function rawFrameToCanvas(source: CpuImageBuffer, maxEdge?: number): HTMLCanvasElement {
+  const { width, height } = source;
+  const scale = maxEdge ? Math.min(1, maxEdge / Math.max(width, height)) : 1;
+  const outWidth = Math.max(1, Math.round(width * scale));
+  const outHeight = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = outWidth;
+  canvas.height = outHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to create RAW preview canvas');
+  const image = ctx.createImageData(outWidth, outHeight);
+  const lut = source.data instanceof Float32Array ? null : linearLut();
+  const data = source.data;
+  for (let y = 0; y < outHeight; y += 1) {
+    const sourceY = Math.min(height - 1, Math.floor((y * height) / outHeight));
+    for (let x = 0; x < outWidth; x += 1) {
+      const sourceX = Math.min(width - 1, Math.floor((x * width) / outWidth));
+      const src = (sourceY * width + sourceX) * 4;
+      const dst = (y * outWidth + x) * 4;
+      if (lut && data instanceof Uint16Array) {
+        image.data[dst] = lut[data[src]];
+        image.data[dst + 1] = lut[data[src + 1]];
+        image.data[dst + 2] = lut[data[src + 2]];
+      } else if (data instanceof Float32Array) {
+        image.data[dst] = linearToSrgbByte(data[src]);
+        image.data[dst + 1] = linearToSrgbByte(data[src + 1]);
+        image.data[dst + 2] = linearToSrgbByte(data[src + 2]);
+      }
+      image.data[dst + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  return canvas;
+}
+async function rawToDecodedImage(raw: DecodedSource, file: File): Promise<DecodedImage> {
+  const working = raw.working as CpuImageBuffer;
+  const preview = rawFrameToCanvas(working, 2048);
+  // The renderer and canvas drawImage paths accept a canvas; keeping it avoids
+  // encoding a 20MP+ frame to a data URL just to obtain an HTMLImageElement.
+  const original = rawFrameToCanvas(working) as unknown as HTMLImageElement;
+  const metadata = await readCaptureDate(file);
+  return {
+    ...metadata,
+    sourceUrl: URL.createObjectURL(file),
+    name: file.name || `${raw.source.id}.raw`,
+    originalWidth: raw.source.width,
+    originalHeight: raw.source.height,
+    previewCanvas: preview,
+    previewWidth: preview.width,
+    previewHeight: preview.height,
+    originalElement: original,
+  };
+}
+
+export interface EditorImageLoad {
+  image: DecodedImage;
+  rawSource: DecodedSource | null;
+}
+export async function decodeEditorImage(file: File | Blob, signal?: AbortSignal): Promise<EditorImageLoad> {
+  const name = (file as File).name || 'photo.jpg';
+  if (!isRawImageFile({ name })) return { image: await decodeImageFile(file, name, signal), rawSource: null };
+  try {
+    const { decodeRawToSource } = await import('../engine/raw');
+    const raw = await decodeRawToSource({ data: file, name, type: file.type, size: file.size }, { signal });
+    return { image: await rawToDecodedImage(raw, file as File), rawSource: raw };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    const code = (error as { code?: string }).code;
+    const label = code === 'unsupported-format'
+      ? 'Unsupported RAW format'
+      : code === 'corrupt-file'
+        ? 'Corrupt RAW file'
+        : code === 'budget-exceeded'
+          ? 'RAW file exceeds the memory budget'
+          : 'RAW decode failed';
+    throw new Error(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 interface EditorSnapshot { sharpening:SharpeningSettings; colorMixer: ColorMixerSettings; curves: ToneCurves; camera: CameraSettings; adjustments: AdjustmentSettings; activeFilmId: FilmId; activePresetId: string | null }
 
@@ -53,6 +167,7 @@ interface EditorState extends MixerUI {
   resetCamera: () => void;
   currentView: AppView;
   image: DecodedImage | null;
+  rawSource: DecodedSource | null;
   activeFilmId: FilmId;
   adjustments: AdjustmentSettings;
   compareMode: 'none' | 'original' | 'split';
@@ -73,7 +188,7 @@ interface EditorState extends MixerUI {
 
   // Actions
   setView: (view: AppView) => void;
-  setImage: (img: DecodedImage) => void;
+  setImage: (img: DecodedImage, rawSource?: DecodedSource | null) => void;
   setFilm: (filmId: FilmId) => void;
   setAdjustment: <K extends keyof AdjustmentSettings>(key: K, val: number) => void;
   resetAdjustments: () => void;
@@ -153,6 +268,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isFilterSetOpen: false,
   currentView: 'home',
   image: null,
+  rawSource: null,
   activeFilmId: 'FS-001',
   adjustments: { ...DEFAULT_ADJUSTMENTS },
   compareMode: 'none',
@@ -222,7 +338,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   setView: (view) => set({ currentView: view }),
 
-  setImage: (img) => {
+  setImage: (img, rawSource = null) => {
     const prevImg = get().image;
     if (prevImg && prevImg.sourceUrl && prevImg.sourceUrl.startsWith('blob:')) {
       try {
@@ -242,6 +358,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isColorMixerOpen:false,mixerPointId:null,
       sharpeningMask:false,isSharpeningDragging:false,detailZoomReturn:null,
       image: img,
+      rawSource,
       currentView: 'editor',
       zoom: 1.0,
       pan: { x: 0, y: 0 },

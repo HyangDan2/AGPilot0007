@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Q03 Imaging PoC</title>
+    <style>
+      body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; margin: 32px; background: #111; color: #ddd; }
+      a { color: #9ad; }
+      code { color: #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>Film Studio 2.0 — Q03 Imaging PoC (CP1)</h1>
+    <p>Standalone PoC pages. Nothing here is imported by the app; the existing color engine is untouched.</p>
+    <ul>
+      <li><a href="/raw.html">RAW decoding PoC</a> — flashraw WASM decode matrix, precision, demosaic, WB, highlight recovery, LibRaw-Wasm reference</li>
+      <li><a href="/video.html">Video PoC</a> — WebCodecs capability detection, VideoSampleSink → WebGL2 3D LUT → encode/mux with audio passthrough</li>
+    </ul>
+    <p>Run drivers: <code>node scripts/run-raw.mjs</code> and <code>node scripts/run-video.mjs</code> (Playwright Chromium, headless).
+    Fixtures are git-ignored under <code>testdata/</code>; see <code>scripts/make-fixtures.sh</code> and the docs for download sources.</p>
+  </body>
+</html>

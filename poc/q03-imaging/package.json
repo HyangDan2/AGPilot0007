@@ -1,0 +1,26 @@
+{
+  "name": "q03-imaging-poc",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5199",
+    "build": "vite build",
+    "preview": "vite preview --port 5199",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --js-float16array --test tests/*.node-test.ts",
+    "check:q01-sync": "node scripts/check-q01-sync.mjs",
+    "verify": "npm run typecheck && npm test && npm run check:q01-sync"
+  },
+  "dependencies": {
+    "flashraw": "0.5.0",
+    "libraw-wasm": "1.6.0",
+    "mediabunny": "1.66.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "playwright-core": "^1.57.0",
+    "typescript": "^7.0.2",
+    "vite": "6.2.0"
+  }
+}

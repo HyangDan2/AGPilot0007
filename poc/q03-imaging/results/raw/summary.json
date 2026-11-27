@@ -1,0 +1,3481 @@
+[
+  {
+    "key": "cr3_canon_r6m3",
+    "format": "CR3",
+    "detectFormat": "CR3",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 2,
+      "mean": 512,
+      "rows": 2,
+      "samples": 1,
+      "values": [
+        512,
+        512,
+        512,
+        512
+      ]
+    },
+    "whiteLevel": [
+      16383
+    ],
+    "whiteBalanceMultipliers": [
+      2.265625,
+      1,
+      1.4199219,
+      1
+    ],
+    "width": 4320,
+    "height": 2880,
+    "bitsPerSample": 14,
+    "inputMB": 14.1,
+    "rawU16": {
+      "wallMs": 195.9,
+      "totalMs": 186.59999990463257,
+      "outputMB": 25.8,
+      "peakHeapDeltaMB": 9
+    },
+    "normalized": {
+      "wallMs": 189.1,
+      "totalMs": 184.90000009536743,
+      "outputMB": 51.5
+    },
+    "linearF32": {
+      "wallMs": 261.3,
+      "totalMs": 231.2999997138977,
+      "outputMB": 142.4,
+      "peakHeapDeltaMB": 217.2,
+      "meanLinearRGB": [
+        0.05764,
+        0.06413,
+        0.06853
+      ]
+    },
+    "linearF16": {
+      "wallMs": 248.8,
+      "totalMs": 243.59999990463257,
+      "outputMB": 71.2
+    },
+    "linear16": {
+      "wallMs": 293.3,
+      "totalMs": 285.40000009536743,
+      "outputMB": 71.2
+    },
+    "rgba8": {
+      "wallMs": 372.9,
+      "totalMs": 376.30000019073486,
+      "outputMB": 47.5,
+      "peakHeapDeltaMB": 108.3
+    },
+    "rgb16": {
+      "wallMs": 443.7,
+      "totalMs": 438.59999990463257,
+      "outputMB": 71.2
+    },
+    "precision": {
+      "f32MB": 142.4,
+      "f16MB": 71.2,
+      "lin16MB": 71.2,
+      "f16": {
+        "mae": 0.000010962659753507137,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.005412460348079561,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.000003822284112255503,
+        "maxAbs": 0.010542307049036026,
+        "over001": 2,
+        "over005": 0,
+        "differingFrac": 0.004089586548353909,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.000021925319501331493,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.0066857424554183816,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 1118128,
+          "mae": 0.0001478874115697551,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.012825901864545025,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 237364,
+          "mae": 0.0002441614330386439,
+          "maxAbs": 0.00048828125
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00004385063900046723,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0.006896835348079561,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 3772120,
+          "mae": 0.0002374712695117548,
+          "maxAbs": 0.0009765625,
+          "display8": {
+            "differingFrac": 0.0029012862793336373,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 3093625,
+          "mae": 0.00026276937599032616,
+          "maxAbs": 0.0009765625
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000011383971770474618,
+        "maxAbs": 0.000244140625,
+        "display8": {
+          "differingFrac": 0.0055225480109739366,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 5,
+          "mae": 0.0001382112503051758,
+          "maxAbs": 0.00021386146545410156,
+          "display8": {
+            "differingFrac": 0,
+            "meanAbsCode": 0
+          }
+        },
+        "overOneBand": {
+          "samples": 0,
+          "mae": 0,
+          "maxAbs": 0
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.000010962659753507137,
+        "maxAbs": 0.000244140625,
+        "display8": {
+          "differingFrac": 0.005412460348079561,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 2,
+          "mae": 0.00015756487846374512,
+          "maxAbs": 0.00017905235290527344,
+          "display8": {
+            "differingFrac": 0,
+            "meanAbsCode": 0
+          }
+        },
+        "overOneBand": {
+          "samples": 0,
+          "mae": 0,
+          "maxAbs": 0
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000002837,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": [
+        2,
+        2,
+        2
+      ],
+      "exposureOverOnePreserved": true,
+      "workingSpaceHonored": true,
+      "resolution": {
+        "fileWidth": 4512,
+        "fileHeight": 2994,
+        "activeArea": {
+          "height": 2880,
+          "width": 4320,
+          "x": 180,
+          "y": 108
+        },
+        "crop": {
+          "height": 2880,
+          "width": 4320,
+          "x": 180,
+          "y": 108
+        },
+        "displayWidth": 4320,
+        "displayHeight": 2880,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.5537078678607941,
+    "clippedPixels": 0,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 271.2,
+        "totalMs": 249.09999990463257,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 150.7,
+        "totalMs": 148.30000019073486,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (2160x1440 vs 4320x2880); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 1007.8,
+        "totalMs": 986,
+        "diffVsAuto": {
+          "differingFrac": 0.39342906057098764,
+          "meanAbsCode": 1.3454119233668385,
+          "maxCode": 104
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 793.2,
+        "totalMs": 737.3000001907349,
+        "diffVsAuto": {
+          "differingFrac": 0.43253383809156376,
+          "meanAbsCode": 1.2605561649576669,
+          "maxCode": 107
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 497.9,
+        "totalMs": 457.5,
+        "diffVsAuto": {
+          "differingFrac": 0.4676483196159122,
+          "meanAbsCode": 1.3054781814598553,
+          "maxCode": 107
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 500.6,
+        "totalMs": 476,
+        "diffVsAuto": {
+          "differingFrac": 0.4207913773148148,
+          "meanAbsCode": 1.2348084045069787,
+          "maxCode": 106
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 335.5,
+        "totalMs": 308.30000019073486,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "blend": {
+        "wallMs": 369.2,
+        "totalMs": 337.5,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "reconstruct": {
+        "wallMs": 499.3,
+        "totalMs": 459.90000009536743,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "clip": {
+        "wallMs": 261.3,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 341.1,
+        "meanLinearRGB": [
+          0.05373,
+          0.06241,
+          0.0756
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8358649209104938,
+          "meanAbsCode": 2.2721588040908776,
+          "maxCode": 17
+        }
+      },
+      "auto": {
+        "wallMs": 411.6,
+        "meanLinearRGB": [
+          0.06973,
+          0.0664,
+          0.05693
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8531466745970507,
+          "meanAbsCode": 4.661987997624259,
+          "maxCode": 28
+        }
+      },
+      "as-shot": {
+        "wallMs": 261.3,
+        "meanLinearRGB": [
+          0.05764,
+          0.06413,
+          0.06853
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 2880,
+        "width": 4320,
+        "x": 180,
+        "y": 108
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 1740,
+            "y": 1148,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 143.6,
+          "totalMs": 143.80000019073486,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 1560,
+              "y": 1040
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0014875,
+              "meanAbsCode": 2.796218487394958,
+              "p99Code": 24,
+              "maxCode": 44
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 337,
+            "y": 319,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 133.7,
+          "totalMs": 135,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0012200520833333334,
+              "meanAbsCode": 2.0066168623265743,
+              "p99Code": 15,
+              "maxCode": 25
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 440.6,
+      "imageMs": 1098.8,
+      "width": 4319,
+      "height": 2879,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 4320,
+      "height": 2880,
+      "byteLength": 1244592,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 4320,
+        "sourceHeight": 2880,
+        "savedAs": "images/cr3_canon_r6m3_developed.jpg",
+        "fileBytes": 139941
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 683,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/cr3_canon_r6m3_embeddedPreview.jpg",
+        "fileBytes": 151498
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 34.8,
+    "rawJson": "cr3_canon_r6m3.json"
+  },
+  {
+    "key": "cr2_canon_1000d",
+    "format": "CR2",
+    "detectFormat": "CR2",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 2,
+      "mean": 255.70439,
+      "rows": 2,
+      "samples": 1,
+      "values": [
+        255.96815,
+        255.04462,
+        255.84134,
+        255.96342
+      ]
+    },
+    "whiteLevel": [
+      3651
+    ],
+    "whiteBalanceMultipliers": [
+      2.444336,
+      1,
+      1.3740234,
+      1
+    ],
+    "width": 3888,
+    "height": 2592,
+    "bitsPerSample": 12,
+    "inputMB": 10.5,
+    "rawU16": {
+      "wallMs": 80.9,
+      "totalMs": 80.59999990463257,
+      "outputMB": 19.7,
+      "peakHeapDeltaMB": 19.7
+    },
+    "normalized": {
+      "wallMs": 110.3,
+      "totalMs": 107.89999961853027,
+      "outputMB": 39.5
+    },
+    "linearF32": {
+      "wallMs": 188.1,
+      "totalMs": 150.09999990463257,
+      "outputMB": 115.3,
+      "peakHeapDeltaMB": 207.1,
+      "meanLinearRGB": [
+        0.08457,
+        0.11132,
+        0.10174
+      ]
+    },
+    "linearF16": {
+      "wallMs": 160.6,
+      "totalMs": 156.5,
+      "outputMB": 57.7
+    },
+    "linear16": {
+      "wallMs": 201.4,
+      "totalMs": 197.99999952316284,
+      "outputMB": 57.7
+    },
+    "rgba8": {
+      "wallMs": 252.5,
+      "totalMs": 256.59999990463257,
+      "outputMB": 38.4,
+      "peakHeapDeltaMB": 89.9
+    },
+    "rgb16": {
+      "wallMs": 315,
+      "totalMs": 310.19999980926514,
+      "outputMB": 57.7
+    },
+    "precision": {
+      "f32MB": 115.3,
+      "f16MB": 57.7,
+      "lin16MB": 57.7,
+      "f16": {
+        "mae": 0.0000170397584337123,
+        "maxAbs": 0.00030040740966796875,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.006592942143389388,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.00000444513850298098,
+        "maxAbs": 0.17289721965789795,
+        "over001": 87,
+        "over005": 11,
+        "differingFrac": 0.0022585850310758862,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.00003407951639172617,
+        "maxAbs": 0.0006008148193359375,
+        "display8": {
+          "differingFrac": 0.008821890770800521,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 190976,
+          "mae": 0.0001590755292471628,
+          "maxAbs": 0.0006008148193359375,
+          "display8": {
+            "differingFrac": 0.01104327245308311,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 58584,
+          "mae": 0.00024307771009385025,
+          "maxAbs": 0.0006008148193359375
+        }
+      },
+      "exposure+2": {
+        "mae": 0.0000681590325623744,
+        "maxAbs": 0.001201629638671875,
+        "display8": {
+          "differingFrac": 0.011975422424596522,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 2563726,
+          "mae": 0.00016751619029143662,
+          "maxAbs": 0.001201629638671875,
+          "display8": {
+            "differingFrac": 0.01118450255604538,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 837468,
+          "mae": 0.0002609591066555183,
+          "maxAbs": 0.001201629638671875
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.0000174097328362497,
+        "maxAbs": 0.00048172473907470703,
+        "display8": {
+          "differingFrac": 0.0066074626581313824,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 2252,
+          "mae": 0.00012623988502190762,
+          "maxAbs": 0.00048172473907470703,
+          "display8": {
+            "differingFrac": 0.023534635879218474,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 73,
+          "mae": 0.00021723851765671821,
+          "maxAbs": 0.00048172473907470703
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.000017039758040397313,
+        "maxAbs": 0.00030040740966796875,
+        "display8": {
+          "differingFrac": 0.006592942143389388,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 1158,
+          "mae": 0.00012192438921162501,
+          "maxAbs": 0.00030040740966796875,
+          "display8": {
+            "differingFrac": 0.019861830742659757,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 4,
+          "mae": 0.00015529990196228027,
+          "maxAbs": 0.00030040740966796875
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000004099,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": null,
+      "exposureOverOnePreserved": null,
+      "workingSpaceHonored": null,
+      "resolution": {
+        "fileWidth": 3948,
+        "fileHeight": 2622,
+        "activeArea": {
+          "height": 2602,
+          "width": 3906,
+          "x": 42,
+          "y": 18
+        },
+        "crop": {
+          "height": 2592,
+          "width": 3888,
+          "x": 52,
+          "y": 22
+        },
+        "displayWidth": 3888,
+        "displayHeight": 2592,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.8102554281552632,
+    "clippedPixels": 0,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 180.7,
+        "totalMs": 150.40000009536743,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 88.5,
+        "totalMs": 87.2999997138977,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (1944x1296 vs 3888x2592); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 997.4,
+        "totalMs": 965.0999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0.6405786269665871,
+          "meanAbsCode": 3.88625313489619,
+          "maxCode": 187
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 594.3,
+        "totalMs": 571.4999995231628,
+        "diffVsAuto": {
+          "differingFrac": 0.6821550613685244,
+          "meanAbsCode": 3.8958034788597597,
+          "maxCode": 188
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 389.2,
+        "totalMs": 363.90000009536743,
+        "diffVsAuto": {
+          "differingFrac": 0.715422751390794,
+          "meanAbsCode": 3.9810267386038074,
+          "maxCode": 188
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 354,
+        "totalMs": 329.69999980926514,
+        "diffVsAuto": {
+          "differingFrac": 0.6957137821978358,
+          "meanAbsCode": 3.9174569745059045,
+          "maxCode": 184
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 254.2,
+        "totalMs": 217.40000009536743,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "blend": {
+        "wallMs": 235.5,
+        "totalMs": 212.69999980926514,
+        "diffVsClip": {
+          "differingFrac": 6.61526867516808e-8,
+          "meanAbsCode": 21,
+          "maxCode": 39
+        }
+      },
+      "reconstruct": {
+        "wallMs": 293.2,
+        "totalMs": 284.2999997138977,
+        "diffVsClip": {
+          "differingFrac": 6.61526867516808e-8,
+          "meanAbsCode": 21,
+          "maxCode": 39
+        }
+      },
+      "clip": {
+        "wallMs": 188.1,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 202.6,
+        "meanLinearRGB": [
+          0.09201,
+          0.11374,
+          0.09337
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8796044585323206,
+          "meanAbsCode": 3.010762391936964,
+          "maxCode": 31
+        }
+      },
+      "auto": {
+        "wallMs": 216,
+        "meanLinearRGB": [
+          0.13567,
+          0.1204,
+          0.06988
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9923662776359464,
+          "meanAbsCode": 13.163927048652308,
+          "maxCode": 98
+        }
+      },
+      "as-shot": {
+        "wallMs": 188.1,
+        "meanLinearRGB": [
+          0.08457,
+          0.11132,
+          0.10174
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 2592,
+        "width": 3888,
+        "x": 52,
+        "y": 22
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 1396,
+            "y": 918,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 92.5,
+          "totalMs": 93.09999990463257,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 1344,
+              "y": 896
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.00191015625,
+              "meanAbsCode": 4.033265167007499,
+              "p99Code": 28,
+              "maxCode": 62
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 209,
+            "y": 233,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 82.2,
+          "totalMs": 83.59999990463257,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0015838541666666666,
+              "meanAbsCode": 2.917132522196646,
+              "p99Code": 22,
+              "maxCode": 54
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 120,
+      "imageMs": 1061.5,
+      "width": 3906,
+      "height": 2602,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 1936,
+      "height": 1288,
+      "byteLength": 598784,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 3888,
+        "sourceHeight": 2592,
+        "savedAs": "images/cr2_canon_1000d_developed.jpg",
+        "fileBytes": 169252
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 681,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/cr2_canon_1000d_embeddedPreview.jpg",
+        "fileBytes": 130532
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 22.1,
+    "rawJson": "cr2_canon_1000d.json"
+  },
+  {
+    "key": "raf_fuji_xt4",
+    "format": "RAF",
+    "detectFormat": "RAF",
+    "supportsFile": true,
+    "layout": "x-trans",
+    "cfa": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+    "cfaObject": {
+      "colors": [
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "B",
+        "R",
+        "G",
+        "R",
+        "B",
+        "G",
+        "G",
+        "G",
+        "B",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "R",
+        "G",
+        "G",
+        "B",
+        "R",
+        "B",
+        "G",
+        "B",
+        "R",
+        "G"
+      ],
+      "height": 6,
+      "pattern": "GGRGGBGGBGGRBRGRBGGGBGGRGGRGGBRBGBRG",
+      "width": 6
+    },
+    "blackLevel": {
+      "cols": 6,
+      "mean": 1022,
+      "rows": 6,
+      "samples": 1,
+      "values": [
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022,
+        1022
+      ]
+    },
+    "whiteLevel": [
+      16383
+    ],
+    "whiteBalanceMultipliers": [
+      1.9304636,
+      1,
+      2.1192052,
+      1
+    ],
+    "width": 6240,
+    "height": 4160,
+    "bitsPerSample": 14,
+    "inputMB": 25.7,
+    "rawU16": {
+      "wallMs": 559,
+      "totalMs": 550.5,
+      "outputMB": 50.9,
+      "peakHeapDeltaMB": 0
+    },
+    "normalized": {
+      "wallMs": 583.9,
+      "totalMs": 565.3000001907349,
+      "outputMB": 101.8
+    },
+    "linearF32": {
+      "wallMs": 1071,
+      "totalMs": 955.7999997138977,
+      "outputMB": 297.1,
+      "peakHeapDeltaMB": 668.8,
+      "meanLinearRGB": [
+        0.0644,
+        0.07025,
+        0.05032
+      ]
+    },
+    "linearF16": {
+      "wallMs": 1011.6,
+      "totalMs": 939.1000003814697,
+      "outputMB": 148.5
+    },
+    "linear16": {
+      "wallMs": 1185.7,
+      "totalMs": 1122.5,
+      "outputMB": 148.5
+    },
+    "rgba8": {
+      "wallMs": 1354.9,
+      "totalMs": 1395.8999996185303,
+      "outputMB": 99,
+      "peakHeapDeltaMB": 267.1
+    },
+    "rgb16": {
+      "wallMs": 1404.8,
+      "totalMs": 1356.4000000953674,
+      "outputMB": 148.5
+    },
+    "precision": {
+      "f32MB": 297.1,
+      "f16MB": 148.5,
+      "lin16MB": 148.5,
+      "f16": {
+        "mae": 0.000010918255653093064,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.00557323769312952,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.000013975568991122221,
+        "maxAbs": 0.14963901042938232,
+        "over001": 16766,
+        "over005": 5316,
+        "differingFrac": 0.003333217763806706,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.00002183651085587432,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0.006861067451512163,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 1345245,
+          "mae": 0.00020514706044598172,
+          "maxAbs": 0.0009765625,
+          "display8": {
+            "differingFrac": 0.006250162609784835,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 863428,
+          "mae": 0.0002514733291880317,
+          "maxAbs": 0.0009765625
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00004367302149069688,
+        "maxAbs": 0.001953125,
+        "display8": {
+          "differingFrac": 0.008528710038625905,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 3443770,
+          "mae": 0.00028290781766903073,
+          "maxAbs": 0.001953125,
+          "display8": {
+            "differingFrac": 0.0033765321145140356,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 2705589,
+          "mae": 0.0003267817331711507,
+          "maxAbs": 0.001953125
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000010497826928123065,
+        "maxAbs": 0.00046944618225097656,
+        "display8": {
+          "differingFrac": 0.005338824169953978,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 182679,
+          "mae": 0.00012212934158549717,
+          "maxAbs": 0.00046944618225097656,
+          "display8": {
+            "differingFrac": 0.020850781972750015,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 62,
+          "mae": 0.00024441365272768084,
+          "maxAbs": 0.00046944618225097656
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.0000109181550797458,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.005573224852071006,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 116633,
+          "mae": 0.00014823644288556196,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.010528752582888205,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 24850,
+          "mae": 0.0002440942173272791,
+          "maxAbs": 0.00048828125
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000001131,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": [
+        2,
+        2,
+        2
+      ],
+      "exposureOverOnePreserved": true,
+      "workingSpaceHonored": true,
+      "resolution": {
+        "fileWidth": 6384,
+        "fileHeight": 4182,
+        "activeArea": {
+          "height": 4170,
+          "width": 6246,
+          "x": 0,
+          "y": 6
+        },
+        "crop": {
+          "height": 4160,
+          "width": 6240,
+          "x": 6,
+          "y": 13
+        },
+        "displayWidth": 6240,
+        "displayHeight": 4160,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.8760220209757488,
+    "clippedPixels": 438,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 1279.6,
+        "totalMs": 1176.5999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 800.9,
+        "totalMs": 788.2000002861023,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (3120x2080 vs 6240x4160); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 3078.1,
+        "totalMs": 2828,
+        "diffVsAuto": {
+          "differingFrac": 0.5785906681459566,
+          "meanAbsCode": 1.7331872411883529,
+          "maxCode": 126
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 3614.4,
+        "totalMs": 3272,
+        "diffVsAuto": {
+          "differingFrac": 0.5785906681459566,
+          "meanAbsCode": 1.7331872411883529,
+          "maxCode": 126
+        },
+        "note": null
+      },
+      "ppg": {
+        "error": "invalid argument: the ppg demosaic needs a Bayer sensor; this file's pattern is not one (use edge-aware, bilinear or auto)"
+      },
+      "rcd": {
+        "error": "invalid argument: the rcd demosaic needs a Bayer sensor; this file's pattern is not one (use edge-aware, bilinear or auto)"
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 3364.7,
+        "totalMs": 2906.4000000953674,
+        "diffVsClip": {
+          "differingFrac": 1.6693376068376068e-7,
+          "meanAbsCode": 17.46153846153846,
+          "maxCode": 43
+        }
+      },
+      "blend": {
+        "wallMs": 1882.1,
+        "totalMs": 1706.0999999046326,
+        "diffVsClip": {
+          "differingFrac": 0.00004806408201840894,
+          "meanAbsCode": 2.525247127972215,
+          "maxCode": 43
+        }
+      },
+      "reconstruct": {
+        "wallMs": 1619,
+        "totalMs": 1495.9000000953674,
+        "diffVsClip": {
+          "differingFrac": 0.000047974194608809995,
+          "meanAbsCode": 2.4826017130620985,
+          "maxCode": 37
+        }
+      },
+      "clip": {
+        "wallMs": 1071,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 1490.6,
+        "meanLinearRGB": [
+          0.07473,
+          0.0764,
+          0.02712
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9954118255876069,
+          "meanAbsCode": 8.113453209739506,
+          "maxCode": 84
+        }
+      },
+      "auto": {
+        "wallMs": 1691.4,
+        "meanLinearRGB": [
+          0.07481,
+          0.06104,
+          0.07548
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9983513750205457,
+          "meanAbsCode": 7.608274541105627,
+          "maxCode": 93
+        }
+      },
+      "as-shot": {
+        "wallMs": 1071,
+        "meanLinearRGB": [
+          0.0644,
+          0.07025,
+          0.05032
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 4160,
+        "width": 6240,
+        "x": 6,
+        "y": 13
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 2526,
+            "y": 1693,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 851.8,
+          "totalMs": 696.3000001907349,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 2520,
+              "y": 1680
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.00151015625,
+              "meanAbsCode": 2.098810139679255,
+              "p99Code": 12,
+              "maxCode": 49
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 163,
+            "y": 224,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 153.5,
+          "totalMs": 117.2000002861023,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0015627604166666667,
+              "meanAbsCode": 1.9516747208798533,
+              "p99Code": 9,
+              "maxCode": 77
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 3720.7,
+      "imageMs": 41594.5,
+      "width": 6246,
+      "height": 4170,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 4416,
+      "height": 2944,
+      "byteLength": 4239974,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 6240,
+        "sourceHeight": 4160,
+        "savedAs": "images/raf_fuji_xt4_developed.jpg",
+        "fileBytes": 172410
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 683,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/raf_fuji_xt4_embeddedPreview.jpg",
+        "fileBytes": 147648
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 254.9,
+    "rawJson": "raf_fuji_xt4.json"
+  },
+  {
+    "key": "nef_nikon_z6",
+    "format": "NEF",
+    "detectFormat": "NEF",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 1,
+      "mean": 252,
+      "rows": 1,
+      "samples": 1,
+      "values": [
+        252
+      ]
+    },
+    "whiteLevel": [
+      4095
+    ],
+    "whiteBalanceMultipliers": [
+      1.1914063,
+      1,
+      2.1191406,
+      1
+    ],
+    "width": 4528,
+    "height": 3018,
+    "bitsPerSample": 12,
+    "inputMB": 12.9,
+    "rawU16": {
+      "wallMs": 2332.1,
+      "totalMs": 2348.699999809265,
+      "outputMB": 26.3,
+      "peakHeapDeltaMB": 26.3
+    },
+    "normalized": {
+      "wallMs": 562.7,
+      "totalMs": 654.1999998092651,
+      "outputMB": 52.6
+    },
+    "linearF32": {
+      "wallMs": 588,
+      "totalMs": 497.69999980926514,
+      "outputMB": 156.4,
+      "peakHeapDeltaMB": 279.4,
+      "meanLinearRGB": [
+        0.13045,
+        0.0908,
+        0.06786
+      ]
+    },
+    "linearF16": {
+      "wallMs": 4792.5,
+      "totalMs": 4739.699999809265,
+      "outputMB": 78.2
+    },
+    "linear16": {
+      "wallMs": 633.9,
+      "totalMs": 527.1999998092651,
+      "outputMB": 78.2
+    },
+    "rgba8": {
+      "wallMs": 459.1,
+      "totalMs": 520.7999997138977,
+      "outputMB": 52.1,
+      "peakHeapDeltaMB": 144.6
+    },
+    "rgb16": {
+      "wallMs": 971.6,
+      "totalMs": 1008.0999999046326,
+      "outputMB": 78.2
+    },
+    "precision": {
+      "f32MB": 156.4,
+      "f16MB": 78.2,
+      "lin16MB": 78.2,
+      "f16": {
+        "mae": 0.000016969493233973375,
+        "maxAbs": 0.0004881620407104492,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.006293169526227012,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.0000049827947752625634,
+        "maxAbs": 0.11769211292266846,
+        "over001": 626,
+        "over005": 31,
+        "differingFrac": 0.002645932414933251,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.00003393898316388969,
+        "maxAbs": 0.0009763240814208984,
+        "display8": {
+          "differingFrac": 0.008941199680597218,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 102978,
+          "mae": 0.00019078667194085886,
+          "maxAbs": 0.0009763240814208984,
+          "display8": {
+            "differingFrac": 0.006933519780924081,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 58643,
+          "mae": 0.00024266961208642927,
+          "maxAbs": 0.0009763240814208984
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00006787796444835819,
+        "maxAbs": 0.0019526481628417969,
+        "display8": {
+          "differingFrac": 0.010478257272228427,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 5270619,
+          "mae": 0.00018628098929530134,
+          "maxAbs": 0.0019526481628417969,
+          "display8": {
+            "differingFrac": 0.008163746990628615,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 2655785,
+          "mae": 0.0002494539031766391,
+          "maxAbs": 0.0019526481628417969
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000022828540152916734,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.0072088815750959495,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 76321,
+          "mae": 0.00017384165614545429,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.008542865004389355,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 32668,
+          "mae": 0.0002436355217968336,
+          "maxAbs": 0.00048828125
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.000016967641597720955,
+        "maxAbs": 0.0004876852035522461,
+        "display8": {
+          "differingFrac": 0.006293242703184115,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 5061,
+          "mae": 0.00010006081749389021,
+          "maxAbs": 0.0004876852035522461,
+          "display8": {
+            "differingFrac": 0.007508397549891326,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 1328,
+          "mae": 0.00008951845657394593,
+          "maxAbs": 0.0004876852035522461
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000001231,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": null,
+      "exposureOverOnePreserved": null,
+      "workingSpaceHonored": null,
+      "resolution": {
+        "fileWidth": 4548,
+        "fileHeight": 3030,
+        "activeArea": {
+          "height": 3030,
+          "width": 4548,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 3018,
+          "width": 4528,
+          "x": 10,
+          "y": 6
+        },
+        "displayWidth": 4528,
+        "displayHeight": 3018,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 1,
+    "clippedPixels": 49,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 1550.6,
+        "totalMs": 1424.0999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 628.2,
+        "totalMs": 657.2999997138977,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (2264x1509 vs 4528x3018); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 3273.3,
+        "totalMs": 2981.999999523163,
+        "diffVsAuto": {
+          "differingFrac": 0.2594516821333483,
+          "meanAbsCode": 1.3134660146546635,
+          "maxCode": 101
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 1442.1,
+        "totalMs": 1279.2999997138977,
+        "diffVsAuto": {
+          "differingFrac": 0.2822638179560251,
+          "meanAbsCode": 1.2641769254859558,
+          "maxCode": 79
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 754.4,
+        "totalMs": 791.5999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0.3063592336830997,
+          "meanAbsCode": 1.2669945683243018,
+          "maxCode": 85
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 572.8,
+        "totalMs": 661.5999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0.2741739102097271,
+          "meanAbsCode": 1.2573739516843778,
+          "maxCode": 88
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 377.9,
+        "totalMs": 414.5,
+        "diffVsClip": {
+          "differingFrac": 0.000005244348592387567,
+          "meanAbsCode": 2.167441860465116,
+          "maxCode": 32
+        }
+      },
+      "blend": {
+        "wallMs": 537.9,
+        "totalMs": 581.2999997138977,
+        "diffVsClip": {
+          "differingFrac": 0.000014610999101582105,
+          "meanAbsCode": 5.794657762938231,
+          "maxCode": 54
+        }
+      },
+      "reconstruct": {
+        "wallMs": 729.6,
+        "totalMs": 754.2999997138977,
+        "diffVsClip": {
+          "differingFrac": 0.000033734577224520954,
+          "meanAbsCode": 28.778018799710775,
+          "maxCode": 95
+        }
+      },
+      "clip": {
+        "wallMs": 588,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 323.6,
+        "meanLinearRGB": [
+          0.26296,
+          0.09169,
+          0.02317
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8989121318418504,
+          "meanAbsCode": 24.91080650626005,
+          "maxCode": 91
+        }
+      },
+      "auto": {
+        "wallMs": 306.3,
+        "meanLinearRGB": [
+          0.09344,
+          0.0884,
+          0.08823
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9301206405071729,
+          "meanAbsCode": 8.931130139430964,
+          "maxCode": 59
+        }
+      },
+      "as-shot": {
+        "wallMs": 588,
+        "meanLinearRGB": [
+          0.13045,
+          0.0908,
+          0.06786
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 3018,
+        "width": 4528,
+        "x": 10,
+        "y": 6
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 1674,
+            "y": 1115,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 115.1,
+          "totalMs": 225.09999990463257,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 1664,
+              "y": 1109
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0010786458333333334,
+              "meanAbsCode": 2.0924674070497344,
+              "p99Code": 14,
+              "maxCode": 39
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 167,
+            "y": 217,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 121.3,
+          "totalMs": 229.69999980926514,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0011890625,
+              "meanAbsCode": 1.673455978975033,
+              "p99Code": 8,
+              "maxCode": 18
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 203.1,
+      "imageMs": 2218.7,
+      "width": 4548,
+      "height": 3030,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 3024,
+      "height": 2016,
+      "byteLength": 432488,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 4528,
+        "sourceHeight": 3018,
+        "savedAs": "images/nef_nikon_z6_developed.jpg",
+        "fileBytes": 91942
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 683,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/nef_nikon_z6_embeddedPreview.jpg",
+        "fileBytes": 91310
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 81,
+    "rawJson": "nef_nikon_z6.json"
+  },
+  {
+    "key": "arw_sony_a7m3",
+    "format": "ARW",
+    "detectFormat": "ARW",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 1,
+      "mean": 512,
+      "rows": 1,
+      "samples": 1,
+      "values": [
+        512
+      ]
+    },
+    "whiteLevel": [
+      16383
+    ],
+    "whiteBalanceMultipliers": [
+      2.21875,
+      1,
+      1.7578125,
+      1
+    ],
+    "width": 6000,
+    "height": 4000,
+    "bitsPerSample": 14,
+    "inputMB": 24.5,
+    "rawU16": {
+      "wallMs": 59,
+      "totalMs": 57.700000286102295,
+      "outputMB": 46.4,
+      "peakHeapDeltaMB": 46.3
+    },
+    "normalized": {
+      "wallMs": 187.1,
+      "totalMs": 167.5,
+      "outputMB": 92.8
+    },
+    "linearF32": {
+      "wallMs": 576.4,
+      "totalMs": 312.40000009536743,
+      "outputMB": 274.7,
+      "peakHeapDeltaMB": 238.6,
+      "meanLinearRGB": [
+        0.1476,
+        0.14759,
+        0.1482
+      ]
+    },
+    "linearF16": {
+      "wallMs": 588,
+      "totalMs": 546.0999999046326,
+      "outputMB": 137.3
+    },
+    "linear16": {
+      "wallMs": 623.8,
+      "totalMs": 590.1999998092651,
+      "outputMB": 137.3
+    },
+    "rgba8": {
+      "wallMs": 657.7,
+      "totalMs": 542.3000001907349,
+      "outputMB": 91.6,
+      "peakHeapDeltaMB": 243.2
+    },
+    "rgb16": {
+      "wallMs": 763.6,
+      "totalMs": 714.0999999046326,
+      "outputMB": 137.3
+    },
+    "precision": {
+      "f32MB": 274.7,
+      "f16MB": 137.3,
+      "lin16MB": 137.3,
+      "f16": {
+        "mae": 0.000025969017935971754,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.007680083333333333,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.00017107198433943428,
+        "maxAbs": 0.45989370346069336,
+        "over001": 229907,
+        "over005": 102871,
+        "differingFrac": 0.0017448055555555556,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.00005193803587194351,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0.010018472222222222,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 3465598,
+          "mae": 0.0002236579707667385,
+          "maxAbs": 0.0009765625,
+          "display8": {
+            "differingFrac": 0.005592397040857018,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 2274144,
+          "mae": 0.00027686894556004844,
+          "maxAbs": 0.0009765625
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00010387607174388701,
+        "maxAbs": 0.001953125,
+        "display8": {
+          "differingFrac": 0.011776680555555556,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 14810023,
+          "mae": 0.00024437749603001176,
+          "maxAbs": 0.001953125,
+          "display8": {
+            "differingFrac": 0.006317680938105228,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 9073208,
+          "mae": 0.00032168026760986734,
+          "maxAbs": 0.001953125
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000027045982511478035,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.007893097222222221,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 987482,
+          "mae": 0.00014812498311435486,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.008458888364547404,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 314812,
+          "mae": 0.0002458209817449472,
+          "maxAbs": 0.00048828125
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.00002563044283865343,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.007679097222222223,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 863318,
+          "mae": 0.00013906351920583014,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.005885432714248979,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 301249,
+          "mae": 0.00021191170903924402,
+          "maxAbs": 0.00048828125
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000001232,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": null,
+      "exposureOverOnePreserved": null,
+      "workingSpaceHonored": null,
+      "resolution": {
+        "fileWidth": 6048,
+        "fileHeight": 4024,
+        "activeArea": {
+          "height": 4024,
+          "width": 6024,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 4000,
+          "width": 6000,
+          "x": 12,
+          "y": 12
+        },
+        "displayWidth": 6000,
+        "displayHeight": 4000,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.9999998609224956,
+    "clippedPixels": 6068,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 1082.5,
+        "totalMs": 815.0000004768372,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 167,
+        "totalMs": 162.19999980926514,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (3000x2000 vs 6000x4000); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 2915.1,
+        "totalMs": 2621.5999999046326,
+        "diffVsAuto": {
+          "differingFrac": 0.8338889027777778,
+          "meanAbsCode": 3.974129680644076,
+          "maxCode": 198
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 3420.7,
+        "totalMs": 2655.6000003814697,
+        "diffVsAuto": {
+          "differingFrac": 0.8226067777777778,
+          "meanAbsCode": 4.275120902912841,
+          "maxCode": 206
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 1435.1,
+        "totalMs": 1048.4000000953674,
+        "diffVsAuto": {
+          "differingFrac": 0.827996375,
+          "meanAbsCode": 4.434238599306804,
+          "maxCode": 206
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 8004.2,
+        "totalMs": 3318.500000476837,
+        "diffVsAuto": {
+          "differingFrac": 0.8281516527777778,
+          "meanAbsCode": 4.344985391581275,
+          "maxCode": 248
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 11711.1,
+        "totalMs": 9546.300000190735,
+        "diffVsClip": {
+          "differingFrac": 0.0014484027777777778,
+          "meanAbsCode": 12.253842834539963,
+          "maxCode": 138
+        }
+      },
+      "blend": {
+        "wallMs": 6476.6,
+        "totalMs": 5042.800000190735,
+        "diffVsClip": {
+          "differingFrac": 0.005403541666666667,
+          "meanAbsCode": 15.86470036370179,
+          "maxCode": 138
+        }
+      },
+      "reconstruct": {
+        "wallMs": 6344.6,
+        "totalMs": 5556.300000190735,
+        "diffVsClip": {
+          "differingFrac": 0.007853430555555556,
+          "meanAbsCode": 27.579323968470963,
+          "maxCode": 90
+        }
+      },
+      "clip": {
+        "wallMs": 576.4,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 4407.4,
+        "meanLinearRGB": [
+          0.20224,
+          0.15735,
+          0.10209
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.994915,
+          "meanAbsCode": 12.074693399268615,
+          "maxCode": 87
+        }
+      },
+      "auto": {
+        "wallMs": 5983.2,
+        "meanLinearRGB": [
+          0.14483,
+          0.14677,
+          0.15162
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.6715264722222222,
+          "meanAbsCode": 1.144996641772168,
+          "maxCode": 19
+        }
+      },
+      "as-shot": {
+        "wallMs": 576.4,
+        "meanLinearRGB": [
+          0.1476,
+          0.14759,
+          0.1482
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 4000,
+        "width": 6000,
+        "x": 12,
+        "y": 12
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 2412,
+            "y": 1612,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 1628.5,
+          "totalMs": 1383.7000002861023,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 2400,
+              "y": 1600
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0024973958333333332,
+              "meanAbsCode": 6.712095933263816,
+              "p99Code": 42,
+              "maxCode": 180
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 169,
+            "y": 223,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 305.3,
+          "totalMs": 256.59999990463257,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0021953125,
+              "meanAbsCode": 5.369632265717675,
+              "p99Code": 37,
+              "maxCode": 116
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 629.8,
+      "imageMs": 2516.2,
+      "width": 6024,
+      "height": 4024,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 1616,
+      "height": 1080,
+      "byteLength": 1150105,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 6000,
+        "sourceHeight": 4000,
+        "savedAs": "images/arw_sony_a7m3_developed.jpg",
+        "fileBytes": 293606
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 684,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/arw_sony_a7m3_embeddedPreview.jpg",
+        "fileBytes": 250526
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 519.3,
+    "rawJson": "arw_sony_a7m3.json"
+  },
+  {
+    "key": "orf_olympus_em10",
+    "format": "ORF",
+    "detectFormat": "ORF",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 1,
+      "mean": 254,
+      "rows": 1,
+      "samples": 1,
+      "values": [
+        254
+      ]
+    },
+    "whiteLevel": [
+      4095
+    ],
+    "whiteBalanceMultipliers": [
+      1.984375,
+      1,
+      1.7265625,
+      1
+    ],
+    "width": 4608,
+    "height": 3456,
+    "bitsPerSample": 12,
+    "inputMB": 14.6,
+    "rawU16": {
+      "wallMs": 3623.6,
+      "totalMs": 3680.499999523163,
+      "outputMB": 30.7,
+      "peakHeapDeltaMB": 30.7
+    },
+    "normalized": {
+      "wallMs": 785.3,
+      "totalMs": 477.8999996185303,
+      "outputMB": 61.5
+    },
+    "linearF32": {
+      "wallMs": 653.7,
+      "totalMs": 470.80000019073486,
+      "outputMB": 182.3,
+      "peakHeapDeltaMB": 361.2,
+      "meanLinearRGB": [
+        0.09658,
+        0.09437,
+        0.10277
+      ]
+    },
+    "linearF16": {
+      "wallMs": 1077.4,
+      "totalMs": 1143.3000001907349,
+      "outputMB": 91.1
+    },
+    "linear16": {
+      "wallMs": 465.3,
+      "totalMs": 519.4000000953674,
+      "outputMB": 91.1
+    },
+    "rgba8": {
+      "wallMs": 532.5,
+      "totalMs": 572.8000001907349,
+      "outputMB": 60.8,
+      "peakHeapDeltaMB": 155.1
+    },
+    "rgb16": {
+      "wallMs": 934.7,
+      "totalMs": 1016.4999995231628,
+      "outputMB": 91.1
+    },
+    "precision": {
+      "f32MB": 182.3,
+      "f16MB": 91.1,
+      "lin16MB": 91.1,
+      "f16": {
+        "mae": 0.000017013628106878762,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.006465728717903378,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.000003990801795711722,
+        "maxAbs": 0.05092740058898926,
+        "over001": 66,
+        "over005": 1,
+        "differingFrac": 0.0021010033878279323,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.00003402725607320847,
+        "maxAbs": 0.00048828125,
+        "display8": {
+          "differingFrac": 0.00878225988484868,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 29546,
+          "mae": 0.00015484078521292122,
+          "maxAbs": 0.00048828125,
+          "display8": {
+            "differingFrac": 0.012455154674067557,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 8052,
+          "mae": 0.0002426332315282921,
+          "maxAbs": 0.00048828125
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00006805451206536244,
+        "maxAbs": 0.0009765625,
+        "display8": {
+          "differingFrac": 0.013218318483957048,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 2072662,
+          "mae": 0.00012906949266637592,
+          "maxAbs": 0.0009765625,
+          "display8": {
+            "differingFrac": 0.014477034846974567,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 101252,
+          "mae": 0.0002624271383441121,
+          "maxAbs": 0.0009765625
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000019179999328418845,
+        "maxAbs": 0.0004839897155761719,
+        "display8": {
+          "differingFrac": 0.007051821108217593,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 888,
+          "mae": 0.0001256849180470716,
+          "maxAbs": 0.0004839897155761719,
+          "display8": {
+            "differingFrac": 0.013513513513513514,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 25,
+          "mae": 0.00027088165283203127,
+          "maxAbs": 0.0004839897155761719
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.000017013628106878762,
+        "maxAbs": 0.000244140625,
+        "display8": {
+          "differingFrac": 0.006465728717903378,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 36,
+          "mae": 0.000110626220703125,
+          "maxAbs": 0.00023996829986572266,
+          "display8": {
+            "differingFrac": 0,
+            "meanAbsCode": 0
+          }
+        },
+        "overOneBand": {
+          "samples": 1,
+          "mae": 0.0001461505889892578,
+          "maxAbs": 0.0001461505889892578
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 8.648e-7,
+      "wbBestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": null,
+      "exposureOverOnePreserved": null,
+      "workingSpaceHonored": null,
+      "resolution": {
+        "fileWidth": 4640,
+        "fileHeight": 3472,
+        "activeArea": {
+          "height": 3472,
+          "width": 4640,
+          "x": 0,
+          "y": 0
+        },
+        "crop": {
+          "height": 3456,
+          "width": 4608,
+          "x": 8,
+          "y": 8
+        },
+        "displayWidth": 4608,
+        "displayHeight": 3456,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.610008696715037,
+    "clippedPixels": 0,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 3827.2,
+        "totalMs": 3801.2999997138977,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 900.3,
+        "totalMs": 877.4000000953674,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (2304x1728 vs 4608x3456); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 4209.7,
+        "totalMs": 3948.9000000953674,
+        "diffVsAuto": {
+          "differingFrac": 0.6091066211339378,
+          "meanAbsCode": 2.448400788137065,
+          "maxCode": 184
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 12295.7,
+        "totalMs": 10103.199999809265,
+        "diffVsAuto": {
+          "differingFrac": 0.6582398800529407,
+          "meanAbsCode": 2.3803745560116893,
+          "maxCode": 174
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 10537.2,
+        "totalMs": 10217.39999961853,
+        "diffVsAuto": {
+          "differingFrac": 0.6877679811747149,
+          "meanAbsCode": 2.4733263504893253,
+          "maxCode": 200
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 6392.2,
+        "totalMs": 5752.5,
+        "diffVsAuto": {
+          "differingFrac": 0.6640121815790038,
+          "meanAbsCode": 2.3760142424856436,
+          "maxCode": 175
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 3867.5,
+        "totalMs": 3756,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "blend": {
+        "wallMs": 5670.7,
+        "totalMs": 4248.799999713898,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "reconstruct": {
+        "wallMs": 4582.7,
+        "totalMs": 4383.099999904633,
+        "diffVsClip": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        }
+      },
+      "clip": {
+        "wallMs": 653.7,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 9081,
+        "meanLinearRGB": [
+          0.12485,
+          0.09412,
+          0.09116
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8747335677284273,
+          "meanAbsCode": 6.396892736379637,
+          "maxCode": 46
+        }
+      },
+      "auto": {
+        "wallMs": 9241.6,
+        "meanLinearRGB": [
+          0.09819,
+          0.09642,
+          0.09666
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.8164289184067965,
+          "meanAbsCode": 1.674639157930014,
+          "maxCode": 15
+        }
+      },
+      "as-shot": {
+        "wallMs": 653.7,
+        "meanLinearRGB": [
+          0.09658,
+          0.09437,
+          0.10277
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 3456,
+        "width": 4608,
+        "x": 8,
+        "y": 8
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 1712,
+            "y": 1336,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 1060.4,
+          "totalMs": 1080.7999997138977,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 1704,
+              "y": 1328
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.002214583333333333,
+              "meanAbsCode": 4.045625587958607,
+              "p99Code": 26,
+              "maxCode": 84
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 165,
+            "y": 219,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 888.7,
+          "totalMs": 824.8000001907349,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0017583333333333333,
+              "meanAbsCode": 3.5112559241706163,
+              "p99Code": 26,
+              "maxCode": 98
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 3267,
+      "imageMs": 4166.2,
+      "width": 4640,
+      "height": 3472,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 3200,
+      "height": 2400,
+      "byteLength": 918873,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 768,
+        "sourceWidth": 4608,
+        "sourceHeight": 3456,
+        "savedAs": "images/orf_olympus_em10_developed.jpg",
+        "fileBytes": 163926
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 768,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/orf_olympus_em10_embeddedPreview.jpg",
+        "fileBytes": 187538
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 393.8,
+    "rawJson": "orf_olympus_em10.json"
+  },
+  {
+    "key": "dng_ricoh_gr3",
+    "format": "DNG",
+    "detectFormat": "DNG",
+    "supportsFile": true,
+    "layout": "bayer",
+    "cfa": "RGGB",
+    "cfaObject": {
+      "colors": [
+        "R",
+        "G",
+        "G",
+        "B"
+      ],
+      "height": 2,
+      "pattern": "RGGB",
+      "width": 2
+    },
+    "blackLevel": {
+      "cols": 2,
+      "mean": 64,
+      "rows": 2,
+      "samples": 1,
+      "values": [
+        64,
+        64,
+        64,
+        64
+      ]
+    },
+    "whiteLevel": [
+      16314
+    ],
+    "whiteBalanceMultipliers": [
+      2.6484375,
+      1,
+      1.7265624,
+      1
+    ],
+    "width": 6000,
+    "height": 4000,
+    "bitsPerSample": 14,
+    "inputMB": 31.8,
+    "rawU16": {
+      "wallMs": 1675.7,
+      "totalMs": 1676.1999998092651,
+      "outputMB": 47.4,
+      "peakHeapDeltaMB": 47.4
+    },
+    "normalized": {
+      "wallMs": 2496.2,
+      "totalMs": 2315.5,
+      "outputMB": 94.8
+    },
+    "linearF32": {
+      "wallMs": 1374.2,
+      "totalMs": 647.4000000953674,
+      "outputMB": 274.7,
+      "peakHeapDeltaMB": 715.3,
+      "meanLinearRGB": [
+        0.09555,
+        0.10587,
+        0.12435
+      ]
+    },
+    "linearF16": {
+      "wallMs": 565.8,
+      "totalMs": 546.6999998092651,
+      "outputMB": 137.3
+    },
+    "linear16": {
+      "wallMs": 716,
+      "totalMs": 668.5,
+      "outputMB": 137.3
+    },
+    "rgba8": {
+      "wallMs": 753.1,
+      "totalMs": 742.4000000953674,
+      "outputMB": 91.6,
+      "peakHeapDeltaMB": 261.4
+    },
+    "rgb16": {
+      "wallMs": 4692.6,
+      "totalMs": 4523.599999904633,
+      "outputMB": 137.3
+    },
+    "precision": {
+      "f32MB": 274.7,
+      "f16MB": 137.3,
+      "lin16MB": 137.3,
+      "f16": {
+        "mae": 0.000018945288737401927,
+        "maxAbs": 0.0004743337631225586,
+        "over001": 0,
+        "over005": 0,
+        "differingFrac": 0.006906194444444445,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      },
+      "lin16": {
+        "mae": 0.000003846588303014465,
+        "maxAbs": 0.42628347873687744,
+        "over001": 43,
+        "over005": 5,
+        "differingFrac": 0.002265277777777778,
+        "meanAbsCode": 1,
+        "maxCode": 1
+      }
+    },
+    "precisionAfterAdjustments": {
+      "exposure+1": {
+        "mae": 0.000037890577472275054,
+        "maxAbs": 0.0009486675262451172,
+        "display8": {
+          "differingFrac": 0.009297125,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 1459285,
+          "mae": 0.00014710065696906693,
+          "maxAbs": 0.0009486675262451172,
+          "display8": {
+            "differingFrac": 0.013413418215084785,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 297536,
+          "mae": 0.00024443149452864365,
+          "maxAbs": 0.0009486675262451172
+        }
+      },
+      "exposure+2": {
+        "mae": 0.00007578115494372227,
+        "maxAbs": 0.0018973350524902344,
+        "display8": {
+          "differingFrac": 0.01061936111111111,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 10759430,
+          "mae": 0.00020339966355785566,
+          "maxAbs": 0.0018973350524902344,
+          "display8": {
+            "differingFrac": 0.006308977334301167,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 6572934,
+          "mae": 0.0002551416222095111,
+          "maxAbs": 0.0018973350524902344
+        }
+      },
+      "whiteBalance-daylight": {
+        "mae": 0.000019065325260888333,
+        "maxAbs": 0.0004868507385253906,
+        "display8": {
+          "differingFrac": 0.0069345,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 23158,
+          "mae": 0.00012528808306964097,
+          "maxAbs": 0.0004868507385253906,
+          "display8": {
+            "differingFrac": 0.015545383884618706,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 572,
+          "mae": 0.00024524622863822886,
+          "maxAbs": 0.0004868507385253906
+        }
+      },
+      "highlights-blend": {
+        "mae": 0.000018945275841688676,
+        "maxAbs": 0.00046515464782714844,
+        "display8": {
+          "differingFrac": 0.006906194444444445,
+          "meanAbsCode": 1,
+          "maxCode": 1
+        },
+        "highlightBand": {
+          "samples": 2125,
+          "mae": 0.00012188459845150218,
+          "maxAbs": 0.00046515464782714844,
+          "display8": {
+            "differingFrac": 0.01647058823529412,
+            "meanAbsCode": 1
+          }
+        },
+        "overOneBand": {
+          "samples": 5,
+          "mae": 0.00027310848236083984,
+          "maxAbs": 0.00046515464782714844
+        }
+      }
+    },
+    "colorContract": {
+      "ok": true,
+      "bridgeMaxCode": 1,
+      "wbOrderPreMatrix": true,
+      "wbOrderEvidence": "matrix-exact",
+      "wbOrderResidualP99": 0.000002126,
+      "wbBestModel": "color[1]@21: xyzToSrgb * inverse(colorMatrix)",
+      "exposurePlus1ChannelRatio": null,
+      "exposureOverOnePreserved": null,
+      "workingSpaceHonored": null,
+      "resolution": {
+        "fileWidth": 6112,
+        "fileHeight": 4064,
+        "activeArea": {
+          "height": 4024,
+          "width": 6020,
+          "x": 58,
+          "y": 28
+        },
+        "crop": {
+          "height": 4000,
+          "width": 6000,
+          "x": 68,
+          "y": 40
+        },
+        "displayWidth": 6000,
+        "displayHeight": 4000,
+        "orientationApplied": true,
+        "sensorBufferSize": null
+      }
+    },
+    "clipMaxLinear": 0.7826186219851176,
+    "clippedPixels": 0,
+    "demosaic": {
+      "bilinear": {
+        "wallMs": 17110.8,
+        "totalMs": 15497.500000476837,
+        "diffVsAuto": {
+          "differingFrac": 0,
+          "meanAbsCode": 0,
+          "maxCode": 0
+        },
+        "note": null
+      },
+      "half-size": {
+        "wallMs": 1899.9,
+        "totalMs": 1832.8000001907349,
+        "diffVsAuto": null,
+        "note": "output dimensions differ from auto (3000x2000 vs 6000x4000); no pixel diff computed"
+      },
+      "edge-aware": {
+        "wallMs": 7530.1,
+        "totalMs": 5716.099999904633,
+        "diffVsAuto": {
+          "differingFrac": 0.6427176666666666,
+          "meanAbsCode": 3.192167711794655,
+          "maxCode": 174
+        },
+        "note": null
+      },
+      "ahd": {
+        "wallMs": 10913.4,
+        "totalMs": 7430.800000190735,
+        "diffVsAuto": {
+          "differingFrac": 0.6953128888888889,
+          "meanAbsCode": 3.1832606016220355,
+          "maxCode": 173
+        },
+        "note": null
+      },
+      "ppg": {
+        "wallMs": 16399.1,
+        "totalMs": 7356.300000190735,
+        "diffVsAuto": {
+          "differingFrac": 0.7175604861111111,
+          "meanAbsCode": 3.240326004263481,
+          "maxCode": 176
+        },
+        "note": null
+      },
+      "rcd": {
+        "wallMs": 8815.5,
+        "totalMs": 8421.700000286102,
+        "diffVsAuto": {
+          "differingFrac": 0.6990344305555556,
+          "meanAbsCode": 3.17514556140028,
+          "maxCode": 165
+        },
+        "note": null
+      }
+    },
+    "highlights": {
+      "neutral": {
+        "wallMs": 7992.8,
+        "totalMs": 7164.699999809265,
+        "diffVsClip": {
+          "differingFrac": 2.7777777777777777e-8,
+          "meanAbsCode": 72.5,
+          "maxCode": 130
+        }
+      },
+      "blend": {
+        "wallMs": 2199.9,
+        "totalMs": 1960,
+        "diffVsClip": {
+          "differingFrac": 5.5555555555555555e-8,
+          "meanAbsCode": 48.75,
+          "maxCode": 130
+        }
+      },
+      "reconstruct": {
+        "wallMs": 7673.5,
+        "totalMs": 6488.800000190735,
+        "diffVsClip": {
+          "differingFrac": 5.5555555555555555e-8,
+          "meanAbsCode": 13,
+          "maxCode": 33
+        }
+      },
+      "clip": {
+        "wallMs": 1374.2,
+        "diffVsClip": null
+      }
+    },
+    "whiteBalance": {
+      "daylight": {
+        "wallMs": 6843.3,
+        "meanLinearRGB": [
+          0.11608,
+          0.11069,
+          0.09776
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9396730833333333,
+          "meanAbsCode": 6.962188046427849,
+          "maxCode": 55
+        }
+      },
+      "auto": {
+        "wallMs": 11876,
+        "meanLinearRGB": [
+          0.12128,
+          0.10997,
+          0.09831
+        ],
+        "diffVsAsShot": {
+          "differingFrac": 0.9020282083333333,
+          "meanAbsCode": 7.770785269387748,
+          "maxCode": 55
+        }
+      },
+      "as-shot": {
+        "wallMs": 1374.2,
+        "meanLinearRGB": [
+          0.09555,
+          0.10587,
+          0.12435
+        ],
+        "diffVsAsShot": null
+      }
+    },
+    "region": {
+      "ok": true,
+      "coordinateSpace": "sensor-buffer pixels; converted to full-decode space by subtracting the default crop origin",
+      "crop": {
+        "height": 4000,
+        "width": 6000,
+        "x": 68,
+        "y": 40
+      },
+      "decode": [
+        {
+          "label": "centre",
+          "ok": true,
+          "region": {
+            "x": 2468,
+            "y": 1640,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 3619.5,
+          "totalMs": 3600.1000003814697,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 2400,
+              "y": 1600
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.00223671875,
+              "meanAbsCode": 4.8303644196064734,
+              "p99Code": 28,
+              "maxCode": 93
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        },
+        {
+          "label": "corner",
+          "ok": true,
+          "region": {
+            "x": 225,
+            "y": 251,
+            "w": 1200,
+            "h": 800
+          },
+          "wallMs": 3126.5,
+          "totalMs": 2966.800000190735,
+          "outputMB": 3.66,
+          "vsFull": {
+            "width": 1200,
+            "height": 800,
+            "offsetInFull": {
+              "x": 157,
+              "y": 211
+            },
+            "all": {
+              "samples": 3840000,
+              "differingFrac": 0.0012697916666666667,
+              "meanAbsCode": 1.6839622641509433,
+              "p99Code": 7,
+              "maxCode": 10
+            },
+            "interior8pxExcluded": {
+              "samples": 3713024,
+              "differingFrac": 0,
+              "meanAbsCode": 0,
+              "p99Code": 0,
+              "maxCode": 0
+            },
+            "exactMatchInside": true
+          }
+        }
+      ],
+      "note": "border pixels may differ because the region decoder lacks full-frame demosaic context; the 8px-inset interior is compared separately"
+    },
+    "libraw": {
+      "ok": true,
+      "openMs": 1010.7,
+      "imageMs": 3240.5,
+      "width": 6020,
+      "height": 4024,
+      "bits": 8,
+      "colors": 3,
+      "error": null
+    },
+    "previewDescriptor": {
+      "mimeType": "image/jpeg",
+      "width": 6000,
+      "height": 4000,
+      "byteLength": 2949020,
+      "orientation": 1
+    },
+    "images": {
+      "developed": {
+        "width": 1024,
+        "height": 683,
+        "sourceWidth": 6000,
+        "sourceHeight": 4000,
+        "savedAs": "images/dng_ricoh_gr3_developed.jpg",
+        "fileBytes": 176015
+      },
+      "embeddedPreview": {
+        "width": 1024,
+        "height": 683,
+        "usage": "reference-only: not used as the RAW development result",
+        "savedAs": "images/dng_ricoh_gr3_embeddedPreview.jpg",
+        "fileBytes": 177725
+      }
+    },
+    "warnings": [],
+    "incomplete": false,
+    "source": "sensor",
+    "backend": "CPU WASM SIMD128 x1 thread",
+    "totalWallSeconds": 533.9,
+    "rawJson": "dng_ricoh_gr3.json"
+  }
+]

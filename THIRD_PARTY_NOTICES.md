@@ -147,3 +147,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## FlashRaw 0.5.0 (RAW sensor decoding)
+
+The RAW source decoder (`src/engine/raw/`) uses FlashRaw for camera RAW decoding. FlashRaw and its WebAssembly binaries are distributed under `MIT OR Apache-2.0`; this product relies on the MIT option.
+
+Source: https://github.com/ybouane/flashraw
+
+```text
+MIT License
+
+Copyright (c) 2026 Yassine Bouanane and FlashRaw contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### Not bundled: LibRaw-Wasm
+
+The Q03 PoC used LibRaw-Wasm only to produce local reference images for decoder comparison. It is not a product dependency and is not bundled: the wrapper is published as ISC, but it statically links LibRaw, which is dual-licensed LGPL-2.1 / CDDL-1.0 and would require additional relinking and source-offer review. The product RAW path uses FlashRaw only.
+
+### Test samples
+
+Camera RAW samples from raw.pixls.us (CC0) are used only for local PoC and decoder tests. They are not distributed with the product or committed to the repository; see `poc/q03-imaging/docs` and `poc/q03-imaging/THIRD_PARTY_NOTICES.md` for the PoC notice policy.

@@ -9,6 +9,7 @@ import {
   type RenderPipelineBackend,
   type RenderPipelineRequest,
 } from '../src/engine/pipeline/renderPipeline';
+import { sourceStageWithinLimit } from '../src/engine/renderer/webglPipelineBackend';
 
 const settings = { adjustments: { ...DEFAULT_ADJUSTMENTS }, filmId: 'FS-010' as const };
 
@@ -165,5 +166,11 @@ describe('render pipeline executor', () => {
     expect(assertRenderPlanParity(settings)).toBe(
       assertRenderPlanParity({ adjustments: { ...DEFAULT_ADJUSTMENTS }, filmId: 'FS-010' }),
     );
+  });
+
+  it('skips the source stage above the 8192px WebGL2 safety limit', () => {
+    expect(sourceStageWithinLimit(8192, 8192)).toBe(true);
+    expect(sourceStageWithinLimit(8193, 4096)).toBe(false);
+    expect(sourceStageWithinLimit(4096, 8193)).toBe(false);
   });
 });

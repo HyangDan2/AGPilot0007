@@ -1,0 +1,110 @@
+{
+  "ok": true,
+  "info": {
+    "output": {
+      "mimeType": "video/mp4",
+      "bytes": 630564,
+      "duration": 3,
+      "videoCodec": "avc1.64001e",
+      "audioCodec": "mp4a.40.2",
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "firstVideoTimestamp": 0,
+      "firstAudioTimestamp": -0.021333333333333333,
+      "avStartOffsetMs": -21.33,
+      "videoTrackDuration": 3,
+      "audioTrackDuration": 3,
+      "avEndDeltaMs": 0,
+      "outputVideoPacketCount": 90,
+      "outputAudioPacketCount": 142,
+      "variableFrameRate": {
+        "sampledPackets": 90,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.1,
+          0.13333333333333333,
+          0.16666666666666666,
+          0.2,
+          0.23333333333333334
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      }
+    },
+    "audio": {
+      "input": {
+        "packets": 142,
+        "bytes": 36512,
+        "hash": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1"
+      },
+      "output": {
+        "packets": 142,
+        "bytes": 36512,
+        "hash": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1"
+      },
+      "hashMatch": true
+    },
+    "inputAv": {
+      "avStartOffsetMs": -21.33,
+      "avEndDeltaMs": 0,
+      "videoTrackDuration": 3,
+      "audioTrackDuration": 3
+    },
+    "decodedFrames": 90
+  },
+  "assertions": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "display dimensions",
+        "expected": "640x360",
+        "actual": "640x360",
+        "pass": true
+      },
+      {
+        "name": "video packet count == encoded frames",
+        "expected": 90,
+        "actual": 90,
+        "pass": true
+      },
+      {
+        "name": "A/V start offset preserved from input (<=1ms)",
+        "expected": -21.33,
+        "actual": -21.33,
+        "pass": true
+      },
+      {
+        "name": "A/V end delta preserved from input (<=5ms)",
+        "expected": 0,
+        "actual": 0,
+        "pass": true
+      },
+      {
+        "name": "audio packet hash matches input (passthrough)",
+        "expected": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
+        "actual": "f0aa078dd7ef2eb931d4e13b71522a944a1ee61ae78dcaa3cf671ba3d1cf7fa1",
+        "pass": true
+      },
+      {
+        "name": "decoded frame count == packet count",
+        "expected": 90,
+        "actual": 90,
+        "pass": true
+      },
+      {
+        "name": "output decode without error + monotonic timestamps",
+        "expected": "true",
+        "actual": "true",
+        "pass": true
+      }
+    ]
+  }
+}

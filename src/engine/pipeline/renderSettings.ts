@@ -4,13 +4,16 @@ import type { ColorMixerSettings } from '../../types/colorMixer';
 import type { SharpeningSettings } from '../../types/sharpening';
 import type { CameraSettings } from '../../types/camera';
 import type { GeometryTransform } from '../contracts/geometry';
+import type { OpticalTransform } from '../contracts/optical';
+import type { MaskData } from '../contracts/masks';
 
 export type CompareMode = 'none' | 'original' | 'split';
 
 /**
  * Persisted render inputs shared by the interactive preview and the exporter.
  * New editable feature groups must be added here so both paths receive them.
- * Non-identity geometry is not rendered yet; CP1 geometry wiring is gated on QA.
+ * Geometry/optical are applied by the Q02 source stage before the color
+ * pipeline; masks stay in corrected NIS for local stages.
  */
 export interface RenderSettings {
   filmId?: FilmId;
@@ -20,6 +23,8 @@ export interface RenderSettings {
   sharpening?: SharpeningSettings;
   camera?: CameraSettings;
   geometry?: GeometryTransform;
+  optical?: OpticalTransform;
+  masks?: readonly MaskData[];
 }
 
 /**

@@ -229,6 +229,8 @@ Vite 개발 서버도 `.private/` 파일 접근을 거부하고 해당 폴더와
 - RAW 단계 스위치: `RAW_SKIP_MAIN`, `RAW_SKIP_CONTRACT`, `RAW_SKIP_ROBUSTNESS`, `RAW_SKIP_RELEASE`, `RAW_FILES=cr3_canon_r6m3`, `RAW_LIBRAW=0`. 단계별 실행은 기존 결과 JSON을 덮어쓰지 않는다.
 - Video 스위치: `VIDEO_FILES`, `VIDEO_SKIP_BENCH`, `VIDEO_SKIP_BUDGET`, `VIDEO_SKIP_CANCEL`, `VIDEO_SKIP_LONG`. 자동화에서는 `page.exposeFunction('__q03Sink')`로 Node fs 스트림을 제공해 Base64 메모리 버퍼 없이 출력 파일을 만든다. 취소 검증은 앱 내부 abort(`abortAfterMs`)와 외부 `cancelRun()` 두 경로를 모두 실행한다.
 - Assertion: `node scripts/check-raw.mjs`(RAW 114개), `node scripts/run-video.mjs` 자체 assertion. 실패 시 exit 1, 결과는 `results/raw/assertions.json`, `results/video/assertions.json`.
+- 회귀 게이트(측정 없이 실행 가능): `npm run verify` = `tsc --noEmit`(src/shared·tests) + `node --js-float16array --test tests/*.test.ts`(Q01 계약/어댑터 단위 테스트 12개) + `node scripts/check-q01-sync.mjs`(vendored Q01 계약 SHA 일치). 테스트는 Q01 `assertDecodedSource`를 그대로 import하므로 계약 위반 시 실패한다.
+- Q01 경계: PoC 내부 표현은 3채널 `SceneLinearFrame`이고, 제품 경계로 넘길 때만 `sceneLinearToQ01DecodedSource`가 RGBA float(rgba16f/rgba32f, alpha=1)로 확장한다. `DisplaySrgb8Frame`은 출력 전용이며 파이프라인 입력으로 쓰지 않는다. 계약 원본은 `src/shared/q01/imageBuffer.ts`에 바이트 동일 복사본으로 두고 `SOURCE.md`에 출처 SHA를 기록한다. (Q01 소유 절과 중복될 경우 위 계약 절이 우선하며, 이 두 줄은 PoC 실행 안내다.)
 - 원칙: 확인하지 않은 포맷·코덱·기기(iOS Safari 포함)를 지원으로 표시하지 않는다. 내장 JPEG 프리뷰를 RAW 현상 결과로 쓰지 않는다. 수치는 headless 소프트웨어 GL·WASM 1스레드 기준이다.
 - 문서: `docs/phase1/RAW_POC.md`, `VIDEO_POC.md`, `Q03_SUPPORT_MATRIX.md`, `Q03_LICENSE_REVIEW.md`. 측정 원시값은 `poc/q03-imaging/results/`에 JSON/표로 보존한다.
 
