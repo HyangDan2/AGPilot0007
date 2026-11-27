@@ -52,7 +52,7 @@ Record in the report:
 2. `git status --porcelain` (official runs must start clean; E2E-generated `docs/screenshots/*.png` must be reverted, never committed).
 3. `lsof -nP -iTCP:<E2E_PORT> -sTCP:LISTEN` (must be empty before the run).
 4. Start time, host load average, and the exact command.
-5. Full output log path under the agent's `PW_OUTPUT_DIR`.
+5. Full output log path **outside** `PW_OUTPUT_DIR`, e.g. `.private/e2e-logs/<agent>/e2e-<sha>.log`. Playwright clears `outputDir` at run start and deletes any log placed inside it (observed by Q05 on 2026-11-27).
 
 A run that shares a server, reuses another branch's process, or runs concurrently with another full suite is not acceptable evidence, even if it is green.
 
