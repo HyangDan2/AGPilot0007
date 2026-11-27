@@ -4,7 +4,9 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { GROUP_LABELS, PARAMETER_GROUPS, type ParameterGroup } from '../../poc/q04/types';
 import { primarySelection } from '../../poc/q04/selection';
-import { clipboardClip, copySelection, pasteToSelection } from '../../poc/q04/integration/parameterPaste';
+import { clipboardClip, copySelection, pasteToSelection, readEditState } from '../../poc/q04/integration/parameterPaste';
+import { recipeFromEditState } from '../../poc/q04/editState';
+import { persistRecipesVerified } from '../../poc/q04/persistence';
 
 /**
  * Selective copy/paste for the workspace selection. Copy reads the primary
@@ -38,6 +40,23 @@ export function CopyPasteHost() {
   const paste = () => {
     const report = pasteToSelection(clip);
     setMessage(report.pasted ? `Pasted to ${report.pasted} photo${report.pasted === 1 ? '' : 's'}` : 'Nothing to paste.');
+  };
+
+  /** Recipe persistence is verified by reading the stored list back. */
+  const saveRecipe = async () => {
+    const state = useEditorStore.getState();
+    if (!state.image) return;
+    const recipe = recipeFromEditState(readEditState(state.image.workspaceKey ?? ''), {
+      id: `rcp-${Date.now()}`,
+      name: `${state.image.name} settings`,
+    });
+    const report = await persistRecipesVerified([...state.recipes, recipe]);
+    if (!report.ok) {
+      setMessage(`Recipe save failed: ${report.error}`);
+      return;
+    }
+    useEditorStore.setState({ recipes: [...state.recipes, recipe] });
+    setMessage(`Recipe saved and verified (${report.actual} stored)`);
   };
 
   return (
@@ -90,6 +109,7 @@ export function CopyPasteHost() {
             <div className="flex flex-wrap gap-2 text-xs">
               <button type="button" data-testid="copy-parameters" onClick={copy} disabled={!groups.length} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400 disabled:opacity-40">Copy</button>
               <button type="button" data-testid="paste-parameters" onClick={paste} disabled={!clip || !groups.length} className="rounded bg-amber-600 px-3 py-1 font-semibold text-white disabled:opacity-40">Paste to {targetIds.length}</button>
+              <button type="button" data-testid="save-recipe" onClick={() => void saveRecipe()} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Save as recipe</button>
               {clip && <span className="self-center text-[color:var(--ui-text-slate400)]">clipboard: {clip.groups.join(', ')}</span>}
             </div>
 
