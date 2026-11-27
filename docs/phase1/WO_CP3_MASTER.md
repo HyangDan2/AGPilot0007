@@ -101,7 +101,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 
 ### Integration orders (Q01 — read before continuing)
 
-1. Push `3da2368` and `6550aa0`, then merge Q02 branch tip `9c78983` with `--no-ff` (contains `3f5f25d`, `ce06ccd`, `2e7e1b6` + docs-only `394a965`, `9c78983`).
+1. Push `3da2368` and `6550aa0`, then merge Q02 branch tip `cf0fe63` with `--no-ff` (contains `3f5f25d`, `ce06ccd`, `2e7e1b6`, docs-only `394a965`/`9c78983`, and test-only `cf0fe63`).
 1b. Merge Q04 branch tip `ff8a2a4` with `--no-ff` (adds the batch resolver guard test on top of `294990e`).
 2. Renderer local stage: inject `LOCAL_STAGE_FRAGMENT` (`src/engine/local/maskRaster.ts`) after Color Lab and before detail; mask canvases bind to texture units starting at **5** (ruling), clamp groups to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8); upload `localStageAdjustmentUniforms`, `localStageBlendCode`, opacity and count; build the plan once per (`localAdjustments`, output size) via `planLocalStage({state,width,height,corrected})` — never per frame; null plan keeps the CP2 path byte-identical.
 3. Mount `GeometryOverlay` + `GeometryPanel` and `MasksWorkspace`/`MaskListPanel`/`MaskOverlay` (all currently unimported). Geometry: drag -> `setGeometry(next,false)`, release -> commit; optical likewise. Masks: `maskUiStore.local` edits commit via `setLocalAdjustments(next, commit)`; `editorStore.localAdjustments` changes (undo/recipe/`applyParameterGroups`) push back via `maskUiStore.setLocal` with an equality guard. Pass group masks into `RenderSettings.masks`.
@@ -119,6 +119,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `2e7e1b6` | cp3-q02-local | 02D masks + 02E local stage seam (maskRaster, mask UI, masks.ts delta 2) | 2026-11-27 | APPROVED — merge `--no-ff` |
 | `394a965` | cp3-q02-local | docs-only: crop comment (post-straighten output NIS) | 2026-11-27 | APPROVED — comment-only, no behavior change |
 | `9c78983` | cp3-q02-local | docs-only: mask texture base 5 ruling in `maskRaster`/POC doc | 2026-11-27 | APPROVED — comment/doc-only; branch tip for Q01 |
+| `cf0fe63` | cp3-q02-local | test-only: zero flow, stroke overlap union, feather scaling | 2026-11-27 | APPROVED — test-only; branch tip for Q01 |
 | `ff8a2a4` | cp3-q04-workspace | CP3-04 test-only: batch must pass the decoded image to the shared exporter resolver (no preview read) | 2026-11-27 | APPROVED — merge `--no-ff`; Q04 branch tip |
 
 ### Ledger log
@@ -202,3 +203,4 @@ Independent fresh-clone QA at final integration SHA: full unit/perf/build, singl
 
 `Progress / Completed / Test Result / Blocker / Next Action` — no reports longer than needed, no re-verification of CP2 evidence.
 - 2026-11-27: Q04 `ff8a2a4` verified by Q00 at SHA in verify worktree: tsc 0; `tests/q04Batch.test.ts` 25 PASS, incl. new guard that batch hands the decoded image (not `originalElement`) to `prepare` and does not resolve full-res itself (resolution belongs to the shared exporter). Branch tip also carries pro-engine merges already on pro-engine, content-neutral. Approved for `--no-ff` merge.
+- 2026-11-27: Q02 `cf0fe63` verified by Q00 at SHA: tsc 0; `tests/local-mask-raster.test.ts` 16 PASS (adds zero-flow no-paint, stroke union 0.75, feather band widening). Test-only delta past `9c78983`; Q02 is on standby again. Minor cosmetic: one `it(...)` line has the first statement on the same line (no behavior impact); not worth a rewrite. Integration target now `cf0fe63`.
