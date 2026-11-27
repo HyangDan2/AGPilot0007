@@ -1,0 +1,43 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+vi.mock('../src/engine/image/decoder',()=>({decodeImageFile:vi.fn(async(file:File)=>({workspaceKey:file.name,name:file.name,sourceUrl:'blob:'+file.name,originalWidth:64,originalHeight:48}))}));
+vi.mock('../src/engine/image/thumbnails',()=>({clearThumbnails:vi.fn(),requestThumbnail:vi.fn()}));
+import {useWorkspaceStore as ws} from '../src/stores/workspaceStore';
+const entry=(name:string)=>({id:name,name,path:name,getFile:async()=>new File(['test'],name,{type:'image/png'})});
+beforeEach(async()=>{ws.getState().close();ws.getState().setEntries(['a','b','c','d'].map(entry),'Folder');await ws.getState().select('a');});
+it('plain click selects one photo, shift click extends the range and opens the target',async()=>{
+ ws.getState().clickThumbnail('b');
+ await vi.waitFor(()=>expect(ws.getState().activeId).toBe('b'));
+ expect(ws.getState().selection).toMatchObject({ids:['b'],anchor:'b',active:'b'});
+ ws.getState().clickThumbnail('d',{shiftKey:true});
+ await vi.waitFor(()=>expect(ws.getState().activeId).toBe('d'));
+ expect(ws.getState().selection.ids).toEqual(['b','c','d']);
+ expect(ws.getState().selection.anchor).toBe('b');
+ expect(ws.getState().selection.active).toBe('d');
+});
+it('ctrl/cmd toggles membership, while dialog toggles never change the edited photo',async()=>{
+ ws.getState().clickThumbnail('c',{toggle:true});
+ await vi.waitFor(()=>expect(ws.getState().activeId).toBe('c'));
+ expect([...ws.getState().selection.ids].sort()).toEqual(['a','c']);
+ ws.getState().clickThumbnail('a',{toggle:true});
+ expect(ws.getState().selection.ids).toEqual(['c']);
+ expect(ws.getState().activeId).toBe('c');
+ ws.getState().toggleSelection('b');
+ expect([...ws.getState().selection.ids].sort()).toEqual(['b','c']);
+ ws.getState().toggleSelection('c');
+ expect(ws.getState().selection.ids).toEqual(['b']);
+ expect(ws.getState().selection.active).toBe('b');
+ expect(ws.getState().activeId).toBe('c');
+});
+it('selects all, clears, and prunes ids that leave the workspace',()=>{
+ ws.getState().selectAllPhotos();
+ expect(ws.getState().selection.ids).toEqual(['a','b','c','d']);
+ ws.getState().clearSelection();
+ expect(ws.getState().selection).toEqual({ids:[],anchor:null,active:null});
+ ws.getState().selectAllPhotos();
+ ws.getState().append([entry('e')]);
+ expect(ws.getState().selection.ids).toEqual(['a','b','c','d']);
+ expect(ws.getState().entries.map((item)=>item.id)).toContain('e');
+ ws.getState().setEntries([entry('b')],'Other');
+ expect(ws.getState().selection).toEqual({ids:[],anchor:null,active:null});
+ expect(ws.getState().activeId).toBeNull();
+});

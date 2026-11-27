@@ -22,8 +22,6 @@ export interface BatchSummary {
 }
 
 export interface BatchExportView {
-  entries: WorkspaceEntry[];
-  selected: string[];
   snapshot: BatchSnapshot<ExportJobMeta> | null;
   summary: BatchSummary | null;
   running: boolean;
@@ -53,15 +51,15 @@ function summarize(snapshot: BatchSnapshot<ExportJobMeta>): BatchSummary {
 }
 
 /**
- * Product-facing controller around the CP1 BatchQueue. Selection stays local to
- * the batch surface (IF-03 deferred by PO), edit states arrive through an
- * injected resolver, and delivery releases prepared object URLs via
+ * Product-facing controller around the CP1 BatchQueue. The caller passes the
+ * workspace selection into start(); the controller never owns selection so the
+ * strip and this surface read one source of truth. Edit states arrive through
+ * an injected resolver, and delivery releases prepared object URLs via
  * createDeliverySink. Jobs keep their ids so retry/retryFailed address the same
  * queue entries.
  */
 export class BatchExportController {
   private entries: WorkspaceEntry[] = [];
-  private selected = new Set<string>();
   private queue: BatchQueue<ExportJobMeta, PreparedExport> | null = null;
   private unsubscribeQueue: (() => void) | null = null;
   private snapshot: BatchSnapshot<ExportJobMeta> | null = null;
@@ -72,13 +70,7 @@ export class BatchExportController {
   constructor(private readonly options: BatchExportControllerOptions = {}) {}
 
   private getView(): BatchExportView {
-    return {
-      entries: this.entries,
-      selected: [...this.selected],
-      snapshot: this.snapshot,
-      summary: this.summary,
-      running: this.queueRunning,
-    };
+    return { snapshot: this.snapshot, summary: this.summary, running: this.queueRunning };
   }
 
   subscribe(listener: (view: BatchExportView) => void): () => void {
@@ -92,45 +84,16 @@ export class BatchExportController {
     for (const listener of this.listeners) listener(view);
   }
 
+  /** Job metadata is resolved from the live workspace entries passed here. */
   setEntries(entries: WorkspaceEntry[]): void {
     this.entries = entries;
-    const ids = new Set(entries.map((entry) => entry.id));
-    let changed = false;
-    for (const id of [...this.selected]) {
-      if (!ids.has(id)) {
-        this.selected.delete(id);
-        changed = true;
-      }
-    }
-    if (changed) this.emit();
   }
 
-  toggle(id: string): void {
-    if (!this.entries.some((entry) => entry.id === id)) return;
-    if (this.selected.has(id)) this.selected.delete(id);
-    else this.selected.add(id);
-    this.emit();
-  }
-
-  selectAll(): void {
-    this.selected = new Set(this.entries.map((entry) => entry.id));
-    this.emit();
-  }
-
-  clearSelection(): void {
-    if (!this.selected.size) return;
-    this.selected.clear();
-    this.emit();
-  }
-
-  isSelected(id: string): boolean {
-    return this.selected.has(id);
-  }
-
-  /** Starts a run over the selection; resolves false while another run is active. */
-  start(editFor: (id: string) => EditState): boolean {
+  /** Starts a run over the given photo ids; resolves false while another run is active or no id exists. */
+  start(ids: readonly string[], editFor: (id: string) => EditState): boolean {
     if (this.queueRunning) return false;
-    const entries = this.entries.filter((entry) => this.selected.has(entry.id));
+    const wanted = new Set(ids);
+    const entries = this.entries.filter((entry) => wanted.has(entry.id));
     if (!entries.length) return false;
 
     this.disposeQueue();
