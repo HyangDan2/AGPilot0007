@@ -215,7 +215,8 @@ test('RAW batch export decodes the full-resolution original, not the preview', a
     { type: 'raw-export', description: `${size.width}x${size.height} · ${downloaded.byteLength} bytes · ${durationMs} ms` },
     { type: 'console-errors', description: errors.length ? errors.join(' | ') : 'none' },
   );
+  console.log(`[raw-export] ${size.width}x${size.height} · ${downloaded.byteLength} bytes · ${durationMs} ms · console errors: ${errors.length}`);
   expect(size).toEqual({ width: 6000, height: 4000 });
-  expect(download.suggestedFilename()).toBe('R0000357.DNG');
+  expect(download.suggestedFilename()).toBe('R0000357_HD2Lab_FilmStudio.jpg');
   expect(errors).toEqual([]);
 });
