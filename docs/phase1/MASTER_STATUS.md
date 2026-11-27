@@ -1,6 +1,6 @@
 # MASTER STATUS — Phase 1 CP2 (Film Studio 2.0)
 
-Last updated: 2026-11-27 08:30 KST · Owner: Q00 Supervisor
+Last updated: 2026-11-27 10:20 KST · Owner: Q00 Supervisor
 Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-verification of completed work, backlog non-blocking defects.
 
 ## Current Gate
@@ -8,47 +8,52 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | Gate | State | Note |
 | --- | --- | --- |
 | CP1 Closure / G1 | **PASS** | PO accepted 2026-11-27. Q05 audit green. |
-| Engine Contract Freeze | **DECLARED** | Frozen blobs at `4dea9b6`: optical `539a381`, imageBuffer `f1f9330`, masks `ab12ad5`, exportControl `108e708`, moduleRegistry `42ca676`. Changes require a WO + Q05 re-audit. |
-| CP2-02..CP2-05 | **IN PROGRESS** | Started after G1 acceptance. |
-| CP2-06 / G2 | NOT STARTED | Q05 on standby until CP2 closure. |
+| Engine Contract Freeze | **UNCHANGED** | 5 blobs identical at `6973126`: optical `539a381`, imageBuffer `f1f9330`, masks `ab12ad5`, exportControl `108e708`, moduleRegistry `42ca676`. |
+| Recipe v8 | **ACTIVE** | Write/read ceiling 8 at `6973126`; v1–v7 readable, migrated in memory. §8.1 conditions met. |
+| CP2-02..CP2-05 | **COMPLETE** | Q02→Q03→Q04 serial integration on pro-engine. |
+| CP2-06 / G2 | **IN PROGRESS** | Q05 activated on `6973126`. |
 
-## Baseline (verified 2026-11-27 08:10 KST)
+## Baseline (verified 2026-11-27 10:15 KST)
 
 | Ref | SHA | PR | Base | State |
 | --- | --- | --- | --- | --- |
 | `main` | `b850f82` | — | — | untouched |
 | `beta` | `d8ec276` | — | — | untouched |
-| `feature/phase1-pro-engine` (Q01) | `4dea9b6` (+docs) | #17 | `beta` | Draft |
-| `feature/phase1-q02-optical` (Q02) | `35e0a30` | #18 | pro-engine | Draft |
-| `feature/phase1-q03-imaging` (Q03) | `93d3ef8` | #20 | pro-engine | Draft |
-| `feature/phase1-q04-application` (Q04) | `5e5cfa6` | #19 | pro-engine | Draft |
+| `feature/phase1-pro-engine` (Q01) | `6973126` | #17 | `beta` | Draft, integration head |
+| `feature/phase1-q02-optical` (Q02) | `ced1414` | #18 | pro-engine | Draft, subsumed |
+| `feature/phase1-q03-imaging` (Q03) | `818adb1` | #20 | pro-engine | Draft, subsumed |
+| `feature/phase1-q04-application` (Q04) | `6ae218c` | #19 | pro-engine | Draft, subsumed |
 
-No merge to `main`/`beta`, no deployment. `beta` ⊂ all heads; `git diff --diff-filter=D origin/beta..4dea9b6` empty.
+No merge to `main`/`beta`, no deployment.
 
-## G1 Evidence (reused; do not re-run)
+## CP2 Integration Evidence (serial merges, verified at `6973126`)
 
-| Item | Result | Source |
+| Area | Result | Owner |
 | --- | --- | --- |
-| Units | pro 151, q02 199, q04 214, q03 verify 12/12 | Q05 IND @ final SHAs |
-| Perf | 4/4 serial, load 2.48, thresholds unchanged | Q05 IND @ `5e5cfa6` |
-| Full E2E | 288 passed / 12 skipped / 0 failed, 11.5m, load 5.07, exit 0 | Q05 IND @ `4dea9b6`, port 5573 |
-| TSC / builds | tsc 0; `build`, `build:beta` pass (precache 65) | Q05 IND |
-| P1 fixes | P1-01 wired + 2/2 tests; P1-02 flat geometry throws | Q05 IND |
-| Contract parity | 5 blobs identical on all four heads | Q00 + Q05 |
+| Render plan + seam (a) | sourceStage sync, identity→null, gates first, cache; 8192 guard with warn | Q01/Q02 |
+| Geometry/optical E2E | optical 17 + stage 2 + geometry 1 + render-parity + sourceStage 3 = 23/23 (5273) | Q02 |
+| Warp cost | Viewport: 12MP cold 49.8ms / warm 0.3ms; 24MP 188.8ms; legacy 0.2ms | Q01 |
+| RAW path | decodeEditorImage (dynamic import, initial bundle free); browser upload 4/4 | Q03 |
+| RAW 24MP | cold open 1.69–1.94s; ~299MB/open (16f working + full canvas + preview) | Q03/Q01 |
+| Workspace | per-photo fresh EditState; RAW rawSource preserved on select; batch+workspace E2E 5/5 (5473) | Q04 |
+| v8 recipes | write 8, v1–v7 read/migrate; v8 missing/unknown geometry rejected; E2E 4/4 | Q01 |
+| Units | 34 files / 305 passed / 6 skipped (RAW fixtures) | Q01 |
+| Builds | tsc 0; build + build:beta pass, precache 71 (12118/12118 KiB) | Q01 |
+| Contracts | 5/5 blob-identical across all heads | Q00 |
 
-Environment: ANGLE SwiftShader; real-device performance UNVERIFIED.
+E2E ran single-slot on per-agent ports; runs at load ≥8 are contention-marked and used only for passes, failures rerun.
 
 ## WO Status
 
 | WO | Owner | State |
 | --- | --- | --- |
-| WO-CP2-00 Isolation | Q00/Q01/Q05 | **CLOSED** (`3f3fea6`, fail-fast verified) |
+| WO-CP2-00 Isolation | Q00/Q01/Q05 | **CLOSED** (`3f3fea6`) |
 | WO-CP2-01 CP1 Closure | all | **CLOSED** (G1 PASS) |
-| WO-CP2-02 Core Product Pipeline | Q01 | **IN PROGRESS** |
-| WO-CP2-03 Geometry & Optical Integration | Q02 | **IN PROGRESS** |
-| WO-CP2-04 RAW Source Decoder Integration | Q03 | **IN PROGRESS** |
-| WO-CP2-05 Workspace & Batch Integration | Q04 | **IN PROGRESS** |
-| WO-CP2-06 Independent Integration QA | Q05 | STANDBY (CP2 closure) |
+| WO-CP2-02 Core Product Pipeline | Q01 | **CLOSED** (`b4b7f5d`, v8 `3b15ba0`) |
+| WO-CP2-03 Geometry & Optical | Q02 | **CLOSED** (`ced1414`, integrated) |
+| WO-CP2-04 RAW Source Decoder | Q03 | **CLOSED** (`818adb1`, integrated) |
+| WO-CP2-05 Workspace & Batch | Q04 | **CLOSED** (`6ae218c`, integrated) |
+| WO-CP2-06 Independent QA | Q05 | **IN PROGRESS** @ `6973126` |
 
 ## Backlog (non-blocking, do not stop CP2)
 
@@ -59,30 +64,33 @@ Environment: ANGLE SwiftShader; real-device performance UNVERIFIED.
 | BL-03 | Real-device perf (iOS/Android), SwiftShader limits | Q04 | post-Beta |
 | BL-04 | PR #17 mergeability UNKNOWN in GitHub API | Q00 | before PO merge |
 | BL-05 | Q02 half-res high-frequency quality | Q02 | G2 QA |
+| BL-06 | RAW 24MP open 1.7–1.9s and ~299MB/open | Q03/Q04 | post-Beta |
+| BL-07 | 24MP source warp ~190ms exceeds 60fps (preview source ≤2048 limits impact) | Q01/Q02 | post-Beta |
+| BL-08 | sourceStage skips >8192px sources with one warn (no tiling) | Q01/Q02 | G2 review |
 
 ## Ownership Boundaries (CP2)
 
-- Frozen: `src/engine/contracts/*` — no edits without WO.
-- Q01: pipeline orchestrator, RenderPlan runner, recipe v8 activation, renderer resource lifecycle.
-- Q02: geometry/optical **stage modules** registered via `EditModuleRegistry` (no pipeline core edits).
-- Q03: RAW decoder behind `DecodedSource` (own `src/engine/raw/` tree).
-- Q04: workspace/batch integration, `ExportControl` consumers (no contract edits).
-- Cross-cutting files (App shell, Header, registry defaults): announce before editing; Q00 arbitrates.
+- Frozen: 5 contract blobs above — no edits without WO + Q05 re-audit.
+- Contract edits authorized for v8 activation only: `recipeV8.ts`, `recipeValidation.ts`, `types/film.ts` (write ceiling 8).
+- Q01: pipeline orchestrator, RenderPlan runner, source-stage hook, renderer lifecycle.
+- Q02: `src/engine/optical/*` stage modules + sourceStage; no shared-file edits.
+- Q03: `src/engine/raw/*`, RAW UI routing (Header/HomeScreen/ImageDropzone/editorStore `decodeEditorImage`).
+- Q04: workspace/batch, `workspaceStore.select`, `BatchExportHost`; App.tsx single mount.
+- Cross-owner note: Q01 aligned 3 Q04-owned PoC/test files to v8 (`poc/q04/editState.ts`, `editStateAdapter.ts`, `tests/q04Workspace.test.ts`) — Q04 review pending, no test weakening.
 
 ## Next Actions
 
-1. Q01–Q04: implement CP2-02..05 on their branches; PR to pro-engine; report Progress/Completed/Test/Blocker/Next only.
-2. Q00: dependency/conflict arbitration; serial review merges to pro-engine after tests.
-3. Q05: CP2-06 regression + G2 evidence when CP2 completes.
-4. PO approval required before any `main`/`beta` merge or deployment (Beta deploy is a separate WO).
+1. Q05: CP2-06 independent regression + G2 evidence at `6973126` (fresh clone, port 5573, logs outside `PW_OUTPUT_DIR`).
+2. Q04: review the v8 alignment diff on its 3 files; raise objections to Q00 only.
+3. Q00: publish G2 verdict; PO approval required before any `main`/`beta` merge or deployment (separate WO).
 
-## G1 Checklist
+## G2 Preconditions
 
 | Condition | State |
 | --- | --- |
-| Blocking defects = 0 | PASS |
-| TypeScript errors = 0 | PASS |
-| Required unit tests pass | PASS |
-| Required E2E pass | PASS (288/12/0) |
-| Stable/Beta build succeeds | PASS |
-| Independent QA + remote SHA verified | PASS |
+| Blocking defects = 0 | pending Q05 |
+| TypeScript errors = 0 | PASS (Q01) |
+| Required unit tests pass | PASS (305/6 skipped) |
+| Required E2E pass | pending Q05 full suite |
+| Stable/Beta build succeeds | PASS (Q01) |
+| Contract blobs identical | PASS (5/5) |
