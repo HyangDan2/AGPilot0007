@@ -118,6 +118,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `2e7e1b6` | cp3-q02-local | 02D masks + 02E local stage seam (maskRaster, mask UI, masks.ts delta 2) | 2026-11-27 | APPROVED — merge `--no-ff` |
 | `394a965` | cp3-q02-local | docs-only: crop comment (post-straighten output NIS) | 2026-11-27 | APPROVED — comment-only, no behavior change |
 | `9c78983` | cp3-q02-local | docs-only: mask texture base 5 ruling in `maskRaster`/POC doc | 2026-11-27 | APPROVED — comment/doc-only; branch tip for Q01 |
+| `ff8a2a4` | cp3-q04-workspace | CP3-04 test-only: batch must pass the decoded image to the shared exporter resolver (no preview read) | 2026-11-27 | APPROVED — merge `--no-ff`; Q04 branch tip |
 
 ### Ledger log
 
@@ -199,3 +200,4 @@ Independent fresh-clone QA at final integration SHA: full unit/perf/build, singl
 ## Reporting Format
 
 `Progress / Completed / Test Result / Blocker / Next Action` — no reports longer than needed, no re-verification of CP2 evidence.
+- 2026-11-27: Q04 `ff8a2a4` verified by Q00 at SHA in verify worktree: tsc 0; `tests/q04Batch.test.ts` 25 PASS, incl. new guard that batch hands the decoded image (not `originalElement`) to `prepare` and does not resolve full-res itself (resolution belongs to the shared exporter). Branch tip also carries pro-engine merges already on pro-engine, content-neutral. Approved for `--no-ff` merge.
