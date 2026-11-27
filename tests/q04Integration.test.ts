@@ -148,7 +148,7 @@ describe('CP2-05 batch export controller', () => {
     expect(controller.start(['a', 'b', 'c'], () => createEditState())).toBe(true);
     const view = await done;
 
-    expect(view.summary).toMatchObject({ total: 3, succeeded: 2, failed: 1, rendered: 3, deliveryFailed: 1 });
+    expect(view.summary).toMatchObject({ total: 3, succeeded: 2, failed: 1, rendered: 3, deliveryFailed: 1, reconciled: true });
     expect(delivered.sort()).toEqual(['a.jpg', 'c.jpg']);
     expect(revoke).toHaveBeenCalledWith('blob:prepared-a.jpg');
     expect(revoke).toHaveBeenCalledWith('blob:prepared-b.jpg');
@@ -185,7 +185,7 @@ describe('CP2-05 batch export controller', () => {
     release();
     const view = await done;
 
-    expect(view.summary).toMatchObject({ total: 2, succeeded: 0, cancelled: 2 });
+    expect(view.summary).toMatchObject({ total: 2, succeeded: 0, cancelled: 2, reconciled: true });
     expect(delivered).not.toHaveBeenCalled();
     controller.destroy();
   });
@@ -208,6 +208,24 @@ describe('CP2-05 batch export controller', () => {
     expect(controller.retryFailed()).toBe(1);
     const view = await retried;
     expect(view.summary).toMatchObject({ total: 2, succeeded: 2, failed: 0 });
+    controller.destroy();
+  });
+
+  it('gives duplicate output names unique filenames before delivering', async () => {
+    const delivered: string[] = [];
+    const controller = new BatchExportController({
+      concurrency: 1,
+      processor: processorOf(async () => prepared('same.png')),
+      delivery: (result) => {
+        delivered.push(result.filename);
+      },
+    });
+    controller.setEntries([entry('a'), entry('b')]);
+    const done = waitForSummary(controller, (view) => view.summary !== null && !view.running);
+    expect(controller.start(['a', 'b'], () => createEditState())).toBe(true);
+    const view = await done;
+    expect(delivered).toEqual(['same.png', 'same-2.png']);
+    expect(view.summary).toMatchObject({ total: 2, succeeded: 2, reconciled: true });
     controller.destroy();
   });
 

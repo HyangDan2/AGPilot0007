@@ -67,6 +67,20 @@ export function disposePrepared(prepared: PreparedExport | null | undefined): vo
 export type ExportDelivery = (prepared: PreparedExport, job: { id: string; filename: string }) => Promise<void> | void;
 
 /**
+ * Batch runs must not overwrite each other when two folders hold the same
+ * file name; later jobs get a stable numeric suffix before the extension.
+ */
+export function uniqueFilename(filename: string, used: Set<string>): string {
+  let candidate = filename;
+  const dot = filename.lastIndexOf('.');
+  const base = dot > 0 ? filename.slice(0, dot) : filename;
+  const extension = dot > 0 ? filename.slice(dot) : '';
+  for (let index = 2; used.has(candidate); index++) candidate = `${base}-${index}${extension}`;
+  used.add(candidate);
+  return candidate;
+}
+
+/**
  * Consumer delivery step for BatchQueue: hands the result to a save/share sink
  * and always releases its object URL. A sink failure propagates, so the queue
  * reports renderSucceeded=true with a delivery error instead of silently

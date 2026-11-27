@@ -5,6 +5,7 @@ import { BatchQueue, type BatchSnapshot } from '../batchQueue';
 import {
   createDeliverySink,
   createExportProcessor,
+  uniqueFilename,
   type ExportDelivery,
   type ExportJobMeta,
   type ExportProcessorHandle,
@@ -19,6 +20,8 @@ export interface BatchSummary {
   cancelled: number;
   rendered: number;
   deliveryFailed: number;
+  /** selected = saved + failed + cancelled; a false here is a UI/queue bug. */
+  reconciled: boolean;
 }
 
 export interface BatchExportView {
@@ -47,6 +50,7 @@ function summarize(snapshot: BatchSnapshot<ExportJobMeta>): BatchSummary {
     cancelled: counts.cancelled,
     rendered: counts.rendered,
     deliveryFailed: counts.deliveryFailed,
+    reconciled: counts.total === counts.succeeded + counts.failed + counts.cancelled,
   };
 }
 
@@ -98,11 +102,16 @@ export class BatchExportController {
 
     this.disposeQueue();
     const handle = this.options.processor ?? createExportProcessor({ exportOptions: this.options.exportOptions ?? DEFAULT_BATCH_EXPORT_OPTIONS });
-    const delivery =
+    const save =
       this.options.delivery ??
       ((prepared: PreparedExport) => {
         triggerSafeDownload(prepared.blob, prepared.filename);
       });
+    const usedNames = new Set<string>();
+    const delivery: ExportDelivery = (prepared, job) => {
+      prepared.filename = uniqueFilename(prepared.filename, usedNames);
+      return save(prepared, { id: job.id, filename: prepared.filename });
+    };
     const queue = new BatchQueue<ExportJobMeta, PreparedExport>({
       concurrency: this.options.concurrency ?? recommendedConcurrency(),
       processor: handle.processor,

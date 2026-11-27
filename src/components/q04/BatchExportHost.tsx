@@ -123,9 +123,16 @@ export function BatchExportHost() {
                     <span className="min-w-0 flex-1 truncate" title={entry.path}>{entry.name}</span>
                     {job && (
                       <>
-                        <span className="shrink-0 text-[color:var(--ui-text-slate400)]">{STATUS_LABEL[job.status] ?? job.status}{job.error ? `: ${job.error}` : ''}</span>
+                        <span className="shrink-0 text-[color:var(--ui-text-slate400)]" data-progress={Math.round(job.progress * 100)}>
+                          {STATUS_LABEL[job.status] ?? job.status}
+                          {job.status === 'running' && ` ${Math.round(job.progress * 100)}%`}
+                          {job.error ? `: ${job.error}` : ''}
+                        </span>
                         {(job.status === 'running' || job.status === 'queued') && (
                           <button type="button" aria-label={`Cancel ${entry.name}`} onClick={() => controller.cancel(entry.id)} className="shrink-0 text-red-300">×</button>
+                        )}
+                        {(job.status === 'failed' || job.status === 'cancelled') && (
+                          <button type="button" aria-label={`Retry ${entry.name}`} onClick={() => controller.retry(entry.id)} className="shrink-0 text-amber-300">↻</button>
                         )}
                       </>
                     )}
@@ -135,9 +142,14 @@ export function BatchExportHost() {
             </ul>
 
             {summary && (
-              <p data-testid="batch-export-summary" className="mt-3 text-xs text-[color:var(--ui-text-slate300)]">
-                {summary.succeeded}/{summary.total} saved · failed {summary.failed} · cancelled {summary.cancelled} · delivery failed {summary.deliveryFailed}
-              </p>
+              <div className="mt-3 text-xs text-[color:var(--ui-text-slate300)]">
+                <p data-testid="batch-export-summary">
+                  {summary.succeeded}/{summary.total} saved · failed {summary.failed} · cancelled {summary.cancelled} · delivery failed {summary.deliveryFailed}
+                </p>
+                <p data-testid="batch-export-reconciled" data-ok={summary.reconciled ? 'true' : 'false'} className={summary.reconciled ? 'text-[color:var(--ui-text-slate400)]' : 'text-red-300'}>
+                  selected {summary.total} = saved {summary.succeeded} + failed {summary.failed} + cancelled {summary.cancelled}{summary.reconciled ? '' : ' · mismatch'}
+                </p>
+              </div>
             )}
           </div>
         </div>
