@@ -392,7 +392,8 @@ const LOCAL_GROUP_BODY = (index: number): string => `
 /**
  * GLSL ES 3.00 local stage. Group coverage is sampled from RGB canvases (red
  * channel); adjustments apply in corrected NIS after Color Lab and before
- * detail. Sampler indices are unrolled constants for driver compatibility.
+ * detail. Sampler indices are unrolled constants for driver compatibility;
+ * the renderer binds the plan canvases starting at texture unit 5 (Q00 ruling).
  */
 export const LOCAL_STAGE_FRAGMENT = /* glsl */ `
 uniform sampler2D u_q02_local_masks[${MAX_LOCAL_GROUPS}];

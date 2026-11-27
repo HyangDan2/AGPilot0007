@@ -663,8 +663,9 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
   `u_q02_local_adjust_a/b/c[8]` 슬롯을 노출하고 `q02_local_stage(color, uv)`를 제공한다. sampler 배열은
   드라이버 호환을 위해 8회 unroll(constant index)했고, `dFdx/dFdy`는 비분기 prologue에서 1회 계산해
   `q02_local_adjust`에 scalar로 넘긴다. blend int는 `localStageBlendCode`(add=0/subtract=1/intersect=2),
-  adjustment vec4 매핑은 `localStageAdjustmentUniforms`가 담당한다. 텍스처 유닛은 image=0, LUT=1일 때
-  2..9(최대 8장)이며 Q01 renderer 통합 소관이다.
+  adjustment vec4 매핑은 `localStageAdjustmentUniforms`가 담당한다. 텍스처 유닛은 Q00 ruling대로
+  **base 5**(그룹 8개면 5..12)에서 시작하고 Q01은 `MAX_TEXTURE_IMAGE_UNITS - 5`로 그룹 수를 clamp한다
+  (min-16 기기는 8그룹 허용). 바인딩/cache는 Q01 renderer 통합 소관이다.
 - **검증**: `tests/e2e/local-stage-contract.spec.ts`가 headless WebGL2에서 chunk를 컴파일·링크하고
   count/coverage/exposure/blend 조합 6종의 픽셀을 CPU 기대값과 ≤2/255로 비교한다. tsc 0, vitest
   38 files / 341 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
