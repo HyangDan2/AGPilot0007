@@ -44,7 +44,7 @@ test('multi-select copy/paste applies chosen groups to the selection with one un
   await page.getByTestId('copy-paste-open').click();
   const dialog = page.getByTestId('copy-paste-dialog');
   await expect(dialog).toBeVisible();
-  for (const group of ['film', 'grain', 'curves', 'camera', 'colorMixer', 'sharpening']) {
+  for (const group of ['film', 'grain', 'curves', 'camera', 'colorMixer', 'sharpening', 'geometry', 'optical', 'localAdjustments']) {
     await dialog.getByTestId(`copy-group-${group}`).uncheck();
   }
   await dialog.getByTestId('copy-parameters').click();

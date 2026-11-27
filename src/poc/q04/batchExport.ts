@@ -81,6 +81,20 @@ export function uniqueFilename(filename: string, used: Set<string>): string {
 }
 
 /**
+ * Clones a prepared export under a new name so `filename` and `file.name` always
+ * agree for the save/share sink. The blob and object URL are shared, not
+ * copied; the original prepared object is left untouched.
+ */
+export function renamePrepared(prepared: PreparedExport, filename: string): PreparedExport {
+  if (prepared.filename === filename && prepared.file.name === filename) return prepared;
+  return {
+    ...prepared,
+    filename,
+    file: new File([prepared.file], filename, { type: prepared.file.type, lastModified: prepared.file.lastModified }),
+  };
+}
+
+/**
  * Consumer delivery step for BatchQueue: hands the result to a save/share sink
  * and always releases its object URL. A sink failure propagates, so the queue
  * reports renderSucceeded=true with a delivery error instead of silently

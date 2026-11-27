@@ -4,6 +4,10 @@ vi.mock('../src/engine/image/thumbnails',()=>({clearThumbnails:vi.fn(),requestTh
 import {useWorkspaceStore as ws} from '../src/stores/workspaceStore';
 import {useEditorStore as editor} from '../src/stores/editorStore';
 import {applyFilmToSelection,clearClipboard,copySelection,pasteToSelection} from '../src/poc/q04/integration/parameterPaste';
+import {normalizeGeometry} from '../src/engine/contracts/geometry';
+import {IDENTITY_OPTICAL_HOMOGRAPHY} from '../src/engine/contracts/optical';
+import {normalizeOpticalTransform} from '../src/engine/optical/transform';
+import {normalizeLocalAdjustments} from '../src/engine/contracts/localAdjustments';
 const entry=(name:string)=>({id:name,name,path:name,getFile:async()=>new File(['test'],name,{type:'image/png'})});
 beforeEach(async()=>{clearClipboard();ws.getState().close();ws.getState().setEntries(['a','b','c'].map(entry),'Folder');await ws.getState().select('a');});
 it('copies only the chosen groups to the clip and pastes them across the selection',async()=>{
@@ -38,4 +42,37 @@ it('applies a recommended film to every selected photo as one undo step',async()
  ws.getState().clickThumbnail('b');
  await vi.waitFor(()=>expect(ws.getState().activeId).toBe('b'));
  expect(editor.getState().activeFilmId).toBe('FS-003');
+});
+it('copies framing, optical and local groups and commits one undo step on the active photo',async()=>{
+ editor.getState().setGeometry(normalizeGeometry({rotation:90,straighten:3}));
+ editor.getState().setOptical(normalizeOpticalTransform({version:1,homography:IDENTITY_OPTICAL_HOMOGRAPHY,distortion:{k1:0.3}}));
+ editor.getState().setLocalAdjustments(normalizeLocalAdjustments({enabled:true,groups:[{id:'g1',name:'Sky',enabled:true,masks:[],adjustment:{exposure:0.5},opacity:1,blend:'add'}]}));
+ const clip=copySelection(['geometry','optical','localAdjustments']);
+ expect(clip?.groups).toEqual(['geometry','optical','localAdjustments']);
+ expect(clip?.geometry?.rotation).toBe(90);
+ expect(clip?.optical?.distortion?.k1).toBeCloseTo(0.3);
+ expect(clip?.localAdjustments?.groups).toHaveLength(1);
+
+ ws.getState().clickThumbnail('b');
+ await vi.waitFor(()=>expect(ws.getState().activeId).toBe('b'));
+ ws.getState().toggleSelection('a');
+ expect([...ws.getState().selection.ids].sort()).toEqual(['a','b']);
+ const before=editor.getState();
+ const report=pasteToSelection();
+ expect(report).toEqual({pasted:2,active:'b'});
+ expect(editor.getState().geometry.rotation).toBe(90);
+ expect(editor.getState().optical?.distortion?.k1).toBeCloseTo(0.3);
+ expect(editor.getState().localAdjustments.groups[0]?.adjustment.exposure).toBe(0.5);
+ expect(editor.getState().historyIndex).toBe(before.historyIndex+1);
+
+ editor.getState().undo();
+ expect(editor.getState().geometry).toEqual(before.geometry);
+ expect(editor.getState().optical).toBeNull();
+ expect(editor.getState().localAdjustments.groups).toHaveLength(0);
+
+ ws.getState().clickThumbnail('a');
+ await vi.waitFor(()=>expect(ws.getState().activeId).toBe('a'));
+ expect(editor.getState().geometry.rotation).toBe(90);
+ expect(editor.getState().optical?.distortion?.k1).toBeCloseTo(0.3);
+ expect(editor.getState().localAdjustments.groups).toHaveLength(1);
 });

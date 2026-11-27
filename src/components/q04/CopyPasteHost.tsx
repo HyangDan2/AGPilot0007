@@ -108,7 +108,7 @@ export function CopyPasteHost() {
 
             <div className="flex flex-wrap gap-2 text-xs">
               <button type="button" data-testid="copy-parameters" onClick={copy} disabled={!groups.length} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400 disabled:opacity-40">Copy</button>
-              <button type="button" data-testid="paste-parameters" onClick={paste} disabled={!clip || !groups.length} className="rounded bg-amber-600 px-3 py-1 font-semibold text-white disabled:opacity-40">Paste to {targetIds.length}</button>
+              <button type="button" data-testid="paste-parameters" onClick={paste} disabled={!clip} className="rounded bg-amber-600 px-3 py-1 font-semibold text-white disabled:opacity-40">Paste to {targetIds.length}</button>
               <button type="button" data-testid="save-recipe" onClick={() => void saveRecipe()} className="rounded border border-[color:var(--ui-border-slate600)] px-2 py-1 hover:border-amber-400">Save as recipe</button>
               {clip && <span className="self-center text-[color:var(--ui-text-slate400)]">clipboard: {clip.groups.join(', ')}</span>}
             </div>

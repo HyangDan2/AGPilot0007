@@ -1,5 +1,5 @@
 import {beforeEach,expect,it,vi} from 'vitest';
-vi.mock('../src/engine/image/decoder',()=>({decodeImageFile:vi.fn(async(file:File)=>({workspaceKey:file.name,name:file.name,sourceUrl:'blob:'+file.name,originalWidth:64,originalHeight:48}))}));
+vi.mock('../src/engine/image/decoder',()=>({decodeImageFile:vi.fn(async(file:File)=>{if(file.name.includes('bad'))throw new Error('corrupt header');return{workspaceKey:file.name,name:file.name,sourceUrl:'blob:'+file.name,originalWidth:64,originalHeight:48};})}));
 vi.mock('../src/engine/image/thumbnails',()=>({clearThumbnails:vi.fn(),requestThumbnail:vi.fn()}));
 import {useWorkspaceStore as ws} from '../src/stores/workspaceStore';
 const entry=(name:string)=>({id:name,name,path:name,getFile:async()=>new File(['test'],name,{type:'image/png'})});
@@ -40,4 +40,15 @@ it('selects all, clears, and prunes ids that leave the workspace',()=>{
  ws.getState().setEntries([entry('b')],'Other');
  expect(ws.getState().selection).toEqual({ids:[],anchor:null,active:null});
  expect(ws.getState().activeId).toBeNull();
+});
+it('reverts the selection when the clicked photo fails to open',async()=>{
+ ws.getState().setEntries(['a','b','bad'].map(entry),'Folder');
+ await ws.getState().select('a');
+ const before=ws.getState().selection;
+ ws.getState().clickThumbnail('bad');
+ await vi.waitFor(()=>expect(ws.getState().error).toContain('bad:'));
+ expect(ws.getState().selection).toEqual(before);
+ expect(ws.getState().selection.active).toBe('a');
+ expect(ws.getState().activeId).toBe('a');
+ expect(ws.getState().loading).toBe(false);
 });

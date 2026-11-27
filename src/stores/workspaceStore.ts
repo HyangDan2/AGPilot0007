@@ -7,15 +7,17 @@ import {defaultCurves} from '../types/curves';
 import {normalizeCamera} from '../types/camera';
 import {defaultColorMixer} from '../types/colorMixer';
 import {DEFAULT_SHARPENING} from '../types/sharpening';
+import {IDENTITY_GEOMETRY} from '../engine/contracts/geometry';
+import {normalizeLocalAdjustments} from '../engine/contracts/localAdjustments';
 import {clampSelection,clickSelection,createSelection,type ClickModifiers,type SelectionState} from '../poc/q04/selection';
 import {createEditState} from '../poc/q04/editState';
 import type {EditState} from '../poc/q04/types';
 let generation=0;let decoding:AbortController|null=null;
 /** Defaults for a photo that has no saved session yet (P1: never inherit the previous photo's edit). */
-export function freshSession(){return{adjustments:{...DEFAULT_ADJUSTMENTS},activeFilmId:'FS-001' as const,activePresetId:null,curves:defaultCurves(),camera:normalizeCamera(),colorMixer:defaultColorMixer(),sharpening:{...DEFAULT_SHARPENING}};}
-type Session=Pick<ReturnType<typeof useEditorStore.getState>,'sharpening'|'history'|'historyIndex'|'canUndo'|'canRedo'|'adjustments'|'camera'|'curves'|'colorMixer'|'activeFilmId'|'activePresetId'|'zoom'|'pan'>;
+export function freshSession(){return{adjustments:{...DEFAULT_ADJUSTMENTS},activeFilmId:'FS-001' as const,activePresetId:null,curves:defaultCurves(),camera:normalizeCamera(),colorMixer:defaultColorMixer(),sharpening:{...DEFAULT_SHARPENING},geometry:IDENTITY_GEOMETRY,optical:null,localAdjustments:normalizeLocalAdjustments(undefined)};}
+type Session=Pick<ReturnType<typeof useEditorStore.getState>,'sharpening'|'history'|'historyIndex'|'canUndo'|'canRedo'|'adjustments'|'camera'|'curves'|'colorMixer'|'activeFilmId'|'activePresetId'|'geometry'|'optical'|'localAdjustments'|'zoom'|'pan'>;
 const sessions=new Map<string,Session>();let historyKeys:string[]=[];
-function session():Session{const s=useEditorStore.getState();return{sharpening:s.sharpening,history:s.history,historyIndex:s.historyIndex,canUndo:s.canUndo,canRedo:s.canRedo,adjustments:s.adjustments,camera:s.camera,curves:s.curves,colorMixer:s.colorMixer,activeFilmId:s.activeFilmId,activePresetId:s.activePresetId,zoom:s.zoom,pan:s.pan};}
+function session():Session{const s=useEditorStore.getState();return{sharpening:s.sharpening,history:s.history,historyIndex:s.historyIndex,canUndo:s.canUndo,canRedo:s.canRedo,adjustments:s.adjustments,camera:s.camera,curves:s.curves,colorMixer:s.colorMixer,activeFilmId:s.activeFilmId,activePresetId:s.activePresetId,geometry:s.geometry,optical:s.optical,localAdjustments:s.localAdjustments,zoom:s.zoom,pan:s.pan};}
 interface WorkspaceState{entries:WorkspaceEntry[];name:string;activeId:string|null;collapsed:boolean;height:number;scroll:number;sort:'name'|'reverse';loading:boolean;scanning:boolean;error:string;selection:SelectionState;setEntries:(entries:WorkspaceEntry[],name:string)=>void;append:(entries:WorkspaceEntry[])=>void;openPhoto:(id:string)=>Promise<boolean>;select:(id:string)=>Promise<void>;clickThumbnail:(id:string,mods?:ClickModifiers)=>void;toggleSelection:(id:string)=>void;selectAllPhotos:()=>void;clearSelection:()=>void;savedEditState:(id:string)=>EditState|null;updateSession:(id:string,edit:EditState)=>void;close:()=>void;}
 export const useWorkspaceStore=create<WorkspaceState>((set,get)=>({entries:[],name:'',activeId:null,collapsed:false,height:144,scroll:0,sort:'name',loading:false,scanning:false,error:'',selection:createSelection([]),
  setEntries:(entries,name)=>{generation++;decoding?.abort();sessions.clear();historyKeys=[];clearThumbnails();set({entries,name,activeId:null,collapsed:false,scroll:0,sort:'name',error:'',loading:false,selection:createSelection([])});},
@@ -25,12 +27,12 @@ export const useWorkspaceStore=create<WorkspaceState>((set,get)=>({entries:[],na
   catch(error){if(request===generation)set({loading:false,error:`${entry.name}: 사진을 열 수 없습니다. ${String(error)}`});return false;}
  },
  select:async id=>{if(!get().entries.some(e=>e.id===id))return;if(await get().openPhoto(id))set({selection:createSelection([id])});},
- clickThumbnail:(id,mods)=>{const state=get();const next=clickSelection(state.selection,state.entries.map(entry=>entry.id),id,mods);set({selection:next});if(next.active&&next.active!==state.activeId)void get().openPhoto(next.active);},
+ clickThumbnail:(id,mods)=>{const state=get();const next=clickSelection(state.selection,state.entries.map(entry=>entry.id),id,mods);set({selection:next});if(next.active&&next.active!==state.activeId){const target=next.active;void get().openPhoto(target).then(opened=>{if(!opened&&get().selection.active===target)set({selection:state.selection});});}},
  toggleSelection:id=>{const state=get();const next=clickSelection(state.selection,state.entries.map(entry=>entry.id),id,{toggle:true});const active=state.selection.active&&next.ids.includes(state.selection.active)?state.selection.active:next.active;set({selection:{...next,active}});},
  selectAllPhotos:()=>{if(!get().entries.length)return;set({selection:createSelection(get().entries.map(entry=>entry.id))});},
  clearSelection:()=>{if(!get().selection.ids.length)return;set({selection:createSelection([])});},
  savedEditState:id=>{const saved=sessions.get(id);return saved?createEditState(saved):null;},
- updateSession:(id,edit)=>{const saved=sessions.get(id);sessions.set(id,saved?{...saved,...edit}:{...edit,history:[{sharpening:edit.sharpening,colorMixer:edit.colorMixer,curves:edit.curves,camera:edit.camera,adjustments:edit.adjustments,activeFilmId:edit.activeFilmId,activePresetId:edit.activePresetId}],historyIndex:0,canUndo:false,canRedo:false,zoom:1,pan:{x:0,y:0}});},
+ updateSession:(id,edit)=>{const saved=sessions.get(id);sessions.set(id,saved?{...saved,...edit}:{...edit,history:[{sharpening:edit.sharpening,colorMixer:edit.colorMixer,curves:edit.curves,camera:edit.camera,adjustments:edit.adjustments,activeFilmId:edit.activeFilmId,activePresetId:edit.activePresetId,geometry:edit.geometry,optical:edit.optical,localAdjustments:edit.localAdjustments}],historyIndex:0,canUndo:false,canRedo:false,zoom:1,pan:{x:0,y:0}});},
  close:()=>{generation++;decoding?.abort();sessions.clear();historyKeys=[];clearThumbnails();set({entries:[],name:'',activeId:null,loading:false,scanning:false,error:'',selection:createSelection([])});}
 }));
 useEditorStore.subscribe((state,previous)=>{if(state.image!==previous.image&&!state.image?.workspaceKey)useWorkspaceStore.getState().close();});

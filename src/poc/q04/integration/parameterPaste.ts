@@ -28,33 +28,23 @@ function sameEditState(a: EditState, b: EditState): boolean {
 }
 
 /**
- * Commits a whole-group patch as one history entry, mirroring the editor's own
- * setter snapshots. Q01's applyParameterGroups replaces this once it lands; the
- * editorStore file itself is never modified here.
+ * Commits a whole-group patch as one history entry through Q01's
+ * applyParameterGroups, which carries all edit groups (v7 fields plus geometry,
+ * optical and localAdjustments) in the shared snapshot format.
  */
 export function commitEditStateToEditor(next: EditState): void {
   const editor = useEditorStore.getState();
   if (sameEditState(editStateFromEditor(editor), next)) return;
-  const snapshot = {
-    sharpening: next.sharpening,
-    colorMixer: next.colorMixer,
+  editor.applyParameterGroups({
+    film: { filmId: next.activeFilmId, presetId: next.activePresetId },
+    adjustments: next.adjustments,
     curves: next.curves,
     camera: next.camera,
-    adjustments: { ...next.adjustments },
-    activeFilmId: next.activeFilmId,
-    activePresetId: next.activePresetId,
-  };
-  const history = [...editor.history.slice(0, editor.historyIndex + 1), snapshot].slice(-50);
-  useEditorStore.setState({
-    ...snapshot,
-    history,
-    historyIndex: history.length - 1,
-    canUndo: history.length > 1,
-    canRedo: false,
-    isSharpeningDragging: false,
-    sharpeningMask: false,
-    mixerTool: 'none',
-    mixerVisualize: false,
+    colorMixer: next.colorMixer,
+    sharpening: next.sharpening,
+    geometry: next.geometry,
+    optical: next.optical,
+    localAdjustments: next.localAdjustments,
   });
 }
 

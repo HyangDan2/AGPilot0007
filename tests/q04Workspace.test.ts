@@ -257,7 +257,8 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(shared.geometry).toBe(geometry);
 
     const edit = fromSharedEditState(shared);
-    expect(Object.hasOwn(edit, 'geometry')).toBe(false);
+    expect(edit.geometry).toEqual(IDENTITY_GEOMETRY);
+    expect(edit.geometry).not.toBe(geometry);
     expect(edit.activeFilmId).toBe('FS-003');
     expect(edit.adjustments.exposure).toBe(2);
     expect(shared.geometry).toBe(geometry);
@@ -281,7 +282,8 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     expect(next.activeFilmId).toBe('FS-003');
     expect(next.adjustments.exposure).toBe(2);
     expect(shared.adjustments.exposure).toBe(0);
-    expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(false);
+    expect(Object.hasOwn(fromSharedEditState(next), 'geometry')).toBe(true);
+    expect(fromSharedEditState(next).geometry).toEqual(IDENTITY_GEOMETRY);
   });
 
   it('accepts v8 recipes, rejects future versions and malformed geometry', () => {

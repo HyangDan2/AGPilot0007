@@ -5,6 +5,7 @@ import { BatchQueue, type BatchSnapshot } from '../batchQueue';
 import {
   createDeliverySink,
   createExportProcessor,
+  renamePrepared,
   uniqueFilename,
   type ExportDelivery,
   type ExportJobMeta,
@@ -109,8 +110,8 @@ export class BatchExportController {
       });
     const usedNames = new Set<string>();
     const delivery: ExportDelivery = (prepared, job) => {
-      prepared.filename = uniqueFilename(prepared.filename, usedNames);
-      return save(prepared, { id: job.id, filename: prepared.filename });
+      const target = renamePrepared(prepared, uniqueFilename(prepared.filename, usedNames));
+      return save(target, { id: job.id, filename: target.filename });
     };
     const queue = new BatchQueue<ExportJobMeta, PreparedExport>({
       concurrency: this.options.concurrency ?? recommendedConcurrency(),

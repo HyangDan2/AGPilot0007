@@ -211,20 +211,23 @@ describe('CP2-05 batch export controller', () => {
     controller.destroy();
   });
 
-  it('gives duplicate output names unique filenames before delivering', async () => {
+  it('gives same-named photos from different folders unique filenames that match the saved file', async () => {
     const delivered: string[] = [];
     const controller = new BatchExportController({
       concurrency: 1,
       processor: processorOf(async () => prepared('same.png')),
       delivery: (result) => {
-        delivered.push(result.filename);
+        delivered.push(`${result.filename}|${result.file.name}`);
       },
     });
-    controller.setEntries([entry('a'), entry('b')]);
+    controller.setEntries([
+      { ...entry('a'), name: 'same.png', path: 'trip/same.png' },
+      { ...entry('b'), name: 'same.png', path: 'trip2/same.png' },
+    ]);
     const done = waitForSummary(controller, (view) => view.summary !== null && !view.running);
     expect(controller.start(['a', 'b'], () => createEditState())).toBe(true);
     const view = await done;
-    expect(delivered).toEqual(['same.png', 'same-2.png']);
+    expect(delivered).toEqual(['same.png|same.png', 'same-2.png|same-2.png']);
     expect(view.summary).toMatchObject({ total: 2, succeeded: 2, reconciled: true });
     controller.destroy();
   });
