@@ -4,10 +4,10 @@ import { normalizeGeometry, validateGeometry, type GeometryTransform } from './g
 export const RECIPE_SCHEMA_V8 = 8;
 
 /**
- * Recipe v8 adds non-destructive framing and is the schema written by the
- * app. Reading stays backward compatible: v1-v7 records are migrated in
- * memory, and a v8 record without a geometry wrapper is rejected rather than
- * silently defaulted.
+ * Recipe v8 adds non-destructive framing and is the fallback schema written by
+ * the app when no v9 optical/local features are active. Reading stays backward
+ * compatible: v1-v7 records are migrated in memory, and a v8 record without a
+ * geometry wrapper is rejected rather than silently defaulted.
  */
 export interface RecipeV8 extends CustomRecipe {
   schemaVersion: 8;

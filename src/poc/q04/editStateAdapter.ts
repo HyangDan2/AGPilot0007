@@ -1,5 +1,4 @@
-import { CURRENT_SCHEMA_VERSION } from '../../stores/recipeStore';
-import { assertRecipeVersionSupported } from '../../engine/contracts/recipeValidation';
+import { assertRecipeVersionSupported, RECIPE_SCHEMA_MAX } from '../../engine/contracts/recipeValidation';
 import { validateRecipeV8Geometry } from '../../engine/contracts/recipeV8';
 import type { CustomRecipe } from '../../types/film';
 import { createEditState, editStateFromRecipe, recipeFromEditState } from './editState';
@@ -16,8 +15,8 @@ export interface SharedEditState extends EditState {
   geometry: unknown;
 }
 
-/** Mirrors Q01 RECIPE_SCHEMA_MAX: v8 framing is persisted, older versions stay readable. */
-export const STORED_RECIPE_SCHEMA_MAX = CURRENT_SCHEMA_VERSION;
+/** Mirrors Q01 RECIPE_SCHEMA_MAX: highest storable schema; older versions stay readable. */
+export const STORED_RECIPE_SCHEMA_MAX = RECIPE_SCHEMA_MAX;
 
 /** Attaches framing to a PoC edit state without touching the shared reference. */
 export function toSharedEditState(edit: EditState, geometry: unknown): SharedEditState {

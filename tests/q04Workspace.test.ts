@@ -288,7 +288,7 @@ describe('Q04 EditState ↔ Q01 shared state adapter (IF-04)', () => {
     const shared = toSharedEditState(createEditState(), geometry);
     const v8 = recipeFromSharedEditState(toSharedEditState(framedEdit(), geometry), { id: 'rcp-v8', name: 'V8' });
 
-    expect(() => applyStoredRecipeToShared(shared, { ...v8, schemaVersion: 9 })).toThrow('Unsupported recipe version');
+    expect(() => applyStoredRecipeToShared(shared, { ...v8, schemaVersion: 10 })).toThrow('Unsupported recipe version');
     const legacy = { ...v8, schemaVersion: 7 } as CustomRecipe;
     delete (legacy as { geometry?: unknown }).geometry;
     expect(() => applyStoredRecipeToShared(shared, legacy)).not.toThrow();

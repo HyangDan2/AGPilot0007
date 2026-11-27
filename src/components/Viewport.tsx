@@ -62,6 +62,9 @@ export const Viewport: React.FC = () => {
     colorMixer,isColorMixerOpen,mixerTool,mixerVisualize,mixerPointId,
     isToneCurveOpen,
     curves,
+    geometry,
+    optical,
+    localAdjustments,
     compareMode,
     setCompareMode,
     splitPos,
@@ -118,6 +121,9 @@ export const Viewport: React.FC = () => {
   },[mixerTool,image]);
   const isToneCurveOpenRef = useRef(isToneCurveOpen); isToneCurveOpenRef.current = isToneCurveOpen;
   const curvesRef = useRef(curves); curvesRef.current = curves;
+  const geometryRef = useRef(geometry); geometryRef.current = geometry;
+  const opticalRef = useRef(optical); opticalRef.current = optical;
+  const localRef = useRef(localAdjustments); localRef.current = localAdjustments;
   const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
   const histogramTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [histogram, setHistogram] = useState<number[][] | null>(null);
@@ -220,6 +226,9 @@ export const Viewport: React.FC = () => {
             colorMixer:mixerRef.current,
             sharpening:sharpRef.current,
             filmId: filmIdRef.current,
+            geometry: geometryRef.current,
+            optical: opticalRef.current ?? undefined,
+            localAdjustments: localRef.current,
           },
           extras:{
             sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
@@ -348,7 +357,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, geometry, optical, localAdjustments, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {

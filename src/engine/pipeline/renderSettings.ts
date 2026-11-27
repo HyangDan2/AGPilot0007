@@ -6,6 +6,7 @@ import type { CameraSettings } from '../../types/camera';
 import type { GeometryTransform } from '../contracts/geometry';
 import type { OpticalTransform } from '../contracts/optical';
 import type { MaskData } from '../contracts/masks';
+import type { LocalAdjustmentState } from '../contracts/localAdjustments';
 
 export type CompareMode = 'none' | 'original' | 'split';
 
@@ -25,6 +26,7 @@ export interface RenderSettings {
   geometry?: GeometryTransform;
   optical?: OpticalTransform;
   masks?: readonly MaskData[];
+  localAdjustments?: LocalAdjustmentState;
 }
 
 /**
