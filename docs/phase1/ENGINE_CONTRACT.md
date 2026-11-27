@@ -231,6 +231,12 @@ interface EditState {
 - 실제 스키마 상향·저장 연결은 기하 렌더 구현 체크포인트에서 수행한다.
 - 마스크·로컬 보정은 v8에 포함하지 않는다.
 
+### 8.1 v8 활성화·롤백 (CP2-02 준비, 아직 비활성)
+
+- `CURRENT_SCHEMA_VERSION`/`RECIPE_SCHEMA_MAX`는 Q02 geometry 단계가 병합되고 기하 렌더가 Preview/Export에서 검증될 때까지 7을 유지한다. CP2-02는 실행기·문서만 준비하며 상한을 올리지 않는다.
+- 활성화 조건: ① Q02 geometry 모듈이 core registry에 등록되고 Preview/Export 지문이 일치 ② `geometry-contract`·`render-parity` E2E 통과 ③ v7→v8 가져오기/저장 왕복 계약 테스트 통과 ④ Q00 승인. 네 조건이 모두 충족될 때만 상한 8과 저장 연결을 한 커밋에서 바꾼다.
+- 롤백: 상한을 7로 되돌리면 `assertRecipeVersionSupported`가 v8 저장을 거부하고 `persistRecipes`는 IndexedDB에 쓰지 않는다. 이미 저장된 v8 레시피는 삭제·다운그레이드하지 않고 "지원하지 않는 버전"으로 남기며, UI 가져오기는 기존 future-version 거부 경로를 그대로 사용한다. `RECIPE_SCHEMA_V8` 타입과 `toRecipeV8`은 유지한다.
+
 ## 9. 리소스 수명과 예산
 
 ```ts
