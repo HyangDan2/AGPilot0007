@@ -92,7 +92,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | --- | --- | --- |
 | geometryOutputSize + 90/270 straighten aspect | Q02 → Q01 | 02A.1 `3f5f25d` VERIFIED; approved for merge |
 | Geometry/mask UI mounting | Q02 → Q01 | Q02 ships prop-driven components (`ce06ccd` verified); only Q01 can mount them in Viewport/AdjustmentPanel |
-| `applyParameterGroups` + new edit groups | Q01 → Q04 | AVAILABLE at `6f363c1` (`ParameterGroupsPatch`); Q04 must switch off its interim history write |
+| `applyParameterGroups` + new edit groups | Q01 → Q04 | DONE: Q04 `294990e` commits through `applyParameterGroups` with geometry/optical/localAdjustments groups |
 | geometry/optical/localAdjustments state + actions | Q01 → Q02 | `6f363c1` on pro-engine (state, history, v9, `applyParameterGroups`); UI wiring by Q02 02C |
 | `planLocalStage` + GLSL chunk | Q02 → Q01 | pending (02E) |
 | RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED + Q03 CP3-03 reported complete (retained 92.56 MB, parity mean 1.101/p99 7); approved for merge; Q01 wiring: `openRawForEditing` in store, `resolveDecodedImageOriginal` in exporter, no silent fallback |
@@ -106,6 +106,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `3f5f25d` | cp3-q02-local | 02A + 02A.1 (perspective homography, cover sizing, derived-size parity) | 2026-11-27 | APPROVED — merge `--no-ff` |
 | `a18bc08` | cp3-q03-raw | CP3-03 RAW develop seam, memory accounting, matrix validation | 2026-11-27 | APPROVED — merge `--no-ff` (engine only; app wiring is Q01) |
 | `ce06ccd` | cp3-q02-local | 02C crop overlay + geometry/perspective panel (new components only) | 2026-11-27 | APPROVED — merge `--no-ff`; NOT yet user-visible until Q01 mounts |
+| `294990e` | cp3-q04-workspace | CP3-04 follow-ups on `applyParameterGroups`, 10 groups, batch/handler fixes | 2026-11-27 | APPROVED — merge `--no-ff` after Q01's current push |
 
 ### Ledger log
 
@@ -114,6 +115,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 - 2026-11-27: Ledger published at `3473234`; distributed to Q01–Q04. Q01 told to publish `applyParameterGroups` signature early and to merge only ledger-listed SHAs (`git merge --no-ff`). Q02 ordered to run 02A.1 → 02B without separate approval. Q03 asked to push the develop API + `resolveOriginal` early. Q04 follow-ups: replace interim history write, add geometry/optical/local groups, EXIF/recommend UI + E2E, `uniqueFilename` consistency test, failed-open selection case.
 - 2026-11-27: Q04 reviewed scope accepted as interim; follow-up items 1–5 outstanding (see above log entry).
 - 2026-11-27: Q02 `3f5f25d` (02A.1) verified by Q00: no straighten expansion, rotated-aspect mapping in `geometryMappings` reused by uniforms + CPU mirror, `tests/e2e/source-stage-output-size.spec.ts` covers rotation 90 + straighten + crop + perspective with parity and no-stretch checks; 8 unit tests re-run PASS. Approved for Q01 merge.
+- 2026-11-27: Q04 `294990e` verified by Q00 at SHA: tsc 0; 72 tests PASS across 8 q04 suites. Interim direct history write replaced by `applyParameterGroups` (all groups incl. geometry/optical/localAdjustments); failed-open selection revert tested; `renamePrepared` no longer mutates prepared and duplicate names agree; batch uses the shared exporter. Approved for merge.
 - 2026-11-27: Q02 `ce06ccd` verified: 15 unit tests PASS, tsc clean, no shared-file edits. Components are prop-driven; mounting is Q01's (allowlist). Ledger note added.
 - 2026-11-27: Q03 CP3-03 report: `a18bc08`, no blocker; fixtures local-only/untracked; bundle index 543.93 kB, lazy raw 61.35 kB; integration steps in PR #23 body. Q03 now idle, on standby for exporter E2E after Q01 wiring.
 - 2026-11-27: Q01 pushed `6f363c1` to pro-engine (state/history/v9/`applyParameterGroups`, render settings + backend source stage). Verified locally at `36813a7`: tsc 0, 89 tests PASS (cp3Core 12, recipeCompat 15, q04Workspace 20, engineContractCorrective 32, retro90 10). Gaps ordered: preview/export dims from `geometryOutputSize`, exporter resolver must not swallow failures, use typed `resolveDecodedImageOriginal`, RAW open via `openRawForEditing`, local stage inert until 02E. Accepted cross-owner edit `src/poc/q04/editStateAdapter.ts` (schema max 9); Q04 must not revert.
