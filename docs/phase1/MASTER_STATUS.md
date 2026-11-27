@@ -12,6 +12,7 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | Recipe v8 | **ACTIVE** | Write/read ceiling 8 at `6973126`; v1–v7 readable, migrated in memory. §8.1 conditions met. |
 | CP2-02..CP2-05 | **COMPLETE** | Q02→Q03→Q04 serial integration on pro-engine. |
 | CP2-06 / G2 | **PASS** | Q05 independent QA at `0a4d4e2`: 97 passed / 1 skipped / 0 failed, exit 0. UNVERIFIED: real RAW fixture, webkit/mobile, real devices. |
+| CP3 (Professional Editing) | **IN PROGRESS** | WO-P1-CP3 issued 2026-11-27; baseline `38b070e`; see `WO_CP3_MASTER.md`. G3 pending. |
 
 ## Baseline (verified 2026-11-27 10:15 KST)
 
