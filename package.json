@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:perf": "vitest run --config vitest.perf.config.ts",
+    "test:all": "vitest run && vitest run --config vitest.perf.config.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "generate-luts": "python3 tools/lut-generation/generate_luts.py",

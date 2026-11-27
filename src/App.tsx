@@ -14,6 +14,7 @@ import { AdjustmentPanel } from './components/AdjustmentPanel';
 import { MobileControls } from './components/MobileControls';
 import { RecipeModal } from './components/RecipeModal';
 import { ExportModal } from './components/ExportModal';
+import { BatchExportHost } from './components/q04/BatchExportHost';
 import { useEditorStore } from './stores/editorStore';
 import { MargarineModal } from './components/MargarineModal';
 import { Sliders, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -148,6 +149,7 @@ export const App: React.FC = () => {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
       />
+      <BatchExportHost />
       {/* Floating Light/Dark toggle (Navy & Lavender) */}
       <ThemeFab />
     </div>
