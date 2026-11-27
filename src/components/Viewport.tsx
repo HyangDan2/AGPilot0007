@@ -10,8 +10,9 @@ import { getMargarinePreset } from '../presets/margarine';
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
-import { createWebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
+import { createWebGLPipelineBackend, type WebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
 import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
+import { createQ02RenderRegistry } from '../engine/optical/modules';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { Columns, Eye, ZoomIn, ZoomOut, Maximize2, Sparkles, AlertCircle } from 'lucide-react';
@@ -47,6 +48,8 @@ export const Viewport: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<WebGL2FilmRenderer | null>(null);
+  const pipelineBackendRef = useRef<WebGLPipelineBackend | null>(null);
+  const renderRegistryRef = useRef(createQ02RenderRegistry());
   const currentLutRef = useRef<ParsedLut3D | null>(null);
 
   const {
@@ -200,11 +203,16 @@ export const Viewport: React.FC = () => {
         const draft=draftRef.current&&sharpRef.current.mode==='advanced'&&(sharpRef.current.amount>0||maskRef.current)&&effectiveMode!=='original';
         const target=sharpeningPreviewSize(current.previewWidth,current.previewHeight,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
         if(canvas&&(canvas.width!==target.width||canvas.height!==target.height)){canvas.width=target.width;canvas.height=target.height;}
+        const pipelineBackend=pipelineBackendRef.current??(pipelineBackendRef.current=createWebGLPipelineBackend(renderer));
         runRenderPipelineSync({
           target:'preview',
           width:canvas?.width??1,
           height:canvas?.height??1,
           dpr:typeof window!=='undefined'?window.devicePixelRatio||1:1,
+          source:current.previewCanvas,
+          sourceWidth:current.previewWidth,
+          sourceHeight:current.previewHeight,
+          registry:renderRegistryRef.current,
           settings:{
             adjustments: adjustmentsRef.current,
             camera: cameraRef.current,
@@ -220,7 +228,7 @@ export const Viewport: React.FC = () => {
             splitPos: splitPosRef.current,
             seed: 42.0,
           },
-        },createWebGLPipelineBackend(renderer));
+        },pipelineBackend);
         window.dispatchEvent(new Event('film-preview-rendered'));
         if (isToneCurveOpenRef.current && !histogramTimer.current) histogramTimer.current = setTimeout(()=>{
           histogramTimer.current = null;
@@ -247,6 +255,7 @@ export const Viewport: React.FC = () => {
         rendererRef.current.destroy();
         rendererRef.current = null;
       }
+      pipelineBackendRef.current = null;
       canvasRef.current = null;
       return;
     }
@@ -258,6 +267,7 @@ export const Viewport: React.FC = () => {
       const curImg = imageRef.current;
       if (curImg && rendererRef.current) {
         rendererRef.current.setImage(curImg.previewCanvas, curImg.previewWidth, curImg.previewHeight);
+        pipelineBackendRef.current?.resetSourceStage();
         if (currentLutRef.current) {
           rendererRef.current.setLut(currentLutRef.current);
         }
@@ -271,6 +281,7 @@ export const Viewport: React.FC = () => {
     }
 
     rendererRef.current = renderer;
+    pipelineBackendRef.current = createWebGLPipelineBackend(renderer);
 
     const curImg = imageRef.current;
     if (curImg) {

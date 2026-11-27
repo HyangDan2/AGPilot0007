@@ -6,6 +6,7 @@ import { ExportOptions, PreparedExport } from '../../types/export';
 import { createAbortError, throwIfExportAborted, type ExportControl } from '../contracts/exportControl';
 import { assertRenderPlanParity, runRenderPipeline } from '../pipeline/renderPipeline';
 import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
+import { createQ02RenderRegistry } from '../optical/modules';
 
 export type { ExportOptions, PreparedExport };
 
@@ -38,7 +39,8 @@ export async function prepareExportImage(
   control?: ExportControl
 ): Promise<PreparedExport> {
   throwIfExportAborted(control?.signal);
-  assertRenderPlanParity(settings);
+  const registry = createQ02RenderRegistry();
+  assertRenderPlanParity(settings, registry);
   onProgress?.(10, 'Initializing export pipeline...');
 
   // Target dimensions preserving exact aspect ratio
@@ -105,6 +107,10 @@ export async function prepareExportImage(
         height: exportHeight,
         dpr: 1,
         settings,
+        source: image.originalElement,
+        sourceWidth: image.originalWidth,
+        sourceHeight: image.originalHeight,
+        registry,
         signal: control?.signal,
         extras: {
           compareMode: 'none',

@@ -25,6 +25,14 @@ export interface PreviewRequestFlags {
   mixerVisualize?: string | null;
 }
 
+/** Source pixels accepted by the Q02 source stage before the color pipeline. */
+export type RenderPipelineSource =
+  | ImageBuffer
+  | HTMLCanvasElement
+  | OffscreenCanvas
+  | ImageBitmap
+  | HTMLImageElement;
+
 export interface RenderPipelineFrame {
   target: RenderTargetKind;
   width: number;
@@ -33,7 +41,9 @@ export interface RenderPipelineFrame {
   settings: RenderSettings;
   plan: RenderPlan;
   fingerprint: string;
-  source?: ImageBuffer;
+  source?: RenderPipelineSource;
+  sourceWidth?: number;
+  sourceHeight?: number;
   signal?: AbortSignal;
   extras?: PreviewRequestFlags;
 }
@@ -48,7 +58,9 @@ export interface RenderPipelineRequest {
   height: number;
   dpr: number;
   settings: RenderSettings;
-  source?: ImageBuffer;
+  source?: RenderPipelineSource;
+  sourceWidth?: number;
+  sourceHeight?: number;
   signal?: AbortSignal;
   registry?: EditModuleRegistry;
   extras?: PreviewRequestFlags;
@@ -64,6 +76,19 @@ export interface RenderPipelineResult {
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   !!value && typeof (value as PromiseLike<unknown>).then === 'function';
 
+function isDomSource(value: RenderPipelineSource): boolean {
+  return (
+    (typeof HTMLCanvasElement !== 'undefined' && value instanceof HTMLCanvasElement) ||
+    (typeof OffscreenCanvas !== 'undefined' && value instanceof OffscreenCanvas) ||
+    (typeof ImageBitmap !== 'undefined' && value instanceof ImageBitmap) ||
+    (typeof HTMLImageElement !== 'undefined' && value instanceof HTMLImageElement)
+  );
+}
+
+function isImageBufferLike(value: RenderPipelineSource): value is ImageBuffer {
+  return !isDomSource(value);
+}
+
 function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw createAbortError();
 }
@@ -71,7 +96,7 @@ function throwIfAborted(signal?: AbortSignal): void {
 function prepare(request: RenderPipelineRequest) {
   const registry = request.registry ?? createCoreRenderRegistry();
   const plan = resolveRenderPlan(request.settings, request.target, registry);
-  if (request.source !== undefined) {
+  if (request.source !== undefined && isImageBufferLike(request.source)) {
     validateImageBuffer(request.source);
     throwIfAborted(request.signal);
   }
@@ -88,6 +113,8 @@ function prepare(request: RenderPipelineRequest) {
       plan,
       fingerprint: renderPlanFingerprint(plan),
       source: request.source,
+      sourceWidth: request.sourceWidth,
+      sourceHeight: request.sourceHeight,
       signal: request.signal,
       extras: request.extras,
     } satisfies RenderPipelineFrame,
