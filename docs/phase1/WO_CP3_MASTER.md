@@ -54,7 +54,15 @@ export const LOCAL_STAGE_FRAGMENT: string; // GLSL ES 3.00, shared by preview an
 - Preview builds the plan at preview size; export at export size; identical math and mask basis (`corrected-nis`).
 - Max 8 group textures (units 2..9 if image=0, LUT=1); Q01 verifies the budget.
 
-### 4. RAW develop seam — Q03 implements, Q01/Q04 integrate
+### 4. Geometry sizing semantics — Q00 ruling on CP3-02A
+
+- Straighten is **cover / auto-crop**: it must NOT change output dimensions. The CP2 shader zooms (`scale` divisor) so no empty borders appear; expanding the canvas would stretch the image.
+- `geometryOutputSize = (rotation 90/270 ? swapped source dims : source dims) × crop`, rounded once per axis.
+- Crop is applied in post-straighten output NIS (forward order: flip → rotate → straighten → crop), matching `q02_geometry_output_to_source`.
+- Straighten uses the **post-rotation aspect** (swap aspect for 90/270) in both the GLSL chunk and the CPU mirror. Parity tests must cover rotation 90 + straighten + crop.
+- `contracts/geometry.ts`'s crop comment may be clarified (comment-only change, approved).
+
+### 5. RAW develop seam — Q03 implements, Q01/Q04 integrate
 
 - No `imageBuffer` contract change. RAW metadata/file handle is kept inside `src/engine/raw/*` (WeakMap keyed by `DecodedSource`).
 - `DecodedImage` gains optional `resolveOriginal?: () => Promise<HTMLImageElement>`; RAW sets `originalElement` to the preview canvas and provides a full-res resolver. JPEG path unchanged.
