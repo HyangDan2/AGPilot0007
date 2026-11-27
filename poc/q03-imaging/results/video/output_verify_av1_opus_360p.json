@@ -1,0 +1,110 @@
+{
+  "ok": true,
+  "info": {
+    "output": {
+      "mimeType": "video/webm",
+      "bytes": 711702,
+      "duration": 4,
+      "videoCodec": "vp09.00.21.08.01.01.01.01.01",
+      "audioCodec": "opus",
+      "codedWidth": 640,
+      "codedHeight": 360,
+      "displayWidth": 640,
+      "displayHeight": 360,
+      "rotation": 0,
+      "firstVideoTimestamp": 0,
+      "firstAudioTimestamp": -0.007,
+      "avStartOffsetMs": -7,
+      "videoTrackDuration": 4,
+      "audioTrackDuration": 3.994,
+      "avEndDeltaMs": -6,
+      "outputVideoPacketCount": 120,
+      "outputAudioPacketCount": 201,
+      "variableFrameRate": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.033,
+          0.067,
+          0.1,
+          0.133,
+          0.167,
+          0.2,
+          0.233
+        ],
+        "durationsMinMs": 33,
+        "durationsMaxMs": 34,
+        "uniqueDurations": 2,
+        "deltaStdMs": 0.472,
+        "variableFrameRate": true
+      }
+    },
+    "audio": {
+      "input": {
+        "packets": 201,
+        "bytes": 38629,
+        "hash": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e"
+      },
+      "output": {
+        "packets": 201,
+        "bytes": 38629,
+        "hash": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e"
+      },
+      "hashMatch": true
+    },
+    "inputAv": {
+      "avStartOffsetMs": -7,
+      "avEndDeltaMs": -6,
+      "videoTrackDuration": 4,
+      "audioTrackDuration": 3.994
+    },
+    "decodedFrames": 120
+  },
+  "assertions": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "display dimensions",
+        "expected": "640x360",
+        "actual": "640x360",
+        "pass": true
+      },
+      {
+        "name": "video packet count == encoded frames",
+        "expected": 120,
+        "actual": 120,
+        "pass": true
+      },
+      {
+        "name": "A/V start offset preserved from input (<=1ms)",
+        "expected": -7,
+        "actual": -7,
+        "pass": true
+      },
+      {
+        "name": "A/V end delta preserved from input (<=5ms)",
+        "expected": -6,
+        "actual": -6,
+        "pass": true
+      },
+      {
+        "name": "audio packet hash matches input (passthrough)",
+        "expected": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
+        "actual": "17410b4c6d98879baf45ac8a981f033d800a17a27e99e8667682dc795260776e",
+        "pass": true
+      },
+      {
+        "name": "decoded frame count == packet count",
+        "expected": 120,
+        "actual": 120,
+        "pass": true
+      },
+      {
+        "name": "output decode without error + monotonic timestamps",
+        "expected": "true",
+        "actual": "true",
+        "pass": true
+      }
+    ]
+  }
+}

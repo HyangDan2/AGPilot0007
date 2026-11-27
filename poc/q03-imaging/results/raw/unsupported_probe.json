@@ -1,0 +1,9 @@
+{
+  "path": "notraw.jpg",
+  "bytes": 21748,
+  "detectFormat": null,
+  "supportsFile": false,
+  "open": {
+    "error": "UnsupportedFormatError: unsupported or unrecognised file format: no recognisable header"
+  }
+}

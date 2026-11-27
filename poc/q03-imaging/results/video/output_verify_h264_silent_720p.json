@@ -1,0 +1,73 @@
+{
+  "ok": true,
+  "info": {
+    "output": {
+      "mimeType": "video/mp4",
+      "bytes": 4183367,
+      "duration": 6,
+      "videoCodec": "avc1.64001f",
+      "audioCodec": null,
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "firstVideoTimestamp": 0,
+      "firstAudioTimestamp": null,
+      "avStartOffsetMs": null,
+      "videoTrackDuration": 6,
+      "audioTrackDuration": null,
+      "avEndDeltaMs": null,
+      "outputVideoPacketCount": 180,
+      "outputAudioPacketCount": null,
+      "variableFrameRate": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.1,
+          0.13333333333333333,
+          0.16666666666666666,
+          0.2,
+          0.23333333333333334
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      }
+    },
+    "decodedFrames": 180
+  },
+  "assertions": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "display dimensions",
+        "expected": "1280x720",
+        "actual": "1280x720",
+        "pass": true
+      },
+      {
+        "name": "video packet count == encoded frames",
+        "expected": 180,
+        "actual": 180,
+        "pass": true
+      },
+      {
+        "name": "decoded frame count == packet count",
+        "expected": 180,
+        "actual": 180,
+        "pass": true
+      },
+      {
+        "name": "output decode without error + monotonic timestamps",
+        "expected": "true",
+        "actual": "true",
+        "pass": true
+      }
+    ]
+  }
+}
