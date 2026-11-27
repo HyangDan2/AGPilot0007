@@ -52,7 +52,7 @@ export const LOCAL_STAGE_FRAGMENT: string; // GLSL ES 3.00, shared by preview an
 - Order: after Color Lab, before detail (`LOCAL_ADJUSTMENT_EXECUTION_ORDER`).
 - `plan === null` → renderer path byte-identical to CP2.
 - Preview builds the plan at preview size; export at export size; identical math and mask basis (`corrected-nis`).
-- Max 8 group textures (units 2..9 if image=0, LUT=1); Q01 verifies the budget.
+- Max 8 group textures; mask canvases bind at **texture unit 5** (image=0, LUT=1, date=2, curves=3, graded detail=4), i.e. units 5..12 for 8 groups; Q01 clamps group count to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8).
 
 ### 4. Geometry sizing semantics — Q00 ruling on CP3-02A
 
@@ -204,3 +204,4 @@ Independent fresh-clone QA at final integration SHA: full unit/perf/build, singl
 `Progress / Completed / Test Result / Blocker / Next Action` — no reports longer than needed, no re-verification of CP2 evidence.
 - 2026-11-27: Q04 `ff8a2a4` verified by Q00 at SHA in verify worktree: tsc 0; `tests/q04Batch.test.ts` 25 PASS, incl. new guard that batch hands the decoded image (not `originalElement`) to `prepare` and does not resolve full-res itself (resolution belongs to the shared exporter). Branch tip also carries pro-engine merges already on pro-engine, content-neutral. Approved for `--no-ff` merge.
 - 2026-11-27: Q02 `cf0fe63` verified by Q00 at SHA: tsc 0; `tests/local-mask-raster.test.ts` 16 PASS (adds zero-flow no-paint, stroke union 0.75, feather band widening). Test-only delta past `9c78983`; Q02 is on standby again. Minor cosmetic: one `it(...)` line has the first statement on the same line (no behavior impact); not worth a rewrite. Integration target now `cf0fe63`.
+- 2026-11-27: Ledger §3 texture-budget line corrected to base unit 5 (`MAX_TEXTURE_IMAGE_UNITS - 5` clamp); it previously said units 2..9, contradicting the log ruling. Q02 spotted it; superseded text removed.
