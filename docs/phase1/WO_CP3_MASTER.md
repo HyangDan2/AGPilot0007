@@ -94,7 +94,8 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | Geometry/mask UI mounting | Q02 → Q01 | Q02 ships prop-driven components (`ce06ccd` verified); only Q01 can mount them in Viewport/AdjustmentPanel |
 | `applyParameterGroups` + new edit groups | Q01 → Q04 | DONE: Q04 `294990e` commits through `applyParameterGroups` with geometry/optical/localAdjustments groups |
 | geometry/optical/localAdjustments state + actions | Q01 → Q02 | `6f363c1` on pro-engine (state, history, v9, `applyParameterGroups`); UI wiring by Q02 02C |
-| `planLocalStage` + GLSL chunk | Q02 → Q01 | pending (02E) |
+| `planLocalStage` + GLSL chunk | Q02 → Q01 | DELIVERED `2e7e1b6` (verified); Q01 must inject the fragment, bind mask textures, cache plans per state/size |
+| Mask UI mounting + state sync | Q02 → Q01 | maskUiStore owns editing (`local`/`setLocal`); Q01 mounts MasksWorkspace/MaskListPanel/MaskOverlay and mirrors into `editorStore.localAdjustments` (undo/recipe) without loops |
 | RAW develop API + `resolveOriginal` | Q03 → Q01/Q04 | `a18bc08` VERIFIED + Q03 CP3-03 reported complete (retained 92.56 MB, parity mean 1.101/p99 7); approved for merge; Q01 wiring: `openRawForEditing` in store, `resolveDecodedImageOriginal` in exporter, no silent fallback |
 | batch resolver compatibility | Q03 → Q04 | `resolveDecodedImageOriginal(image)` available in `a18bc08`; Q04 to use it in batch |
 
@@ -107,6 +108,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 | `a18bc08` | cp3-q03-raw | CP3-03 RAW develop seam, memory accounting, matrix validation | 2026-11-27 | APPROVED — merge `--no-ff` (engine only; app wiring is Q01) |
 | `ce06ccd` | cp3-q02-local | 02C crop overlay + geometry/perspective panel (new components only) | 2026-11-27 | APPROVED — merge `--no-ff`; NOT yet user-visible until Q01 mounts |
 | `294990e` | cp3-q04-workspace | CP3-04 follow-ups on `applyParameterGroups`, 10 groups, batch/handler fixes | 2026-11-27 | APPROVED — merge `--no-ff` after Q01's current push |
+| `2e7e1b6` | cp3-q02-local | 02D masks + 02E local stage seam (maskRaster, mask UI, masks.ts delta 2) | 2026-11-27 | APPROVED — merge `--no-ff` |
 
 ### Ledger log
 
@@ -115,6 +117,7 @@ PRs #18/#19/#20 remain Draft/subsed. Q01 performs serial merges into pro-engine 
 - 2026-11-27: Ledger published at `3473234`; distributed to Q01–Q04. Q01 told to publish `applyParameterGroups` signature early and to merge only ledger-listed SHAs (`git merge --no-ff`). Q02 ordered to run 02A.1 → 02B without separate approval. Q03 asked to push the develop API + `resolveOriginal` early. Q04 follow-ups: replace interim history write, add geometry/optical/local groups, EXIF/recommend UI + E2E, `uniqueFilename` consistency test, failed-open selection case.
 - 2026-11-27: Q04 reviewed scope accepted as interim; follow-up items 1–5 outstanding (see above log entry).
 - 2026-11-27: Q02 `3f5f25d` (02A.1) verified by Q00: no straighten expansion, rotated-aspect mapping in `geometryMappings` reused by uniforms + CPU mirror, `tests/e2e/source-stage-output-size.spec.ts` covers rotation 90 + straighten + crop + perspective with parity and no-stretch checks; 8 unit tests re-run PASS. Approved for Q01 merge.
+- 2026-11-27: Q02 `2e7e1b6` verified at SHA: tsc 0; 36 tests PASS (local-mask-raster 14, masks-limits 7, cropGeometry 7, output-size 8). Masks delta 2 truncation reporting ok. Approved. Ruling: mask masks texture base 5 (units 5..12 for 8 groups); Q01 must clamp group count to `MAX_TEXTURE_IMAGE_UNITS - 5` (min-16 devices allow 8).
 - 2026-11-27: Q01 pushed `59bd0bf`: geometry-derived preview/export dims, typed `resolveDecodedImageOriginal` (failures propagate), RAW open via `openRawForEditing`. Verified by Q00 locally: tsc 0, 42 tests PASS. Note: Q01 rebased the approved `3f5f25d`/`a18bc08` onto the ledger tip; patch-ids match (040d14e…, f6cf726…), so approval carries over, but future integrations must use `--no-ff` and never rewrite pushed history.
 - 2026-11-27: Q04 `294990e` verified by Q00 at SHA: tsc 0; 72 tests PASS across 8 q04 suites. Interim direct history write replaced by `applyParameterGroups` (all groups incl. geometry/optical/localAdjustments); failed-open selection revert tested; `renamePrepared` no longer mutates prepared and duplicate names agree; batch uses the shared exporter. Approved for merge.
 - 2026-11-27: Q02 `ce06ccd` verified: 15 unit tests PASS, tsc clean, no shared-file edits. Components are prop-driven; mounting is Q01's (allowlist). Ledger note added.
