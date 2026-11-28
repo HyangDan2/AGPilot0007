@@ -1,4 +1,5 @@
 import { FRAGMENT_FEATURE_SOURCE } from '../pipeline/shaderChunks';
+import { LOCAL_STAGE_FRAGMENT } from '../local/maskRaster';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
 in vec2 a_position;
 in vec2 a_uv;
@@ -78,6 +79,7 @@ vec3 applyCurves(vec3 c) {
     return vec3(curveSample(w.r).g, curveSample(w.g).b, curveSample(w.b).a);
 }
 ${FRAGMENT_FEATURE_SOURCE}
+${LOCAL_STAGE_FRAGMENT}
 vec3 grade(vec3 srgb) {
 
     // 1. Convert to Linear for physical optical adjustments
@@ -140,7 +142,7 @@ vec3 grade(vec3 srgb) {
 }
 
 void main() {
-    if(u_detail_stage==1){vec4 raw=texture(u_image,v_uv);fragColor=vec4(grade(raw.rgb),raw.a);return;}
+    if(u_detail_stage==1){vec4 raw=texture(u_image,v_uv);fragColor=vec4(q02_local_stage(grade(raw.rgb),v_uv),raw.a);return;}
     // Check if in split original section
     bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && v_uv.x < u_split_pos);
 
@@ -159,6 +161,9 @@ void main() {
     vec3 srgb = rawColor.rgb;
     vec3 color = u_detail_stage==2?gradedAt(v_uv):grade(srgb);
     if (u_mixer_reference || u_mixer_visualize >= 0) { fragColor = vec4(clamp(color,0.0,1.0),rawColor.a); return; }
+    // Local stage runs after Color Lab (grade) and before detail; the detail
+    // pre-pass already applied it, so stage 2 must not apply it twice.
+    if (u_detail_stage==0) { color = q02_local_stage(color, v_uv); }
     if(u_detail_stage==2){color=sharpenColor(color);if(u_detail_mask){fragColor=vec4(color,rawColor.a);return;}}
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (max(u_optics.x, max(u_optics.y, u_optics.z)) > 0.0) {

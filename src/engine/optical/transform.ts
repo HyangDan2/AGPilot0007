@@ -1,7 +1,10 @@
 import {
   applyOpticalHomography,
+  createPerspectiveQuad,
   validateOpticalTransform,
+  type Mat3,
   type OpticalTransform,
+  type PerspectiveQuad,
   type Point2,
 } from '../contracts/optical';
 
@@ -34,6 +37,48 @@ export function normalizeOpticalTransform(value: unknown): OpticalTransform {
 /** Rejects non-invertible coefficients before any render is scheduled. */
 export function assertOpticalRenderable(value: unknown): OpticalTransform {
   return normalizeOpticalTransform(value);
+}
+
+/**
+ * Solves the projective mapping from the unit square (TL, TR, BR, BL) to the
+ * supplied perspective quad. The returned row-major matrix is the corrected-NIS
+ * -> source-NIS homography used by the optical sampler.
+ */
+export function homographyFromPerspectiveQuad(quad: PerspectiveQuad): Mat3 {
+  const [q0, q1, q2, q3] = quad;
+  const dx1 = q1.x - q2.x;
+  const dx2 = q3.x - q2.x;
+  const dx3 = q0.x - q1.x + q2.x - q3.x;
+  const dy1 = q1.y - q2.y;
+  const dy2 = q3.y - q2.y;
+  const dy3 = q0.y - q1.y + q2.y - q3.y;
+  const denominator = dx1 * dy2 - dx2 * dy1;
+  if (!Number.isFinite(denominator) || Math.abs(denominator) <= 1e-12) {
+    throw new Error('Optical perspective quad is degenerate');
+  }
+  const g = (dx3 * dy2 - dx2 * dy3) / denominator;
+  const h = (dx1 * dy3 - dx3 * dy1) / denominator;
+  const a = q1.x - q0.x + g * q1.x;
+  const b = q3.x - q0.x + h * q3.x;
+  const d = q1.y - q0.y + g * q1.y;
+  const e = q3.y - q0.y + h * q3.y;
+  const values = [a, b, q0.x, d, e, q0.y, g, h, 1];
+  if (!values.every(Number.isFinite)) {
+    throw new Error('Optical perspective quad is degenerate');
+  }
+  const homography = values.map((value) => (value === 0 ? 0 : value));
+  validateOpticalTransform({ version: 1, homography, perspective: quad });
+  return homography;
+}
+
+/**
+ * Builds a validated perspective-only optical transform from the same
+ * vertical/horizontal controls as the frozen perspective quad helper.
+ */
+export function createPerspectiveTransform(vertical: number, horizontal: number): OpticalTransform {
+  const perspective = createPerspectiveQuad(vertical, horizontal);
+  const homography = homographyFromPerspectiveQuad(perspective);
+  return normalizeOpticalTransform({ version: 1, homography, perspective });
 }
 
 export function opticalIsIdentity(value: OpticalTransform): boolean {

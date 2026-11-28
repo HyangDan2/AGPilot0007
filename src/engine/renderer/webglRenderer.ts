@@ -8,6 +8,12 @@ import { VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE } from './shaderManager';
 import { ParsedLut3D } from '../color/lutLoader';
 import { RenderTarget } from './renderTarget';
 import type { RenderRequest } from '../pipeline/renderSettings';
+import {
+  localStageAdjustmentUniforms,
+  localStageBlendCode,
+  localStageTextureBudget,
+  type LocalStagePlan,
+} from '../local/maskRaster';
 
 export class WebGL2FilmRenderer {
   private detailTarget: RenderTarget | null = null;
@@ -24,11 +30,17 @@ export class WebGL2FilmRenderer {
   private curveTexture: WebGLTexture | null = null;
   private curveKey = '';
   private curvesEnabled = false;
+  private localMaskTextures: (WebGLTexture | null)[] = [];
+  private localPlan: LocalStagePlan | null = null;
+  private localPlanMasks: HTMLCanvasElement[] = [];
+  private localGroupCount = 0;
+  private warnedLocalBudget = false;
   private stampRect = [0,0,1,1];
   private quadBuffer: WebGLBuffer | null = null;
   private currentLutSize: number = 33;
   private isContextLost = false;
   private isInitialized = false;
+  private destroyed = false;
 
   private onContextRestoredCallback?: () => void;
 
@@ -43,20 +55,21 @@ export class WebGL2FilmRenderer {
   }
 
   public isReady(): boolean {
-    return this.isInitialized && !this.isContextLost && this.gl !== null && this.program !== null;
+    return !this.destroyed && this.isInitialized && !this.isContextLost && this.gl !== null && this.program !== null;
   }
 
   public getMaxTextureSize(): number {
-    if (!this.gl || this.isContextLost) return 4096;
+    if (this.destroyed || !this.gl || this.isContextLost) return 4096;
     return this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE) || 4096;
   }
 
   public getMaxRenderbufferSize(): number {
-    if (!this.gl || this.isContextLost) return 4096;
+    if (this.destroyed || !this.gl || this.isContextLost) return 4096;
     return this.gl.getParameter(this.gl.MAX_RENDERBUFFER_SIZE) || 4096;
   }
 
   private initContext(): boolean {
+    if (this.destroyed) return false;
     const gl = this.canvas.getContext('webgl2', {
       alpha: true,
       antialias: false,
@@ -80,12 +93,14 @@ export class WebGL2FilmRenderer {
   private setupContextLossHandling() {
     this.canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
+      if (this.destroyed) return;
       console.warn('WebGL2 context lost.');
       this.isContextLost = true;
       this.isInitialized = false;
     });
 
     this.canvas.addEventListener('webglcontextrestored', () => {
+      if (this.destroyed) return;
       console.log('WebGL2 context restored. Reinitializing pipeline...');
       this.detailTarget?.dispose();this.detailTarget=null;
       this.imageTexture = null;
@@ -93,6 +108,7 @@ export class WebGL2FilmRenderer {
       this.stampTexture = null;
       this.stampKey = '';
       this.curveTexture = null; this.curveKey = '';
+      this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
       this.initContext();
       this.onContextRestoredCallback?.();
     });
@@ -178,6 +194,8 @@ export class WebGL2FilmRenderer {
       'u_split_pos',
       'u_rgb_base_enabled','u_rgb_base_matrix','u_shadows_tint','u_mixer_enabled','u_mixer_reference','u_mix_bands[0]','u_point_count','u_point_color[0]','u_point_range[0]','u_point_shift[0]','u_mixer_visualize',
       'u_curves', 'u_curves_enabled', 'u_endpoints', 'u_seed', 'u_stamp', 'u_stamp_enabled', 'u_stamp_rect', 'u_optics', 'u_optical_samples',
+      'u_q02_local_masks[0]', 'u_q02_local_group_count', 'u_q02_local_group_opacity[0]', 'u_q02_local_group_blend[0]',
+      'u_q02_local_adjust_a[0]', 'u_q02_local_adjust_b[0]', 'u_q02_local_adjust_c[0]',
     ];
     for (const name of uniformNames) {
       this.uniforms[name] = gl.getUniformLocation(prog, name);
@@ -420,6 +438,8 @@ export class WebGL2FilmRenderer {
     gl.uniform1i(this.uniforms.u_detail_mask,options.sharpeningMask?1:0);
     gl.uniform4f(this.uniforms.u_detail,sharpening.amount/100,sharpening.radius,sharpening.detail/100,sharpening.masking/100);
     gl.uniform2f(this.uniforms.u_source_size,options.sourceWidth||this.imageWidth,options.sourceHeight||this.imageHeight);
+    // Must precede the detail pre-pass, which applies the local stage inside grade.
+    this.applyLocalStage(gl, options.localStage ?? null);
     if(detail){
       this.ensureDetailTarget();
       gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,null);gl.uniform1i(this.uniforms.u_graded,4);
@@ -434,6 +454,88 @@ export class WebGL2FilmRenderer {
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
+  }
+
+  /**
+   * Binds Q02 mask canvases from texture unit 5 upward and uploads the group
+   * uniforms. Without an active plan the CP2 path stays untouched: the group
+   * count is only reset when it was raised before, so inert frames issue no
+   * local-stage GL calls at all.
+   */
+  private applyLocalStage(gl: WebGL2RenderingContext, plan: LocalStagePlan | null) {
+    const countLocation = this.uniforms.u_q02_local_group_count;
+    if (!countLocation) return;
+    if (!plan || plan.groups.length === 0) {
+      if (this.localGroupCount !== 0) {
+        gl.uniform1i(countLocation, 0);
+        this.localGroupCount = 0;
+      }
+      this.localPlan = null;
+      return;
+    }
+    const budget = localStageTextureBudget(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number);
+    const count = Math.min(plan.groups.length, budget.groupLimit);
+    if (count === 0) {
+      if (!this.warnedLocalBudget) {
+        this.warnedLocalBudget = true;
+        console.warn('Local stage skipped: this device has no texture units above the base pipeline.');
+      }
+      if (this.localGroupCount !== 0) {
+        gl.uniform1i(countLocation, 0);
+        this.localGroupCount = 0;
+      }
+      this.localPlan = null;
+      return;
+    }
+
+    const planChanged = this.localPlan !== plan;
+    const masksChanged = planChanged || plan.masks.some((mask, index) => this.localPlanMasks[index] !== mask);
+    if (planChanged || masksChanged) {
+      for (let index = 0; index < count; index++) {
+        let texture = this.localMaskTextures[index];
+        if (!texture) {
+          texture = gl.createTexture();
+          if (!texture) continue;
+          this.localMaskTextures[index] = texture;
+        }
+        gl.activeTexture(gl.TEXTURE0 + budget.base + index);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, plan.masks[index]);
+      }
+      this.localPlan = plan;
+      this.localPlanMasks = plan.masks.slice();
+    }
+
+    const units = new Int32Array(8);
+    for (let index = 0; index < 8; index++) units[index] = budget.base + Math.min(index, count - 1);
+    gl.uniform1iv(this.uniforms['u_q02_local_masks[0]'], units);
+
+    const opacity = new Float32Array(8);
+    const blend = new Int32Array(8);
+    const adjustA = new Float32Array(32);
+    const adjustB = new Float32Array(32);
+    const adjustC = new Float32Array(32);
+    for (let index = 0; index < count; index++) {
+      const group = plan.groups[index];
+      opacity[index] = group.opacity;
+      blend[index] = localStageBlendCode(group.blend);
+      const values = localStageAdjustmentUniforms(group.adjustment);
+      adjustA.set(values.a, index * 4);
+      adjustB.set(values.b, index * 4);
+      adjustC.set(values.c, index * 4);
+    }
+    gl.uniform1i(countLocation, count);
+    this.localGroupCount = count;
+    gl.uniform1fv(this.uniforms['u_q02_local_group_opacity[0]'], opacity);
+    gl.uniform1iv(this.uniforms['u_q02_local_group_blend[0]'], blend);
+    gl.uniform4fv(this.uniforms['u_q02_local_adjust_a[0]'], adjustA);
+    gl.uniform4fv(this.uniforms['u_q02_local_adjust_b[0]'], adjustB);
+    gl.uniform4fv(this.uniforms['u_q02_local_adjust_c[0]'], adjustC);
   }
 
   private ensureDetailTarget(){
@@ -454,6 +556,8 @@ export class WebGL2FilmRenderer {
   }
 
   public destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     const gl = this.gl;
     if (!gl) return;
     if(this.detailTarget){this.detailTarget.dispose();this.detailTarget=null;}
@@ -467,12 +571,20 @@ export class WebGL2FilmRenderer {
     }
     if (this.stampTexture) { gl.deleteTexture(this.stampTexture); this.stampTexture = null; }
     if (this.curveTexture) { gl.deleteTexture(this.curveTexture); this.curveTexture = null; }
+    for (const texture of this.localMaskTextures) { if (texture) gl.deleteTexture(texture); }
+    this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
     if (this.quadBuffer) { gl.deleteBuffer(this.quadBuffer); this.quadBuffer = null; }
     if (this.vao) { gl.deleteVertexArray(this.vao); this.vao = null; }
     if (this.program) {
       gl.deleteProgram(this.program);
       this.program = null;
     }
+    // Export canvases are single-use and detached; without an explicit loss
+    // Chromium keeps the context alive and repeated export/cancel cycles
+    // exhaust the page's budget. Attached canvases (viewport, loupe) may be
+    // reused by a new renderer, so their context must stay restorable.
+    const lose = gl.getExtension('WEBGL_lose_context');
+    if (lose && !this.canvas.isConnected) lose.loseContext();
     this.isInitialized = false;
     this.gl = null;
   }

@@ -1,0 +1,207 @@
+{
+  "apis": {
+    "VideoDecoder": true,
+    "VideoEncoder": true,
+    "AudioDecoder": true,
+    "AudioEncoder": true,
+    "VideoFrame": true,
+    "AudioData": true,
+    "ImageDecoder": true,
+    "showSaveFilePicker": true,
+    "FileSystemWritableFileStream": true
+  },
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36",
+  "platform": "macOS",
+  "hardwareConcurrency": 8,
+  "deviceMemoryGB": 8,
+  "crossOriginIsolated": false,
+  "heapLimitMB": 4192,
+  "mediaCapabilitiesDecoding": {
+    "supported": true,
+    "smooth": true,
+    "powerEfficient": true
+  },
+  "probes": {
+    "videoDecode": [
+      {
+        "codec": "avc1.42E01E",
+        "supported": true,
+        "config": {
+          "codec": "avc1.42E01E",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "avc1.640028",
+        "supported": true,
+        "config": {
+          "codec": "avc1.640028",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "hvc1.1.6.L93.B0",
+        "supported": true,
+        "config": {
+          "codec": "hvc1.1.6.L93.B0",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "vp09.00.10.08",
+        "supported": true,
+        "config": {
+          "codec": "vp09.00.10.08",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "vp8",
+        "supported": true,
+        "config": {
+          "codec": "vp8",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "av01.0.04M.08",
+        "supported": true,
+        "config": {
+          "codec": "av01.0.04M.08",
+          "hardwareAcceleration": "no-preference"
+        }
+      }
+    ],
+    "audioDecode": [
+      {
+        "codec": "mp4a.40.2",
+        "supported": true,
+        "config": {
+          "codec": "mp4a.40.2",
+          "hardwareAcceleration": null
+        }
+      },
+      {
+        "codec": "opus",
+        "supported": true,
+        "config": {
+          "codec": "opus",
+          "hardwareAcceleration": null
+        }
+      },
+      {
+        "codec": "mp3",
+        "supported": true,
+        "config": {
+          "codec": "mp3",
+          "hardwareAcceleration": null
+        }
+      },
+      {
+        "codec": "flac",
+        "supported": true,
+        "config": {
+          "codec": "flac",
+          "hardwareAcceleration": null
+        }
+      }
+    ],
+    "videoEncode": [
+      {
+        "codec": "avc1.42001f",
+        "supported": true,
+        "config": {
+          "codec": "avc1.42001f",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "vp09.00.10.08",
+        "supported": true,
+        "config": {
+          "codec": "vp09.00.10.08",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "av01.0.04M.08",
+        "supported": true,
+        "config": {
+          "codec": "av01.0.04M.08",
+          "hardwareAcceleration": "no-preference"
+        }
+      },
+      {
+        "codec": "hvc1.1.6.L93.B0",
+        "supported": true,
+        "config": {
+          "codec": "hvc1.1.6.L93.B0",
+          "hardwareAcceleration": "no-preference"
+        }
+      }
+    ],
+    "audioEncode": [
+      {
+        "codec": "mp4a.40.2",
+        "supported": true,
+        "config": {
+          "codec": "mp4a.40.2",
+          "hardwareAcceleration": null
+        }
+      },
+      {
+        "codec": "opus",
+        "supported": true,
+        "config": {
+          "codec": "opus",
+          "hardwareAcceleration": null
+        }
+      }
+    ]
+  },
+  "mediabunny": {
+    "encodableVideo": [
+      "avc",
+      "hevc",
+      "vp9",
+      "av1",
+      "vp8"
+    ],
+    "encodableAudio": [
+      "aac",
+      "opus",
+      "pcm-s16",
+      "pcm-s16be",
+      "pcm-s24",
+      "pcm-s24be",
+      "pcm-s32",
+      "pcm-s32be",
+      "pcm-f32",
+      "pcm-f32be",
+      "pcm-f64",
+      "pcm-f64be",
+      "pcm-u8",
+      "pcm-s8",
+      "ulaw",
+      "alaw"
+    ],
+    "error": null
+  },
+  "webgl2": true,
+  "webgl2MaxTexture": 8192,
+  "webgl2Renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "outputTargets": {
+    "showSaveFilePicker": true,
+    "fileSystemWritableFileStream": true,
+    "harnessSink": true,
+    "secureContext": true,
+    "userActivation": {
+      "isActive": true,
+      "hasBeenActive": true
+    },
+    "requiresUserGesture": true,
+    "canOpenPickerNow": true,
+    "defaultMode": "harness-stream",
+    "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+  }
+}

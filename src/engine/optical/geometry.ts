@@ -17,6 +17,61 @@ export interface GeometryUniforms {
   crop: readonly [number, number, number, number];
 }
 
+export interface GeometryOutputSize {
+  width: number;
+  height: number;
+}
+
+function roundOutputDimension(value: number): number {
+  return Math.max(1, Math.round(value));
+}
+
+function rotatedDimensions(
+  geometry: GeometryTransform,
+  sourceWidth: number,
+  sourceHeight: number,
+): GeometryOutputSize {
+  const quarterTurn = geometry.rotation === 90 || geometry.rotation === 270;
+  return {
+    width: quarterTurn ? sourceHeight : sourceWidth,
+    height: quarterTurn ? sourceWidth : sourceHeight,
+  };
+}
+
+function assertSourceDimensions(sourceWidth: number, sourceHeight: number): void {
+  if (
+    !Number.isFinite(sourceWidth) ||
+    !Number.isFinite(sourceHeight) ||
+    sourceWidth <= 0 ||
+    sourceHeight <= 0
+  ) {
+    throw new Error('Invalid geometry source dimensions');
+  }
+}
+
+/**
+ * Canvas/export dimensions for an applied geometry transform. Quarter turns
+ * swap the axes and crop multiplies; straighten is cover/auto-crop, so it never
+ * changes the size (expanding the canvas would stretch the image). Rounding
+ * happens once per axis so repeated calls are stable.
+ */
+export function geometryOutputSize(
+  geometry: GeometryTransform | null | undefined,
+  sourceWidth: number,
+  sourceHeight: number,
+): GeometryOutputSize {
+  assertSourceDimensions(sourceWidth, sourceHeight);
+  const normalized = validateGeometryRenderable(geometry);
+  const rotated = rotatedDimensions(normalized, sourceWidth, sourceHeight);
+  let width = rotated.width;
+  let height = rotated.height;
+  if (normalized.crop) {
+    width *= normalized.crop.width;
+    height *= normalized.crop.height;
+  }
+  return { width: roundOutputDimension(width), height: roundOutputDimension(height) };
+}
+
 /** Output NIS -> source NIS. The CPU mirror of the GPU chunk below. */
 export function geometryOutputToSource(
   point: { x: number; y: number },
@@ -110,3 +165,4 @@ vec2 q02_geometry_output_to_source(vec2 uv) {
   return p;
 }
 `;
+

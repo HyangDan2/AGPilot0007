@@ -1,0 +1,69 @@
+[
+  {
+    "probe": "internal-abort",
+    "aborted": true,
+    "ok": false,
+    "error": "AbortError: transcode cancelled",
+    "peakHeapDeltaMB": 15.5
+  },
+  {
+    "probe": "external-cancel",
+    "cancelRunReturned": true,
+    "aborted": true,
+    "ok": false,
+    "error": "AbortError: transcode cancelled",
+    "peakHeapDeltaMB": 20.5
+  },
+  {
+    "probe": "rerun-after-cancel",
+    "ok": true,
+    "frames": 300,
+    "verification": {
+      "pass": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "1920x1080",
+          "actual": "1920x1080",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 300,
+          "actual": 300,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "A/V end delta preserved from input (<=5ms)",
+          "expected": 0,
+          "actual": 0,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
+          "actual": "3edf6cb2f2c73ce454cf14bee18aa733ee12719e1a68993dc0959ae4163f164f",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 300,
+          "actual": 300,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    }
+  }
+]

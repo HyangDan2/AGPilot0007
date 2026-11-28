@@ -1,0 +1,261 @@
+{
+  "path": "arw/_DSC0009.ARW",
+  "version": "q03-contract/1.0.0",
+  "ok": true,
+  "resolution": {
+    "fileWidth": 6048,
+    "fileHeight": 4024,
+    "activeArea": {
+      "height": 4024,
+      "width": 6024,
+      "x": 0,
+      "y": 0
+    },
+    "crop": {
+      "height": 4000,
+      "width": 6000,
+      "x": 12,
+      "y": 12
+    },
+    "displayWidth": 6000,
+    "displayHeight": 4000,
+    "orientationApplied": true,
+    "sensorBufferSize": null
+  },
+  "buffer": {
+    "channels": 3,
+    "dataType": "f32",
+    "transfer": "linear",
+    "primaries": "srgb",
+    "source": "sensor",
+    "orientation": 1,
+    "width": 6000,
+    "height": 4000,
+    "bytesPerPixel": 12,
+    "bytes": 288000000
+  },
+  "asShot": {
+    "stats": {
+      "samples": 200000,
+      "max": 1.17804,
+      "p999": 1.00051,
+      "mean": 0.1476,
+      "over1Frac": 0.002325,
+      "over2Frac": 0,
+      "atOneFrac": 0,
+      "zeroFrac": 0,
+      "nonFinite": 0,
+      "halfSaturated": 0
+    },
+    "meanLinearRGB": [
+      0.1476,
+      0.14759,
+      0.1482
+    ],
+    "warnings": [],
+    "noEarlyClip": true
+  },
+  "sdrBridge": {
+    "decoderRgba8Linear": {
+      "width": 6000,
+      "height": 4000,
+      "channels": 4,
+      "output": "rgba8",
+      "dataType": "u8",
+      "bitsPerSample": 14,
+      "cfa": null,
+      "layout": "linear",
+      "activeArea": {
+        "height": 4000,
+        "width": 6000,
+        "x": 0,
+        "y": 0
+      },
+      "crop": {
+        "height": 4000,
+        "width": 6000,
+        "x": 0,
+        "y": 0
+      },
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "blackLevel": {
+        "cols": 1,
+        "mean": 512,
+        "rows": 1,
+        "samples": 1,
+        "values": [
+          512
+        ]
+      },
+      "whiteLevel": [
+        16383
+      ],
+      "whiteBalance": [
+        2.21875,
+        1,
+        1.7578125,
+        1
+      ],
+      "whiteBalanceApplied": false,
+      "colorMatrices": {
+        "analogBalance": [],
+        "calibration": [],
+        "color": [
+          {
+            "illuminant": 21,
+            "rows": 3,
+            "temperature": 6500,
+            "values": [
+              0.7374,
+              -0.2389,
+              -0.0551,
+              -0.5435,
+              1.3162,
+              0.2519,
+              -0.1006,
+              0.1795,
+              0.6552
+            ]
+          }
+        ],
+        "forward": [],
+        "source": "camera-db"
+      },
+      "orientation": 1,
+      "backend": {
+        "decode": "CPU WASM SIMD128 x1 thread",
+        "gpuAdapter": null,
+        "kind": "cpu",
+        "postprocess": "CPU x1",
+        "requested": "auto",
+        "simd": "WASM SIMD128",
+        "threads": 1,
+        "fallbackReason": null,
+        "binary": "simd",
+        "jpegxl": false
+      },
+      "timings": {
+        "stages": {
+          "containerParse": 1.1000003814697266,
+          "entropyDecode": 29.59999990463257,
+          "postprocess": 243.2000002861023
+        },
+        "totalMs": 274.70000076293945,
+        "copyMs": 8.800000190734863,
+        "wallMs": 282.7000002861023
+      },
+      "inputBytes": 25639680,
+      "outputBytes": 96000000,
+      "opcodes": [],
+      "incomplete": false,
+      "warnings": [],
+      "source": "sensor",
+      "colorSpace": "srgb",
+      "hasIccProfile": true
+    },
+    "bridgeVsDecoder": {
+      "samples": 96000000,
+      "differingFrac": 0.04280555208333333,
+      "meanAbsCode": 1,
+      "p99Code": 1,
+      "maxCode": 1
+    },
+    "bridgeBytes": 96000000,
+    "decoderBytes": 96000000,
+    "sameDimensions": true,
+    "note": "bridge performs the sRGB transfer only; the decoder path is the SDR comparator"
+  },
+  "whiteBalanceOrder": {
+    "tested": true,
+    "hypothesis": "if the multipliers act on camera RGB before the camera matrix, doubling red must also move green/blue through the matrix cross-terms",
+    "samples": 11669,
+    "prediction": "out_variant = T * diag(2,1,1) * T^-1 * out_neutral, for each candidate interpretation T of colorMatrices.color[0]",
+    "candidateModels": [
+      {
+        "model": "color[0]@21: colorMatrix",
+        "invertible": true,
+        "residualP99": 0.1275,
+        "residualMax": 0.334,
+        "medianCosine": 0.84394,
+        "overOneSamplesPredicted": 0
+      },
+      {
+        "model": "color[0]@21: inverse(colorMatrix)",
+        "invertible": true,
+        "residualP99": 0.3197,
+        "residualMax": 0.878,
+        "medianCosine": -0.89356,
+        "overOneSamplesPredicted": 0
+      },
+      {
+        "model": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+        "invertible": true,
+        "residualP99": 0.000001232,
+        "residualMax": 0.000006242,
+        "medianCosine": 1,
+        "overOneSamplesPredicted": 0
+      },
+      {
+        "model": "color[0]@21: inverse(xyzToSrgb * colorMatrix)",
+        "invertible": true,
+        "residualP99": 1.112,
+        "residualMax": 2.703,
+        "medianCosine": -0.79747,
+        "overOneSamplesPredicted": 0
+      }
+    ],
+    "bestModel": "color[0]@21: xyzToSrgb * inverse(colorMatrix)",
+    "bestResidualP99": 0.000001232,
+    "bestMedianCosine": 1,
+    "greenBlueChangedFrac": 0.9062,
+    "neutralMeanRGB": [
+      0.02855,
+      0.18377,
+      0.05979
+    ],
+    "variantMeanRGB": [
+      0.13744,
+      0.17504,
+      0.06055
+    ],
+    "postMatrixResidualP99": 0.1745,
+    "postMatrixRejected": true,
+    "orderEvidence": "matrix-exact",
+    "preMatrix": true,
+    "postMatrixOnly": false,
+    "matrixOrientationConsistent": true,
+    "matrixExactUnderBestModel": true
+  },
+  "cameraMatrix": {
+    "found": true,
+    "values": [
+      0.7374,
+      -0.2389,
+      -0.0551,
+      -0.5435,
+      1.3162,
+      0.2519,
+      -0.1006,
+      0.1795,
+      0.6552
+    ],
+    "invertible": true
+  },
+  "cameraMatrices": [
+    {
+      "index": 0,
+      "illuminant": 21,
+      "temperature": 6500
+    }
+  ],
+  "resolutionCheck": {
+    "decodedDimensionsMatchCrop": true,
+    "orientationApplied": true,
+    "fileOrientation": 1,
+    "sourceIsSensor": true,
+    "channelsRGB": true
+  }
+}

@@ -578,12 +578,12 @@ describe('CORE-08 resource lifecycle', () => {
 
 describe('CORE-09 recipe version identification and storage policy', () => {
   it('separates version detection from full recipe validation', () => {
-    expect(RECIPE_SCHEMA_MAX).toBe(7);
-    expect(detectRecipeSchemaVersion({ schemaVersion: 7 })).toBe(7);
+    expect(RECIPE_SCHEMA_MAX).toBe(9);
+    expect(detectRecipeSchemaVersion({ schemaVersion: 8 })).toBe(8);
     expect(detectRecipeSchemaVersion({})).toBeNull();
-    expect(detectRecipeSchemaVersion({ schemaVersion: '7' })).toBeNull();
+    expect(detectRecipeSchemaVersion({ schemaVersion: '8' })).toBeNull();
     expect(assertRecipeVersionSupported(undefined)).toBe(RECIPE_SCHEMA_MAX);
-    expect(() => assertRecipeVersionSupported(8)).toThrow('Unsupported recipe version');
+    expect(() => assertRecipeVersionSupported(10)).toThrow('Unsupported recipe version');
     expect(() => assertRecipeVersionSupported(0)).toThrow('Unsupported recipe version');
   });
 
@@ -594,7 +594,7 @@ describe('CORE-09 recipe version identification and storage policy', () => {
     expect(resolveRecipeStorageKey('/AGPilot0007/beta/')).toBe(RECIPE_STORAGE_KEYS.beta);
   });
 
-  it('accepts v1-v7 imports, strips unapproved geometry and refuses future versions', () => {
+  it('accepts v1-v7 imports, upgrades them to v8, and refuses malformed or future versions', () => {
     const raw = {
       id: 'recipe-v7',
       name: 'Versioned',
@@ -604,20 +604,23 @@ describe('CORE-09 recipe version identification and storage policy', () => {
       createdAt: 1,
       updatedAt: 1,
       schemaVersion: 7,
-      geometry: { rotation: 90, straighten: 0, flipHorizontal: false, flipVertical: false, crop: null },
     };
     for (let version = 1; version <= 7; version++) {
       const parsed = validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: version }));
-      expect(parsed.schemaVersion).toBe(7);
-      expect('geometry' in parsed).toBe(false);
+      expect(parsed.schemaVersion).toBe(8);
+      expect(geometryIsIdentity(parsed.geometry!)).toBe(true);
     }
-    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 8 }))).toThrow(
+    const framed = { ...raw, schemaVersion: 8, geometry: { rotation: 90, straighten: 0, flipHorizontal: false, flipVertical: false, crop: null } };
+    expect(validateRecipeJSON(JSON.stringify(framed)).geometry).toEqual(framed.geometry);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 8 }))).toThrow(/geometry wrapper/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 8, geometry: { rotation: 90, unknown: 1 } }))).toThrow(/Unknown recipe geometry field/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 10 }))).toThrow(
       'Unsupported recipe version',
     );
     expect(() =>
-      assertRecipePersistable({ ...raw, schemaVersion: 8 }, RECIPE_STORAGE_KEYS.stable),
+      assertRecipePersistable({ ...framed, schemaVersion: 10 }, RECIPE_STORAGE_KEYS.stable),
     ).toThrow('Unsupported recipe version');
-    expect(() => assertRecipePersistable(raw, RECIPE_STORAGE_KEYS.stable)).not.toThrow();
+    expect(() => assertRecipePersistable(framed, RECIPE_STORAGE_KEYS.stable)).not.toThrow();
   });
 });
 

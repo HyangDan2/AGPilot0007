@@ -76,6 +76,22 @@ export const MAX_MASKS = 16;
 export const MAX_STROKES = 64;
 export const MAX_STROKE_POINTS = 1024;
 
+/**
+ * Capacity limits shared by the UI and import paths so overflow is reported
+ * instead of silently truncated.
+ */
+export const MASK_LIMITS = {
+  masks: MAX_MASKS,
+  strokes: MAX_STROKES,
+  points: MAX_STROKE_POINTS,
+} as const;
+
+export interface MaskDropReport {
+  masks: number;
+  strokes: number;
+  points: number;
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const finite = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -86,14 +102,16 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 const axis = (value: unknown, fallback = 0.5): number => clamp(finite(value, fallback), 0, 1);
 const feather = (value: unknown): number => clamp(finite(value, 0.5), 0, 1);
 
-function normalizeStroke(value: unknown): BrushStroke | null {
+function normalizeStroke(value: unknown, drop?: MaskDropReport): BrushStroke | null {
   if (!isObject(value)) return null;
-  const points = Array.isArray(value.points)
-    ? value.points
-        .slice(0, MAX_STROKE_POINTS)
-        .filter(isObject)
-        .map((point) => ({ x: axis(point.x), y: axis(point.y) }))
-    : [];
+  const rawPoints = Array.isArray(value.points) ? value.points : [];
+  if (drop && rawPoints.length > MAX_STROKE_POINTS) {
+    drop.points += rawPoints.length - MAX_STROKE_POINTS;
+  }
+  const points = rawPoints
+    .slice(0, MAX_STROKE_POINTS)
+    .filter(isObject)
+    .map((point) => ({ x: axis(point.x), y: axis(point.y) }));
   if (points.length === 0) return null;
   return {
     points,
@@ -114,17 +132,19 @@ function common(raw: Record<string, unknown>, index: number): MaskBase {
   };
 }
 
-function normalizeMask(raw: unknown, index: number): MaskData | null {
+function normalizeMask(raw: unknown, index: number, drop?: MaskDropReport): MaskData | null {
   if (!isObject(raw)) return null;
   const base = common(raw, index);
   switch (raw.kind) {
     case 'brush': {
-      const strokes = Array.isArray(raw.strokes)
-        ? raw.strokes
-            .slice(0, MAX_STROKES)
-            .map(normalizeStroke)
-            .filter((stroke): stroke is BrushStroke => stroke !== null)
-        : [];
+      const rawStrokes = Array.isArray(raw.strokes) ? raw.strokes : [];
+      if (drop && rawStrokes.length > MAX_STROKES) {
+        drop.strokes += rawStrokes.length - MAX_STROKES;
+      }
+      const strokes = rawStrokes
+        .slice(0, MAX_STROKES)
+        .map((stroke) => normalizeStroke(stroke, drop))
+        .filter((stroke): stroke is BrushStroke => stroke !== null);
       return strokes.length > 0 ? { ...base, kind: 'brush', strokes } : null;
     }
     case 'linear': {
@@ -172,17 +192,28 @@ function normalizeMask(raw: unknown, index: number): MaskData | null {
   }
 }
 
-export function normalizeMasks(value: unknown): MaskData[] {
-  if (!Array.isArray(value)) return [];
+/**
+ * Normalizes a mask stack and reports capacity truncation. Invalid entries and
+ * duplicate ids are dropped as before but are not counted as truncation; the
+ * report only covers the MASK_LIMITS ceilings so callers can tell the user.
+ */
+export function normalizeMasksDetailed(value: unknown): { masks: MaskData[]; dropped: MaskDropReport } {
+  const dropped: MaskDropReport = { masks: 0, strokes: 0, points: 0 };
+  if (!Array.isArray(value)) return { masks: [], dropped };
+  if (value.length > MAX_MASKS) dropped.masks = value.length - MAX_MASKS;
   const out: MaskData[] = [];
   const ids = new Set<string>();
   for (const [index, raw] of value.slice(0, MAX_MASKS).entries()) {
-    const mask = normalizeMask(raw, index);
+    const mask = normalizeMask(raw, index, dropped);
     if (!mask || ids.has(mask.id)) continue;
     ids.add(mask.id);
     out.push(mask);
   }
-  return out;
+  return { masks: out, dropped };
+}
+
+export function normalizeMasks(value: unknown): MaskData[] {
+  return normalizeMasksDetailed(value).masks;
 }
 
 function validateStroke(value: unknown): void {
