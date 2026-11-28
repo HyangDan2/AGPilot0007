@@ -5,17 +5,15 @@ test('Q02 lens blur chunk matches the CPU gather', async ({ page, browserName })
   await page.goto('/');
 
   const result: any = await page.evaluate(async () => {
-    const {
-      LENS_BLUR_FRAGMENT,
-      blurRgbaReference,
-      normalizeLensBlurState,
-      planLensBlur,
-    } = await import('../../src/engine/optical/lensBlur');
+    const { LENS_BLUR_FRAGMENT, blurRgbaReference, planLensBlur } = await import(
+      '../../src/engine/optical/lensBlur'
+    );
+    const { normalizeLensBlur } = await import('../../src/engine/contracts/lensBlur');
 
     const W = 64;
     const H = 64;
     const plan = planLensBlur(
-      normalizeLensBlurState({
+      normalizeLensBlur({
         enabled: true,
         focusPlane: 0.5,
         focusRange: 0.1,

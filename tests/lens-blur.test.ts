@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isNeutralLensBlur, normalizeLensBlur, type LensBlurState } from '../src/engine/contracts/lensBlur';
 import type { LinearMask, LuminanceMask } from '../src/engine/contracts/masks';
 import {
   LENS_BLUR_FRAGMENT,
@@ -8,9 +9,7 @@ import {
   apertureTapWeights,
   blurRgbaReference,
   circleOfConfusion,
-  isNeutralLensBlur,
   lensBlurMaxCoc,
-  normalizeLensBlurState,
   planLensBlur,
   proceduralDepth,
   psfTextureData,
@@ -18,13 +17,12 @@ import {
   suggestTaps,
   type ApertureShape,
   type LensBlurPlan,
-  type LensBlurState,
 } from '../src/engine/optical/lensBlur';
 
 const CAPABILITY = { maxTextureSize: 4096 };
 
 const state = (extra: Partial<LensBlurState> = {}): LensBlurState =>
-  normalizeLensBlurState({
+  normalizeLensBlur({
     enabled: true,
     focusPlane: 0.5,
     focusRange: 0.1,

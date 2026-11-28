@@ -679,7 +679,11 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 ## 18. CP4-02 — Lens blur engine (depth CoC + guarded gather)
 
 - **API**: `planLensBlur(state, outputSize, capability) -> LensBlurPlan | null` (Q00-frozen seam,
-  WO_CP4 §2.2a). `depthMask` is the frozen flat `MaskData[] | null`; coverage = normalized depth
+  WO_CP4 §2.2a). `LensBlurState` / `LensBlurCapability` / `normalizeLensBlur` / `isNeutralLensBlur` /
+  `LENS_BLUR_LIMITS` come from `contracts/lensBlur.ts` (CP4-01a, pro-engine `cac6e7e`); normalization
+  clamps `rotationDeg` rather than wrapping and nulls an empty mask stack. The local `LensBlurPlan` return
+  type stays engine-owned until Q01 lands the expanded contract plan (01b). `depthMask` is the frozen flat
+  `MaskData[] | null`; coverage = normalized depth
   (0 near, 1 far), composed with per-mask blend/opacity/invert via `composeMaskStack`. `luminance`/`color`
   masks are rejected with an explicit error because the planner has no corrected pixels. `null` → radial
   procedural depth (short-side distance from center, farthest corner = 1).
@@ -705,7 +709,8 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 - **UI**: `LensBlurPanel.tsx` (enabled, focus plane/range, aperture, blades, rotation, highlight boost,
   preview/export quality, depth status + clear) and `LensBlurOverlay.tsx` (paints brush strokes into the
   flat depth stack; pointer capture, one stroke per press). Both are controlled components; Q01 mounts them.
-- **검증**: tsc 0; vitest 49 files / 412 passed (9 skipped). `tests/lens-blur.test.ts` covers CoC
+- **검증**: tsc 0; vitest 50 files / 433 passed (9 skipped) after merging pro-engine `c0843e4` and switching
+  to the contract types. `tests/lens-blur.test.ts` covers CoC
   monotonicity/range/aperture, blade-polygon containment + normalized weights + determinism, PSF packing,
   neutral/identity `null`, half-res + texture/tap clamps, uniform-image energy conservation, depth-mask
   rejection rules, halo suppression across a depth step, and preview-vs-export parity after upscale

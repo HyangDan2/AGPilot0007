@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LensBlurQuality, LensBlurState } from '../../engine/optical/lensBlur';
+import type { LensBlurState } from '../../engine/contracts/lensBlur';
 
 export interface LensBlurPanelProps {
   state: LensBlurState;
@@ -192,7 +192,7 @@ export const LensBlurPanel: React.FC<LensBlurPanelProps> = ({
           disabled={disabled}
           onChange={(event) => {
             onCommitStart?.();
-            patch({ quality: event.target.value as LensBlurQuality });
+            patch({ quality: event.target.value as LensBlurState['quality'] });
             onCommitEnd?.();
           }}
         >

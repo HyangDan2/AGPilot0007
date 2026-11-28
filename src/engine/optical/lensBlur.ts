@@ -1,3 +1,10 @@
+import {
+  isNeutralLensBlur,
+  normalizeLensBlur,
+  LENS_BLUR_LIMITS,
+  type LensBlurCapability,
+  type LensBlurState,
+} from '../contracts/lensBlur';
 import type { MaskData } from '../contracts/masks';
 import { composeMaskStack } from '../local/maskRaster';
 
@@ -9,28 +16,10 @@ import { composeMaskStack } from '../local/maskRaster';
  * provided the depth field is the PoC radial field (center 0, farthest corner 1).
  */
 
-// Temporary mirror of contracts/lensBlur.ts §2.2/2.2a until CP4-01a lands on
-// pro-engine; Q01 owns the contract. depthMask is the frozen flat MaskData
-// stack (no parallel group type), coverage = normalized depth.
-export type LensBlurQuality = 'preview' | 'export';
-
-export interface LensBlurState {
-  enabled: boolean;
-  focusPlane: number;
-  focusRange: number;
-  aperture: number;
-  bladeCount: number;
-  rotationDeg: number;
-  quality: LensBlurQuality;
-  highlightBoost: number;
-  depthMask: MaskData[] | null;
-}
-
-export interface LensBlurCapability {
-  maxTextureSize: number;
-  maxTaps?: number;
-  supportsFloatLinear?: boolean;
-}
+// Contract LensBlurState/Capability live in contracts/lensBlur.ts (Q01-owned).
+// Note: normalization clamps rotationDeg instead of wrapping it and nulls an
+// empty depthMask; this engine reuses that behavior verbatim.
+export type LensBlurQuality = LensBlurState['quality'];
 
 export interface ApertureShape {
   blades: number;
@@ -89,39 +78,20 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-export function normalizeLensBlurState(value: Partial<LensBlurState> = {}): LensBlurState {
-  const rotationDeg = finite(value.rotationDeg, 0);
-  return {
-    enabled: value.enabled === true,
-    focusPlane: clamp(finite(value.focusPlane, 0.5), 0, 1),
-    focusRange: clamp(finite(value.focusRange, 0.2), 0, 1),
-    aperture: clamp(finite(value.aperture, 2.8), 1, 22),
-    bladeCount: Math.round(clamp(finite(value.bladeCount, 6), 5, 9)),
-    rotationDeg: ((((rotationDeg + 180) % 360) + 360) % 360) - 180,
-    quality: value.quality === 'export' ? 'export' : 'preview',
-    highlightBoost: clamp(finite(value.highlightBoost, 0), 0, 2),
-    depthMask: Array.isArray(value.depthMask) ? value.depthMask : null,
-  };
-}
-
-export function isNeutralLensBlur(state: LensBlurState): boolean {
-  return !state.enabled;
-}
-
 export function apertureFromState(state: LensBlurState): ApertureShape {
   return {
-    blades: Math.round(clamp(state.bladeCount, 5, 9)),
+    blades: Math.round(clamp(state.bladeCount, LENS_BLUR_LIMITS.bladeCount.min, LENS_BLUR_LIMITS.bladeCount.max)),
     rotation: (state.rotationDeg * Math.PI) / 180,
     roundness: 0,
   };
 }
 
 export function lensBlurMaxCoc(aperture: number): number {
-  return MAX_COC_AT_F1 / clamp(aperture, 1, 22);
+  return MAX_COC_AT_F1 / clamp(aperture, LENS_BLUR_LIMITS.aperture.min, LENS_BLUR_LIMITS.aperture.max);
 }
 
 export function focusFalloff(focusRange: number): number {
-  return Math.max(0.05, (1 - clamp(focusRange, 0, 1)) / 2);
+  return Math.max(0.05, (1 - clamp(focusRange, LENS_BLUR_LIMITS.focusRange.min, LENS_BLUR_LIMITS.focusRange.max)) / 2);
 }
 
 function polygonRadius(theta: number, blades: number, rotation: number): number {
@@ -271,7 +241,7 @@ export function planLensBlur(
   if (maxTextureSize <= 0) throw new Error('Invalid lens blur capability');
   if (isNeutralLensBlur(state)) return null;
 
-  const normalized = normalizeLensBlurState(state);
+  const normalized = normalizeLensBlur(state);
   const aperture = apertureFromState(normalized);
   const maxCocShortSide = lensBlurMaxCoc(normalized.aperture);
   const maxDepthDelta = Math.max(normalized.focusPlane, 1 - normalized.focusPlane) - normalized.focusRange / 2;

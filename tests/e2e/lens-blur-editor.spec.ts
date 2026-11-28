@@ -7,9 +7,9 @@ const MOUNT_HARNESS = async () => {
   const reactDom: any = pick(await load('/@id/react-dom/client'));
   const { LensBlurPanel } = await load('/src/components/optical/LensBlurPanel.tsx');
   const { LensBlurOverlay } = await load('/src/components/optical/LensBlurOverlay.tsx');
-  const { normalizeLensBlurState } = await load('/src/engine/optical/lensBlur.ts');
+  const { normalizeLensBlur } = await load('/src/engine/contracts/lensBlur.ts');
 
-  let state = normalizeLensBlurState({
+  let state = normalizeLensBlur({
     enabled: true,
     focusPlane: 0.5,
     focusRange: 0.2,
