@@ -196,7 +196,7 @@ describe.skipIf(!hasSample)('re-develop integration (24 MP DNG)', () => {
     red.dispose();
   });
 
-  it('re-develops EV/WB through the decoder while preserving source identity', async () => {
+  it('re-develops EV/WB through the delta path while preserving source identity', async () => {
     const opened = await open();
     const sourceRef = opened.source;
     const neutral = await redevelopRawPreview(sourceRef, state());
@@ -204,6 +204,7 @@ describe.skipIf(!hasSample)('re-develop integration (24 MP DNG)', () => {
 
     const ev = await redevelopRawPreview(sourceRef, state({ exposureEV: 1 }));
     expect(ev.skipped).toBe(false);
+    expect(ev.delta).toBe(true);
     expect(ev.settings.exposureEv).toBe(1);
     expect(opened.source).toBe(sourceRef);
     expect((opened.source.working as { data: Uint16Array }).data).toBe((ev.working as { data: Uint16Array }).data);
@@ -213,12 +214,16 @@ describe.skipIf(!hasSample)('re-develop integration (24 MP DNG)', () => {
     expect(ev.previewWidth).toBe(neutral.previewWidth);
 
     const wb = await redevelopRawPreview(sourceRef, state({ wb: { mode: 'custom', temperatureK: 7200, tint: 12 } }));
+    expect(wb.delta).toBe(true);
     expect(wb.settings.temperatureK).toBe(7200);
     expect(wb.settings.tint).toBe(12);
     expect(getRawDevelopInfo(sourceRef)!.settings.temperatureK).toBe(7200);
 
     const back = await redevelopRawPreview(sourceRef, state());
     expect(back.skipped).toBe(false);
+    expect(back.delta).toBe(true);
+    // Delta at the base state hands back the open-time decode untouched.
+    expect(back.preview).toBe(opened.image.previewCanvas);
     expect(back.settings).toEqual(defaultRawDevelopSettings(getRawDevelopInfo(sourceRef)!.report.asShotTemperatureK));
   }, 600_000);
 

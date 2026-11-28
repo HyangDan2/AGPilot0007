@@ -7,7 +7,7 @@ import {
   type RawDevelopSettings,
   type RawHighlightRecovery,
 } from '../../types/rawDevelop';
-import { apply3x3, invert3x3, inspectCameraColor, type CameraColorReport } from './cameraColor';
+import { apply3x3, invert3x3, inspectCameraColor, XYZ_D50_TO_LINEAR_SRGB, type CameraColorReport } from './cameraColor';
 
 /**
  * RAW develop model (CP3-03 §1–2).
@@ -329,6 +329,47 @@ export function rawDevelopDecodeOptions(
     exposure: settings.exposureEv,
     ...(whiteBalance.multipliers ? { whiteBalanceMultipliers: whiteBalance.multipliers } : {}),
   };
+}
+
+/**
+ * Camera→linear-sRGB matrix, reusing the forward (camera→XYZ D50) matrix the
+ * develop seam already resolves (file tag or ColorMatrix/Bradford derivation).
+ */
+export function cameraToLinearSrgb(forwardMatrix: readonly number[] | null): number[] | null {
+  if (!forwardMatrix || forwardMatrix.length !== 9) return null;
+  const matrix = multiply3x3(XYZ_D50_TO_LINEAR_SRGB, forwardMatrix);
+  return matrix.every((value) => Number.isFinite(value)) ? matrix : null;
+}
+
+/**
+ * Linear-sRGB delta for a develop change that only moves exposure/WB:
+ * the decoder balances camera RGB before the colour conversion and applies
+ * exposure after it, so for float outputs
+ *   decode(target) = M · diag(targetMultipliers / baseMultipliers) · M⁻¹ · 2^ΔEV · decode(base)
+ * up to f16 rounding. Returns null (caller re-decodes) when the matrix chain is
+ * unknown or singular.
+ */
+export function deriveDevelopDeltaMatrix(input: {
+  exposureEv: number;
+  baseMultipliers: readonly number[];
+  targetMultipliers: readonly number[];
+  cameraToSrgb: readonly number[] | null;
+}): number[] | null {
+  const exposureGain = 2 ** input.exposureEv;
+  if (!Number.isFinite(exposureGain) || exposureGain <= 0) return null;
+  if (!input.cameraToSrgb || input.cameraToSrgb.length !== 9) return null;
+  const inverse = invert3x3(input.cameraToSrgb);
+  if (!inverse) return null;
+  const ratio: number[] = [];
+  for (let channel = 0; channel < 3; channel += 1) {
+    const base = input.baseMultipliers[channel];
+    const target = input.targetMultipliers[channel];
+    if (!(base > 0) || !(target > 0) || !Number.isFinite(target)) return null;
+    ratio[channel] = (target / base) * exposureGain;
+  }
+  const scale = [ratio[0], 0, 0, 0, ratio[1], 0, 0, 0, ratio[2]];
+  const matrix = multiply3x3(input.cameraToSrgb, multiply3x3(scale, inverse));
+  return matrix.every((value) => Number.isFinite(value)) ? matrix : null;
 }
 
 export function createRawDevelopReport(
