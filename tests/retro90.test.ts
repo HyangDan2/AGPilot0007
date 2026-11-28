@@ -51,7 +51,7 @@ describe('Retro film and independent date imprint',()=>{
   const old=validateRecipeJSON(JSON.stringify({name:'Legacy',baseFilmId:'FS-001',schemaVersion:1}));expect(old.camera).toEqual(DEFAULT_CAMERA);
   store.getState().applyRecipe(old);expect(store.getState().camera.dateStamp.enabled).toBe(false);
   expect(()=>validateRecipeJSON(JSON.stringify({...saved,camera:{dateStamp:{enabled:true,date:'2016-02-31'}}}))).toThrow(/date/);
-  expect(()=>validateRecipeJSON(JSON.stringify({...saved,schemaVersion:10}))).toThrow(/version/);
+  expect(()=>validateRecipeJSON(JSON.stringify({...saved,schemaVersion:11}))).toThrow(/version/);
  });
  it('does not carry the previous photo EXIF date into a photo with no EXIF',()=>{
   const store=useEditorStore;store.getState().applyOldSchool();store.getState().updateDateStamp({date:'2016-03-08',enabled:true,source:'exif'});

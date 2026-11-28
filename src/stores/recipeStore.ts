@@ -18,6 +18,13 @@ import {
   hasRecipeV9Fields,
   validateRecipeV9,
 } from '../engine/contracts/recipeV9';
+import {
+  RECIPE_SCHEMA_V10,
+  hasRecipeV10Fields,
+  validateRecipeV10,
+} from '../engine/contracts/recipeV10';
+import { normalizeDevelop, isNeutralDevelop, type RawDevelopState } from '../engine/contracts/develop';
+import { normalizeLensBlur, isNeutralLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
 import { normalizeLocalAdjustments, localAdjustmentsActive, type LocalAdjustmentState } from '../engine/contracts/localAdjustments';
 import { normalizeOpticalTransform, opticalIsIdentity } from '../engine/optical/transform';
 import type { OpticalTransform } from '../engine/contracts/optical';
@@ -27,15 +34,23 @@ import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
 import { getMargarinePreset } from '../presets/margarine';
 
 const RECIPES_IDB_KEY = resolveRecipeStorageKey((import.meta as any).env?.BASE_URL || '');
-/** Default write version; v9 is written only when v9 features are active. */
-export const CURRENT_SCHEMA_VERSION = RECIPE_SCHEMA_V8;
+/** Highest version the app can write; v10 is emitted only when v10 features are active. */
+export const CURRENT_SCHEMA_VERSION = RECIPE_SCHEMA_V10;
 
-/** v9 is written only when optical or local adjustments are actually active. */
+/** v9 is written when optical or local adjustments are active (and no v10 feature is). */
 export function shouldWriteRecipeV9(state: {
   optical?: OpticalTransform | null;
   localAdjustments?: LocalAdjustmentState | null;
 }): boolean {
   return localAdjustmentsActive(state.localAdjustments) || (!!state.optical && !opticalIsIdentity(state.optical));
+}
+
+/** v10 is written when lens blur or a non-neutral RAW develop is active. */
+export function shouldWriteRecipeV10(state: {
+  lensBlur?: LensBlurState | null;
+  develop?: RawDevelopState | null;
+}): boolean {
+  return (!!state.lensBlur && !isNeutralLensBlur(state.lensBlur)) || (!!state.develop && !isNeutralDevelop(state.develop));
 }
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
@@ -71,16 +86,23 @@ export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
 function migrateRecipe(recipe: any): CustomRecipe {
   const declaredVersion = detectRecipeSchemaVersion(recipe);
   const hasGeometry = !!recipe && typeof recipe === 'object' && Object.prototype.hasOwnProperty.call(recipe, 'geometry');
+  const hasV10Fields = hasRecipeV10Fields(recipe);
   const hasV9Fields = hasRecipeV9Fields(recipe);
+  if (hasV10Fields && (declaredVersion === null || declaredVersion < RECIPE_SCHEMA_V10)) {
+    throw new Error('Unexpected v10 field in recipe');
+  }
   if (hasV9Fields && (declaredVersion === null || declaredVersion < RECIPE_SCHEMA_V9)) {
     throw new Error('Unexpected v9 field in recipe');
   }
-  if (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9) {
+  if (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V10) {
+    validateRecipeV10(recipe);
+  } else if (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9) {
     validateRecipeV9(recipe);
   } else if (hasGeometry || (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V8)) {
     validateRecipeV8Geometry(recipe);
   }
-  const keepsV9 = declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9 && hasV9Fields;
+  const keepsV10 = declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V10;
+  const keepsV9 = !keepsV10 && declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9 && hasV9Fields;
   const baseFilmId: FilmId = Object.hasOwn(FILM_PROFILES, recipe.baseFilmId) ? recipe.baseFilmId : 'FS-001';
   const adjustments = { ...DEFAULT_ADJUSTMENTS };
   for (const def of ADJUSTMENT_DEFINITIONS) {
@@ -96,13 +118,19 @@ function migrateRecipe(recipe: any): CustomRecipe {
     adjustments,
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
-    schemaVersion: keepsV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
+    schemaVersion: keepsV10 ? RECIPE_SCHEMA_V10 : keepsV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
     geometry: hasGeometry ? normalizeRecipeV8Geometry(recipe) : IDENTITY_GEOMETRY,
-    ...(keepsV9 && Object.prototype.hasOwnProperty.call(recipe, 'optical')
+    ...((keepsV9 || keepsV10) && Object.prototype.hasOwnProperty.call(recipe, 'optical')
       ? { optical: normalizeOpticalTransform(recipe.optical) }
       : {}),
-    ...(keepsV9 && Object.prototype.hasOwnProperty.call(recipe, 'localAdjustments')
+    ...((keepsV9 || keepsV10) && Object.prototype.hasOwnProperty.call(recipe, 'localAdjustments')
       ? { localAdjustments: normalizeLocalAdjustments(recipe.localAdjustments) }
+      : {}),
+    ...(keepsV10 && Object.prototype.hasOwnProperty.call(recipe, 'lensBlur')
+      ? { lensBlur: normalizeLensBlur(recipe.lensBlur) }
+      : {}),
+    ...(keepsV10 && Object.prototype.hasOwnProperty.call(recipe, 'develop')
+      ? { develop: normalizeDevelop(recipe.develop) }
       : {}),
     ...normalizeRecipeFeatures(recipe, adjustments),
   };
