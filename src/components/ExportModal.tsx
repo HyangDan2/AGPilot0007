@@ -2,6 +2,7 @@ import { getMargarinePreset } from '../presets/margarine';
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { prepareExportImage, triggerSafeDownload } from '../engine/export/imageExporter';
+import { composeDevelop, rawDevelopStateFromInfo } from '../engine/contracts/develop';
 import { loadCubeLut } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { PreparedExport, ExportFormat } from '../types/export';
@@ -25,7 +26,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening } = useEditorStore();
+  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening, geometry, optical, localAdjustments, lensBlur, rawDevelop } = useEditorStore();
 
   const [stage, setStage] = useState<'config' | 'preparing' | 'ready'>('config');
   const [format, setFormat] = useState<ExportFormat>('image/jpeg');
@@ -124,10 +125,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         },
       };
 
+      // Commit any pending RAW re-develop so the resolved original matches the panel.
+      await useEditorStore.getState().flushDevelop();
+      const exportImage = useEditorStore.getState().image ?? image;
+
       const result = await prepareExportImage(
-        image,
+        exportImage,
         lut,
-        { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening },
+        composeDevelop(
+          { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments, lensBlur },
+          rawDevelopStateFromInfo(rawDevelop),
+          { developBaked: true },
+        ),
         {
           format,
           quality: format === 'image/jpeg' ? quality : 1.0,

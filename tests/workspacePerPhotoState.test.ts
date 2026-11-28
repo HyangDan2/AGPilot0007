@@ -8,8 +8,10 @@ import {defaultCurves} from '../src/types/curves';
 import {normalizeCamera} from '../src/types/camera';
 import {defaultColorMixer} from '../src/types/colorMixer';
 import {DEFAULT_SHARPENING} from '../src/types/sharpening';
+import {IDENTITY_GEOMETRY, normalizeGeometry} from '../src/engine/contracts/geometry';
+import {normalizeLocalAdjustments} from '../src/engine/contracts/localAdjustments';
 const entry=(name:string)=>({id:name,name,path:name,getFile:async()=>new File(['test'],name,{type:'image/png'})});
-const baseline=()=>({image:null,adjustments:{...DEFAULT_ADJUSTMENTS},activeFilmId:'FS-001' as const,activePresetId:null,curves:defaultCurves(),camera:normalizeCamera(),colorMixer:defaultColorMixer(),sharpening:{...DEFAULT_SHARPENING},historyIndex:0,canUndo:false,canRedo:false});
+const baseline=()=>({image:null,adjustments:{...DEFAULT_ADJUSTMENTS},activeFilmId:'FS-001' as const,activePresetId:null,curves:defaultCurves(),camera:normalizeCamera(),colorMixer:defaultColorMixer(),sharpening:{...DEFAULT_SHARPENING},geometry:IDENTITY_GEOMETRY,optical:null,localAdjustments:normalizeLocalAdjustments(undefined),historyIndex:0,canUndo:false,canRedo:false});
 beforeEach(()=>{ws.getState().close();editor.setState(baseline());ws.getState().setEntries([entry('a'),entry('b')],'Folder');});
 it('opens an unvisited photo from the default EditState instead of inheriting the previous edit',async()=>{
  editor.setState({adjustments:{...DEFAULT_ADJUSTMENTS,exposure:1.2},activeFilmId:'FS-006',activePresetId:'portra-400'});
@@ -36,8 +38,7 @@ it('restores the saved session of a visited photo and keeps unvisited photos at 
  expect(editor.getState().adjustments.exposure).toBe(1.2);
  expect(editor.getState().activeFilmId).toBe('FS-006');
 });
-it('does not reset anything when the already-open photo is selected again',async()=>{
- await ws.getState().select('a');
+it('does not reset anything when the already-open photo is selected again',async()=>{ await ws.getState().select('a');
  editor.setState({adjustments:{...editor.getState().adjustments,exposure:-0.4},activeFilmId:'FS-010',sharpening:{...DEFAULT_SHARPENING,amount:55}});
  const before=editor.getState();
  await ws.getState().select('a');
@@ -49,4 +50,12 @@ it('does not reset anything when the already-open photo is selected again',async
  expect(after.history.length).toBe(before.history.length);
  expect(after.historyIndex).toBe(before.historyIndex);
  expect(after.canUndo).toBe(before.canUndo);
+});
+it('keeps framing, optical and local adjustments per photo across visits',async()=>{
+ await ws.getState().select('a');
+ editor.getState().setGeometry(normalizeGeometry({rotation:180}));
+ await ws.getState().select('b');
+ expect(editor.getState().geometry).toEqual(IDENTITY_GEOMETRY);
+ await ws.getState().select('a');
+ expect(editor.getState().geometry.rotation).toBe(180);
 });

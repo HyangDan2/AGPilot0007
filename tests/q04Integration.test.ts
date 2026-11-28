@@ -144,12 +144,11 @@ describe('CP2-05 batch export controller', () => {
       },
     });
     controller.setEntries([entry('a'), entry('b'), entry('c')]);
-    controller.selectAll();
     const done = waitForSummary(controller, (view) => view.summary !== null && !view.running);
-    expect(controller.start(() => createEditState())).toBe(true);
+    expect(controller.start(['a', 'b', 'c'], () => createEditState())).toBe(true);
     const view = await done;
 
-    expect(view.summary).toMatchObject({ total: 3, succeeded: 2, failed: 1, rendered: 3, deliveryFailed: 1 });
+    expect(view.summary).toMatchObject({ total: 3, succeeded: 2, failed: 1, rendered: 3, deliveryFailed: 1, reconciled: true });
     expect(delivered.sort()).toEqual(['a.jpg', 'c.jpg']);
     expect(revoke).toHaveBeenCalledWith('blob:prepared-a.jpg');
     expect(revoke).toHaveBeenCalledWith('blob:prepared-b.jpg');
@@ -178,16 +177,15 @@ describe('CP2-05 batch export controller', () => {
       delivery: delivered,
     });
     controller.setEntries([entry('a'), entry('b')]);
-    controller.selectAll();
     const done = waitForSummary(controller, (view) => view.summary !== null && !view.running);
-    expect(controller.start(() => createEditState())).toBe(true);
+    expect(controller.start(['a', 'b'], () => createEditState())).toBe(true);
     await running;
     controller.cancel('a');
     controller.cancel('b');
     release();
     const view = await done;
 
-    expect(view.summary).toMatchObject({ total: 2, succeeded: 0, cancelled: 2 });
+    expect(view.summary).toMatchObject({ total: 2, succeeded: 0, cancelled: 2, reconciled: true });
     expect(delivered).not.toHaveBeenCalled();
     controller.destroy();
   });
@@ -202,9 +200,8 @@ describe('CP2-05 batch export controller', () => {
       delivery: () => {},
     });
     controller.setEntries([entry('a'), entry('b')]);
-    controller.selectAll();
     const first = waitForSummary(controller, (view) => view.summary !== null && !view.running);
-    controller.start(() => createEditState());
+    controller.start(['a', 'b'], () => createEditState());
     expect((await first).summary).toMatchObject({ succeeded: 1, failed: 1 });
 
     const retried = waitForSummary(controller, (view) => view.summary !== null && view.summary.failed === 0 && !view.running);
@@ -214,14 +211,35 @@ describe('CP2-05 batch export controller', () => {
     controller.destroy();
   });
 
-  it('drops removed photos from the selection without touching the rest', () => {
-    const controller = new BatchExportController();
+  it('gives same-named photos from different folders unique filenames that match the saved file', async () => {
+    const delivered: string[] = [];
+    const controller = new BatchExportController({
+      concurrency: 1,
+      processor: processorOf(async () => prepared('same.png')),
+      delivery: (result) => {
+        delivered.push(`${result.filename}|${result.file.name}`);
+      },
+    });
+    controller.setEntries([
+      { ...entry('a'), name: 'same.png', path: 'trip/same.png' },
+      { ...entry('b'), name: 'same.png', path: 'trip2/same.png' },
+    ]);
+    const done = waitForSummary(controller, (view) => view.summary !== null && !view.running);
+    expect(controller.start(['a', 'b'], () => createEditState())).toBe(true);
+    const view = await done;
+    expect(delivered).toEqual(['same.png|same.png', 'same-2.png|same-2.png']);
+    expect(view.summary).toMatchObject({ total: 2, succeeded: 2, reconciled: true });
+    controller.destroy();
+  });
+
+  it('starts only ids that still exist in the workspace entries', () => {
+    const started = vi.fn((): ReturnType<typeof createEditState> => createEditState());
+    const controller = new BatchExportController({ processor: processorOf(async (id) => prepared(`${id}.jpg`)), delivery: () => {} });
     controller.setEntries([entry('a'), entry('b')]);
-    controller.selectAll();
-    controller.setEntries([entry('b')]);
-    expect(controller.isSelected('a')).toBe(false);
-    controller.selectAll();
-    expect(controller.start(() => createEditState())).toBe(true);
+    expect(controller.start([], started)).toBe(false);
+    expect(controller.start(['gone'], started)).toBe(false);
+    expect(controller.start(['a', 'gone'], started)).toBe(true);
+    expect(started).toHaveBeenCalledTimes(1);
     controller.cancelAll();
     controller.destroy();
   });

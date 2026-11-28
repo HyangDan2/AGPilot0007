@@ -7,6 +7,9 @@ import type { CameraSettings } from '../../../types/camera';
 import type { ColorMixerSettings } from '../../../types/colorMixer';
 import type { ToneCurves } from '../../../types/curves';
 import type { SharpeningSettings } from '../../../types/sharpening';
+import type { GeometryTransform } from '../../../engine/contracts/geometry';
+import type { OpticalTransform } from '../../../engine/contracts/optical';
+import type { LocalAdjustmentState } from '../../../engine/contracts/localAdjustments';
 
 interface EditorSnapshot {
   activeFilmId: FilmId;
@@ -16,6 +19,10 @@ interface EditorSnapshot {
   camera: CameraSettings;
   colorMixer: ColorMixerSettings;
   sharpening: SharpeningSettings;
+  /** Optional so lightweight test sources stay valid; absent means neutral. */
+  geometry?: GeometryTransform;
+  optical?: OpticalTransform | null;
+  localAdjustments?: LocalAdjustmentState;
   image: { workspaceKey?: string } | null;
 }
 
@@ -43,6 +50,9 @@ export function editStateFromEditor(snapshot: EditorSnapshot): EditState {
     camera: snapshot.camera,
     colorMixer: snapshot.colorMixer,
     sharpening: snapshot.sharpening,
+    geometry: snapshot.geometry,
+    optical: snapshot.optical,
+    localAdjustments: snapshot.localAdjustments,
   });
 }
 

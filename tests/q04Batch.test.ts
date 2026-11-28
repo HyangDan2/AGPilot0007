@@ -1,11 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BatchQueue, MAX_CONCURRENCY } from '../src/poc/q04/batchQueue';
 import { recommendedConcurrency } from '../src/poc/q04/resources';
-import { createDeliverySink, createExportProcessor, disposePrepared, type ExportJobMeta } from '../src/poc/q04/batchExport';
+import { createDeliverySink, createExportProcessor, disposePrepared, renamePrepared, uniqueFilename, type ExportJobMeta } from '../src/poc/q04/batchExport';
 import { createEditState } from '../src/poc/q04/editState';
 import { throwIfExportAborted, type ExportControl } from '../src/engine/contracts/exportControl';
 import type { PreparedExport } from '../src/types/export';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
+import { normalizeGeometry } from '../src/engine/contracts/geometry';
+import { IDENTITY_OPTICAL_HOMOGRAPHY } from '../src/engine/contracts/optical';
+import { normalizeOpticalTransform } from '../src/engine/optical/transform';
+import { normalizeLocalAdjustments } from '../src/engine/contracts/localAdjustments';
 import { FILM_PROFILES } from '../src/films/registry';
 import type { WorkspaceEntry } from '../src/engine/image/workspace';
 
@@ -383,7 +387,16 @@ describe('Q04 device-aware concurrency', () => {
 
 describe('Q04 batch export adapter', () => {
   const exportOptions = { format: 'image/jpeg' as const, quality: 0.9, scale: 0.5 };
-  const edit = createEditState({ activeFilmId: 'FS-006', adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1 } });
+  const edit = createEditState({
+    activeFilmId: 'FS-006',
+    adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1 },
+    geometry: normalizeGeometry({ rotation: 90 }),
+    optical: normalizeOpticalTransform({ version: 1, homography: IDENTITY_OPTICAL_HOMOGRAPHY, distortion: { k1: 0.25 } }),
+    localAdjustments: normalizeLocalAdjustments({
+      enabled: true,
+      groups: [{ id: 'g1', name: 'Sky', enabled: true, masks: [], adjustment: { exposure: 0.4 }, opacity: 1, blend: 'add' }],
+    }),
+  });
   const entry: WorkspaceEntry = { id: 'p', name: 'p.jpg', path: 'p.jpg', getFile: async () => new File(['img'], 'p.jpg') };
   const preparedBlob = new Blob(['x']);
 
@@ -436,13 +449,16 @@ describe('Q04 batch export adapter', () => {
     expect(deps.decode).toHaveBeenCalledWith(expect.any(File), 'p.jpg', ctx.signal);
     expect(deps.loadLut).toHaveBeenCalledWith(FILM_PROFILES['FS-006'].lutFile);
     const args = deps.prepare.mock.calls[0] as unknown[];
-    const settings = args[2] as { filmId: string; adjustments: unknown; curves: unknown; camera: unknown; colorMixer: unknown; sharpening: unknown };
+    const settings = args[2] as { filmId: string; adjustments: unknown; curves: unknown; camera: unknown; colorMixer: unknown; sharpening: unknown; geometry: unknown; optical: unknown; localAdjustments: unknown };
     expect(settings.filmId).toBe('FS-006');
     expect(settings.adjustments).toBe(edit.adjustments);
     expect(settings.curves).toBe(edit.curves);
     expect(settings.camera).toBe(edit.camera);
     expect(settings.colorMixer).toBe(edit.colorMixer);
     expect(settings.sharpening).toBe(edit.sharpening);
+    expect(settings.geometry).toBe(edit.geometry);
+    expect(settings.optical).toBe(edit.optical);
+    expect(settings.localAdjustments).toBe(edit.localAdjustments);
     expect(args[3]).toEqual(exportOptions);
     expect(typeof args[4]).toBe('function');
     expect((args[5] as { signal: AbortSignal }).signal).toBe(ctx.signal);
@@ -636,8 +652,7 @@ describe('Q04 batch export adapter', () => {
     queue.destroy();
   });
 
-  it('delivers results through a sink and always releases the object URL', async () => {
-    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  it('delivers results through a sink and always releases the object URL', async () => {    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     const saved: string[] = [];
     const sink = createDeliverySink((result, job) => {
       saved.push(`${job.id}:${result.filename}`);
@@ -649,6 +664,55 @@ describe('Q04 batch export adapter', () => {
     expect(revoke).toHaveBeenCalledWith('blob:prepared-shot.jpg');
     disposePrepared(result);
     expect(revoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders through the decoded image resolver without reading the preview element', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const fullRes = new Image();
+    const resolveOriginal = vi.fn(async () => fullRes);
+    const rawImage = {
+      sourceUrl: 'blob:decoded-raw.dng',
+      name: 'raw.dng',
+      originalWidth: 6000,
+      originalHeight: 4000,
+      previewWidth: 1024,
+      previewHeight: 683,
+      previewCanvas: document.createElement('canvas'),
+      // RAW keeps the preview canvas in originalElement; reading it here would
+      // silently render at preview size instead of the resolver's full-res image.
+      get originalElement(): HTMLImageElement {
+        throw new Error('batch read the preview element');
+      },
+      resolveOriginal,
+    };
+    const deps = makeDeps({ decode: vi.fn(async () => rawImage) });
+    const handle = createExportProcessor({ exportOptions, deps: deps as any });
+    await handle.processor({ id: 'p', meta: { entry, edit } }, { id: 'p', signal: new AbortController().signal, report: vi.fn() });
+
+    expect((deps.prepare as any).mock.calls[0][0]).toBe(rawImage);
+    // Resolution belongs to the shared exporter, which batch calls unchanged.
+    expect(resolveOriginal).not.toHaveBeenCalled();
+    expect(revoke).toHaveBeenCalledWith('blob:decoded-raw.dng');
+  });
+
+  it('renames duplicates so prepared.file.name and filename agree without mutating the original', () => {
+    const used = new Set<string>();
+    const original = prepared('same.png');
+    const first = renamePrepared(original, uniqueFilename(original.filename, used));
+    expect(first).toBe(original);
+
+    const second = renamePrepared(original, uniqueFilename(original.filename, used));
+    expect(second.filename).toBe('same-2.png');
+    expect(second.file.name).toBe('same-2.png');
+    expect(second.blob).toBe(original.blob);
+    expect(second.objectUrl).toBe(original.objectUrl);
+    expect(original.filename).toBe('same.png');
+    expect(original.file.name).toBe('same.png');
+
+    const renamedExisting = renamePrepared(second, 'other.jpg');
+    expect(renamedExisting.filename).toBe('other.jpg');
+    expect(renamedExisting.file.name).toBe('other.jpg');
+    expect(second.filename).toBe('same-2.png');
   });
 
   it('propagates save failures after releasing the object URL', async () => {

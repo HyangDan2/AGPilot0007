@@ -11,7 +11,7 @@ import { budgetForDevice, detectDeviceCapabilities } from '../contracts/resource
 
 export const RAW_DECODER_ID = 'flashraw@0.5.0';
 export const RAW_WORKING_FORMAT = 'rgba16f' as const;
-const DEFAULT_MAX_INPUT_BYTES = 256 * 1024 * 1024;
+export const DEFAULT_MAX_INPUT_BYTES = 256 * 1024 * 1024;
 const HALF_ONE = 0x3c00;
 
 export type RawDecodeErrorCode =
@@ -60,7 +60,7 @@ let sourceCounter = 0;
 let flashRawInit: Promise<unknown> | null = null;
 
 /** Browsers need the bundled WASM URLs; Node resolves its own entry at import time. */
-function ensureRawEngine(): Promise<unknown> | undefined {
+export function ensureRawEngine(): Promise<unknown> | undefined {
   if (typeof window === 'undefined' && typeof self === 'undefined') return undefined;
   flashRawInit ??= init({ wasm: flashRawSimdUrl, jpegxlWasm: flashRawSimdJxlUrl, threads: false });
   return flashRawInit;
@@ -68,14 +68,14 @@ function ensureRawEngine(): Promise<unknown> | undefined {
 
 const abortError = (): DOMException => new DOMException('RAW decode cancelled', 'AbortError');
 
-const isAbortError = (error: unknown): boolean =>
+export const isAbortError = (error: unknown): boolean =>
   !!error && typeof error === 'object' && (error as { name?: string }).name === 'AbortError';
 
-function throwIfAborted(signal: AbortSignal | undefined): void {
+export function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted) throw abortError();
 }
 
-async function raceAbort<T>(promise: Promise<T>, signal: AbortSignal | undefined, onLate?: (value: T) => void): Promise<T> {
+export async function raceAbort<T>(promise: Promise<T>, signal: AbortSignal | undefined, onLate?: (value: T) => void): Promise<T> {
   if (!signal) return promise;
   if (signal.aborted) {
     promise.then(onLate).catch(() => {});
@@ -96,27 +96,27 @@ async function raceAbort<T>(promise: Promise<T>, signal: AbortSignal | undefined
   }
 }
 
-function inputSize(input: RawSourceInput): number | undefined {
+export function inputSize(input: RawSourceInput): number | undefined {
   if (typeof input.size === 'number') return input.size;
   if (input.data instanceof Blob) return input.data.size;
   if (input.data instanceof ArrayBuffer) return input.data.byteLength;
   return input.data.byteLength;
 }
 
-function inputName(input: RawSourceInput): string {
+export function inputName(input: RawSourceInput): string {
   if (input.name) return input.name;
   const candidate = input.data as { name?: unknown };
   return typeof candidate.name === 'string' && candidate.name.length > 0 ? candidate.name : 'RAW image';
 }
 
-function inputType(input: RawSourceInput, format: RawFormatName): string {
+export function inputType(input: RawSourceInput, format: RawFormatName): string {
   if (input.type) return input.type;
   const candidate = input.data as { type?: unknown };
   if (typeof candidate.type === 'string' && candidate.type.length > 0) return candidate.type;
   return `image/x-${format.toLowerCase()}`;
 }
 
-function mapDecodeError(error: unknown, stage: RawDecodeErrorDetails['stage']): never {
+export function mapDecodeError(error: unknown, stage: RawDecodeErrorDetails['stage']): never {
   if (error instanceof RawDecodeError) throw error;
   if (isAbortError(error)) throw error;
   const kind = (error as { kind?: string } | null)?.kind;

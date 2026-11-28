@@ -1,4 +1,9 @@
-import { renderSourceStage } from '../optical/sourceStage';
+import { renderSourceStage, type Q02SourceStageSource } from '../optical/sourceStage';
+import {
+  localStageCacheKey,
+  planLocalStage,
+  type LocalStagePlan,
+} from '../local/maskRaster';
 import type { PreviewRequestFlags, RenderPipelineBackend, RenderPipelineFrame } from '../pipeline/renderPipeline';
 import type { RenderRequest } from '../pipeline/renderSettings';
 import type { WebGL2FilmRenderer } from './webglRenderer';
@@ -27,8 +32,11 @@ export interface WebGLPipelineBackend extends RenderPipelineBackend {
 
 export function buildRenderRequest(frame: RenderPipelineFrame): RenderRequest {
   const extras = frame.extras ?? DEFAULT_EXTRAS;
+  // A null plan must not add a key to the request; only a real plan travels.
+  const { localStage, ...settings } = frame.settings;
   return {
-    ...frame.settings,
+    ...settings,
+    ...(localStage ? { localStage } : {}),
     compareMode: extras.compareMode,
     splitPos: extras.splitPos,
     seed: extras.seed ?? 42,
@@ -38,6 +46,7 @@ export function buildRenderRequest(frame: RenderPipelineFrame): RenderRequest {
     sharpeningDraft: extras.sharpeningDraft,
     mixerReference: extras.mixerReference,
     mixerVisualize: extras.mixerVisualize ?? null,
+    ...(frame.tile ? { tile: frame.tile } : {}),
   };
 }
 
@@ -51,6 +60,17 @@ function intrinsicSize(frame: RenderPipelineFrame): { width: number; height: num
   return width && height ? { width, height } : null;
 }
 
+function isCanvasImageSource(value: unknown): value is CanvasImageSource {
+  return (
+    (typeof HTMLCanvasElement !== 'undefined' && value instanceof HTMLCanvasElement) ||
+    (typeof OffscreenCanvas !== 'undefined' && value instanceof OffscreenCanvas) ||
+    (typeof ImageBitmap !== 'undefined' && value instanceof ImageBitmap) ||
+    (typeof HTMLImageElement !== 'undefined' && value instanceof HTMLImageElement) ||
+    (typeof HTMLVideoElement !== 'undefined' && value instanceof HTMLVideoElement) ||
+    (typeof VideoFrame !== 'undefined' && value instanceof VideoFrame)
+  );
+}
+
 /**
  * Adapter between the plan executor and the existing WebGL2 renderer. When a
  * source is present the Q02 source stage warps geometry/optical first and the
@@ -62,12 +82,49 @@ export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options
   let warnedOversize = false;
   const warn = options.warn ?? ((message: string) => console.warn(message));
 
+  // Plans rasterize masks from corrected pixels, so they are built once per
+  // (state, output size, corrected canvas) and reused across frames.
+  let planCache: {
+    key: string;
+    width: number;
+    height: number;
+    corrected: CanvasImageSource;
+    plan: LocalStagePlan | null;
+  } | null = null;
+
+  const resolveLocalPlan = (frame: RenderPipelineFrame, corrected: CanvasImageSource | null): LocalStagePlan | null => {
+    const state = frame.settings.localAdjustments;
+    const key = state ? localStageCacheKey(state) : null;
+    if (!state || !key || !corrected) {
+      planCache = null;
+      return null;
+    }
+    if (
+      !planCache ||
+      planCache.key !== key ||
+      planCache.width !== frame.width ||
+      planCache.height !== frame.height ||
+      planCache.corrected !== corrected
+    ) {
+      planCache = {
+        key,
+        width: frame.width,
+        height: frame.height,
+        corrected,
+        plan: planLocalStage({ state, width: frame.width, height: frame.height, corrected }),
+      };
+    }
+    return planCache.plan;
+  };
+
   return {
     resetSourceStage() {
       appliedCanvas = null;
+      planCache = null;
     },
     render(frame) {
       const source = frame.source;
+      let corrected: CanvasImageSource | null = null;
       if (source) {
         const size = intrinsicSize(frame);
         if (size && !sourceStageWithinLimit(size.width, size.height)) {
@@ -77,9 +134,10 @@ export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options
               `Source stage skipped: ${size.width}x${size.height} exceeds the ${MAX_SOURCE_STAGE_DIMENSION}px WebGL2 safety limit; using the legacy texture path.`,
             );
           }
+          if (isCanvasImageSource(source)) corrected = source;
         } else if (size) {
           const result = renderSourceStage({
-            source,
+            source: source as Q02SourceStageSource,
             sourceWidth: size.width,
             sourceHeight: size.height,
             output: { width: frame.width, height: frame.height },
@@ -92,13 +150,20 @@ export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options
               renderer.setImage(result.canvas, result.width, result.height);
               appliedCanvas = result.canvas;
             }
-          } else if (appliedCanvas) {
-            renderer.setImage(source as TexImageSource, size.width, size.height);
-            appliedCanvas = null;
+            corrected = result.canvas;
+          } else {
+            if (appliedCanvas) {
+              renderer.setImage(source as TexImageSource, size.width, size.height);
+              appliedCanvas = null;
+            }
+            if (isCanvasImageSource(source)) corrected = source;
           }
         }
       }
-      renderer.render(buildRenderRequest(frame));
+      const request = buildRenderRequest(frame);
+      const localStage = resolveLocalPlan(frame, corrected);
+      if (localStage) request.localStage = localStage;
+      renderer.render(request);
     },
   };
 }

@@ -1,35 +1,32 @@
-import { CURRENT_SCHEMA_VERSION } from '../../stores/recipeStore';
+import { assertRecipeVersionSupported, RECIPE_SCHEMA_MAX } from '../../engine/contracts/recipeValidation';
+import { validateRecipeV8Geometry } from '../../engine/contracts/recipeV8';
 import type { CustomRecipe } from '../../types/film';
 import { createEditState, editStateFromRecipe, recipeFromEditState } from './editState';
 import type { EditState } from './types';
 
 /**
- * Q01's canonical EditState (feature/phase1-pro-engine
- * src/engine/contracts/editState.ts) adds `geometry` to the v7 fields. The Q04
- * PoC cannot import that module before Q01 merges, so this adapter mirrors the
- * shape structurally and treats geometry as opaque: only Q01 normalizeGeometry
- * may inspect or clamp it.
+ * Q01's canonical EditState adds `geometry` to the v7 fields. The PoC now
+ * carries framing itself, so the shared shape only widens geometry to opaque:
+ * only Q01 normalizeGeometry may inspect or clamp a shared geometry value.
  */
-export interface SharedEditState extends EditState {
-  geometry: unknown;
-}
+export type SharedEditState = Omit<EditState, 'geometry'> & { geometry: unknown };
 
-/** Mirrors Q01 RECIPE_SCHEMA_MAX: v8 geometry exists as a contract but is not persisted yet. */
-export const STORED_RECIPE_SCHEMA_MAX = CURRENT_SCHEMA_VERSION;
+/** Mirrors Q01 RECIPE_SCHEMA_MAX: highest storable schema; older versions stay readable. */
+export const STORED_RECIPE_SCHEMA_MAX = RECIPE_SCHEMA_MAX;
 
 /** Attaches framing to a PoC edit state without touching the shared reference. */
 export function toSharedEditState(edit: EditState, geometry: unknown): SharedEditState {
   return { ...edit, geometry };
 }
 
-/** Drops framing; createEditState copies only the known v7 fields. */
+/** Drops the shared framing back to neutral; the opaque value is never reinterpreted here. */
 export function fromSharedEditState(shared: SharedEditState): EditState {
-  return createEditState(shared);
+  return createEditState({ ...shared, geometry: undefined });
 }
 
 /**
- * v7 recipes never carry framing. Saving from a shared state therefore stores
- * only the color/detail groups; geometry stays per-photo UI state.
+ * Saves color/detail groups with neutral v8 framing. Per-photo framing stays in
+ * the shared state and is not copied into a shared recipe.
  */
 export function recipeFromSharedEditState(
   shared: SharedEditState,
@@ -39,22 +36,18 @@ export function recipeFromSharedEditState(
 }
 
 /**
- * Applies a stored recipe to a shared state while preserving that photo's own
- * framing. v8+ recipes and persisted geometry are rejected until Q01 activates
- * the v8 storage checkpoint.
+ * Applies a stored v1-v8 recipe to a shared state while preserving that photo's
+ * own framing. v8 recipes must carry a valid geometry wrapper.
  */
 export function applyStoredRecipeToShared(shared: SharedEditState, recipe: CustomRecipe): SharedEditState {
-  assertStoredRecipeV7(recipe);
+  assertStoredRecipe(recipe);
   return { ...editStateFromRecipe(recipe), geometry: shared.geometry };
 }
 
-/** Persistable v7 recipe: version 1..7 (or absent legacy version) and no stored geometry. */
-export function assertStoredRecipeV7(recipe: CustomRecipe): void {
-  const version = recipe.schemaVersion;
-  if (version !== undefined && (!Number.isInteger(version) || version < 1 || version > STORED_RECIPE_SCHEMA_MAX)) {
-    throw new Error(`Unsupported recipe version for v7 storage: ${String(version)}`);
-  }
-  if (Object.hasOwn(recipe, 'geometry')) {
-    throw new Error('Geometry must not be persisted in a v7 recipe');
+/** Persistable recipe: version 1..8 (or absent legacy version), with valid v8 geometry. */
+export function assertStoredRecipe(recipe: CustomRecipe): void {
+  assertRecipeVersionSupported(recipe.schemaVersion);
+  if ((recipe.schemaVersion ?? 0) >= 8 || Object.hasOwn(recipe, 'geometry')) {
+    validateRecipeV8Geometry(recipe);
   }
 }

@@ -5,7 +5,11 @@ import { normalizeCamera } from '../../types/camera';
 import { defaultColorMixer, normalizeColorMixer } from '../../types/colorMixer';
 import { DEFAULT_SHARPENING, normalizeSharpening } from '../../types/sharpening';
 import { FILM_PROFILES } from '../../films/registry';
-import { CURRENT_SCHEMA_VERSION } from '../../stores/recipeStore';
+import { IDENTITY_GEOMETRY, normalizeGeometry } from '../../engine/contracts/geometry';
+import { normalizeOpticalTransform, opticalIsIdentity } from '../../engine/optical/transform';
+import { localAdjustmentsActive, normalizeLocalAdjustments } from '../../engine/contracts/localAdjustments';
+import { RECIPE_SCHEMA_V8 } from '../../engine/contracts/recipeV8';
+import { RECIPE_SCHEMA_V9 } from '../../engine/contracts/recipeV9';
 import type { EditState, ParameterClip, ParameterGroup } from './types';
 
 const TONE_KEYS = [
@@ -52,6 +56,9 @@ export function createEditState(init: Partial<EditState> = {}, legacySharpness =
     camera: normalizeCamera(init.camera),
     colorMixer: init.colorMixer ? normalizeColorMixer(init.colorMixer) : defaultColorMixer(),
     sharpening: init.sharpening || legacySharpness > 0 ? normalizeSharpening(init.sharpening, legacySharpness) : { ...DEFAULT_SHARPENING },
+    geometry: init.geometry ? normalizeGeometry(init.geometry) : IDENTITY_GEOMETRY,
+    optical: init.optical ? normalizeOpticalTransform(init.optical) : null,
+    localAdjustments: normalizeLocalAdjustments(init.localAdjustments),
   };
 }
 
@@ -66,17 +73,28 @@ export function editStateFromRecipe(recipe: CustomRecipe): EditState {
       camera: recipe.camera,
       colorMixer: recipe.colorMixer,
       sharpening: recipe.sharpening,
+      geometry: recipe.geometry,
+      optical: recipe.optical,
+      localAdjustments: recipe.localAdjustments,
     },
     recipe.adjustments.sharpness,
   );
 }
 
-/** Inverse of editStateFromRecipe for saving one image's edit as a Recipe v7. */
+/** Same v9 trigger as editorStore.saveCurrentAsRecipe; v8 keeps rollback safety. */
+function writesRecipeV9(state: EditState): boolean {
+  return localAdjustmentsActive(state.localAdjustments) || (!!state.optical && !opticalIsIdentity(state.optical));
+}
+
+/** Inverse of editStateFromRecipe for saving one image's edit as a shared recipe. */
 export function recipeFromEditState(
   state: EditState,
   meta: { id: string; name: string; profileVersion?: string; createdAt?: number; updatedAt?: number },
 ): CustomRecipe {
   const now = Date.now();
+  const v9 = writesRecipeV9(state);
+  const optical = state.optical ? normalizeOpticalTransform(state.optical) : null;
+  const localAdjustments = normalizeLocalAdjustments(state.localAdjustments);
   return {
     id: meta.id,
     name: meta.name,
@@ -86,7 +104,10 @@ export function recipeFromEditState(
     adjustments: { ...state.adjustments },
     createdAt: meta.createdAt ?? now,
     updatedAt: meta.updatedAt ?? now,
-    schemaVersion: CURRENT_SCHEMA_VERSION,
+    schemaVersion: v9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
+    geometry: normalizeGeometry(state.geometry),
+    ...(v9 && optical ? { optical } : {}),
+    ...(v9 && localAdjustments.groups.length > 0 ? { localAdjustments } : {}),
     sharpening: { ...state.sharpening },
     colorMixer: JSON.parse(JSON.stringify(state.colorMixer)),
     curves: JSON.parse(JSON.stringify(state.curves)),
@@ -112,6 +133,9 @@ export function copyParameters(sourceId: string, state: EditState, groups: reado
   if (wanted.has('camera')) clip.camera = JSON.parse(JSON.stringify(state.camera));
   if (wanted.has('colorMixer')) clip.colorMixer = JSON.parse(JSON.stringify(state.colorMixer));
   if (wanted.has('sharpening')) clip.sharpening = { ...state.sharpening };
+  if (wanted.has('geometry')) clip.geometry = JSON.parse(JSON.stringify(state.geometry));
+  if (wanted.has('optical')) clip.optical = state.optical ? normalizeOpticalTransform(JSON.parse(JSON.stringify(state.optical))) : null;
+  if (wanted.has('localAdjustments')) clip.localAdjustments = normalizeLocalAdjustments(JSON.parse(JSON.stringify(state.localAdjustments)));
   return clip;
 }
 
@@ -134,6 +158,11 @@ export function pasteParameters(target: EditState, clip: ParameterClip): EditSta
   if (groups.has('camera') && clip.camera) next.camera = normalizeCamera(JSON.parse(JSON.stringify(clip.camera)));
   if (groups.has('colorMixer') && clip.colorMixer) next.colorMixer = normalizeColorMixer(JSON.parse(JSON.stringify(clip.colorMixer)));
   if (groups.has('sharpening') && clip.sharpening) next.sharpening = normalizeSharpening({ ...clip.sharpening });
+  if (groups.has('geometry') && clip.geometry) next.geometry = normalizeGeometry(JSON.parse(JSON.stringify(clip.geometry)));
+  if (groups.has('optical')) next.optical = clip.optical ? normalizeOpticalTransform(JSON.parse(JSON.stringify(clip.optical))) : null;
+  if (groups.has('localAdjustments') && clip.localAdjustments) {
+    next.localAdjustments = normalizeLocalAdjustments(JSON.parse(JSON.stringify(clip.localAdjustments)));
+  }
 
   next.adjustments = sanitizeAdjustments(adjustments);
   return next;

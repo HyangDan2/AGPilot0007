@@ -1,4 +1,4 @@
-import { DecodedImage } from '../image/decoder';
+import { DecodedImage, resolveDecodedImageOriginal } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
 import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
 import type { RenderSettings } from '../pipeline/renderSettings';
@@ -7,6 +7,11 @@ import { createAbortError, throwIfExportAborted, type ExportControl } from '../c
 import { assertRenderPlanParity, runRenderPipeline } from '../pipeline/renderPipeline';
 import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
 import { createQ02RenderRegistry } from '../optical/modules';
+import { geometryOutputSize } from '../optical/geometry';
+import { renderTiled } from '../renderer/tiledExport';
+import { planLensBlur } from '../optical/lensBlur';
+import { isNeutralLensBlur, type LensBlurPlan } from '../contracts/lensBlur';
+import { budgetForDevice, detectDeviceCapabilities, estimateFrameBytes } from '../contracts/resourceBudget';
 
 export type { ExportOptions, PreparedExport };
 
@@ -43,13 +48,17 @@ export async function prepareExportImage(
   assertRenderPlanParity(settings, registry);
   onProgress?.(10, 'Initializing export pipeline...');
 
-  // Target dimensions preserving exact aspect ratio
-  const origW = image.originalWidth;
-  const origH = image.originalHeight;
-  const aspect = origW / origH;
+  // RAW keeps a preview canvas in originalElement; the resolver starts the
+  // full-resolution develop. Failures propagate so a preview is never exported
+  // silently in place of the original.
+  const source = await resolveDecodedImageOriginal(image);
+
+  // Geometry output (quarter turns swap axes, crop multiplies) is the export base.
+  const output = geometryOutputSize(settings.geometry, image.originalWidth, image.originalHeight);
+  const aspect = output.width / output.height;
 
   const scale = options.scale && options.scale > 0 && options.scale <= 1 ? options.scale : 1.0;
-  let exportWidth = options.targetWidth ? Math.round(options.targetWidth) : Math.round(origW * scale);
+  let exportWidth = options.targetWidth ? Math.round(options.targetWidth) : Math.round(output.width * scale);
   let exportHeight = Math.round(exportWidth / aspect);
 
   // Create temporary probe canvas to inspect GPU constraints
@@ -62,6 +71,96 @@ export async function prepareExportImage(
   const maxRenderSize = glProbe ? glProbe.getParameter(glProbe.MAX_RENDERBUFFER_SIZE) || 4096 : 4096;
   const maxSafeDim = Math.min(maxTexSize, maxRenderSize);
   glProbe?.getExtension('WEBGL_lose_context')?.loseContext();
+
+  const encodeCanvas = (canvas: HTMLCanvasElement, width: number, height: number, cleanup: () => void) =>
+    new Promise<PreparedExport>((resolve, reject) => {
+      onProgress?.(90, `Encoding ${options.format === 'image/jpeg' ? 'JPEG' : 'PNG'} output...`);
+      canvas.toBlob(
+        (blob) => {
+          cleanup();
+
+          if (control?.signal?.aborted) {
+            reject(createAbortError());
+            return;
+          }
+
+          if (!blob || blob.size === 0) {
+            reject(new Error('Failed to generate export image: blob was empty or encoding failed.'));
+            return;
+          }
+
+          control?.onStage?.('complete');
+          onProgress?.(100, 'Photo preparation complete!');
+          const ext = options.format === 'image/jpeg' ? 'jpg' : 'png';
+          const baseName = image.name.replace(/\.[^/.]+$/, '');
+          const filename = `${baseName}_HD2Lab_FilmStudio.${ext}`;
+
+          let file: File;
+          try {
+            file = new File([blob], filename, { type: options.format });
+          } catch {
+            file = Object.assign(blob, { name: filename, lastModified: Date.now() }) as any;
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+
+          resolve({
+            blob,
+            file,
+            objectUrl,
+            filename,
+            format: options.format,
+            quality: options.quality,
+            width,
+            height,
+            fileSize: blob.size,
+            formattedSize: formatBytes(blob.size),
+            createdAt: Date.now(),
+          });
+        },
+        options.format,
+        options.quality,
+      );
+    });
+
+  // Frames that exceed the texture limit or the GPU budget render in tiles.
+  // Scaled/target-wide requests keep the clamped path, which honors the size.
+  const budget = budgetForDevice({ ...detectDeviceCapabilities(), maxTextureSize: maxSafeDim });
+  const fullResRequest = (!options.scale || options.scale >= 1) && !options.targetWidth;
+  const needsTiling =
+    fullResRequest &&
+    (Math.max(output.width, output.height) > maxSafeDim ||
+      estimateFrameBytes(output.width, output.height, 'rgba8') > budget.maxGpuBytes);
+  if (needsTiling) {
+    const local = settings.localAdjustments;
+    const localActive = !!local && local.enabled && local.groups.some((group) => group.enabled);
+    if (settings.localStage || localActive) {
+      throw new Error(
+        'This export needs tiled rendering, which does not support local adjustments yet. Disable local adjustments or export at a smaller size.',
+      );
+    }
+    if (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur)) {
+      throw new Error(
+        'This export needs tiled rendering, which does not support lens blur yet. Disable lens blur or export at a smaller size.',
+      );
+    }
+    throwIfExportAborted(control?.signal);
+    onProgress?.(30, 'Rendering large image in tiles...');
+    control?.onStage?.('render');
+    const tiled = await renderTiled({
+      image,
+      settings,
+      maxTextureSize: maxSafeDim,
+      budgetBytes: budget.maxGpuBytes,
+      overlap: Math.max(8, Math.round(Math.min(output.width, output.height) * 0.004)),
+    });
+    throwIfExportAborted(control?.signal);
+    control?.onStage?.('encode');
+    return encodeCanvas(tiled, output.width, output.height, () => {
+      tiled.width = 1;
+      tiled.height = 1;
+    });
+  }
 
   // If requested dimensions exceed GPU limits, safely constrain while strictly preserving aspect ratio
   if (exportWidth > maxSafeDim || exportHeight > maxSafeDim) {
@@ -93,8 +192,20 @@ export async function prepareExportImage(
   };
 
   onProgress?.(50, 'Uploading image textures and 3D LUT...');
-  renderer.setImage(image.originalElement, exportWidth, exportHeight);
+  renderer.setImage(source, exportWidth, exportHeight);
   renderer.setLut(lut);
+
+  // Export quality gather at the final canvas size; the plan is transient and
+  // never persisted. A null plan keeps the unmodified pipeline output.
+  let lensStage: LensBlurPlan | null = null;
+  if (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur)) {
+    lensStage = planLensBlur(
+      { ...settings.lensBlur, quality: 'export' },
+      { width: exportWidth, height: exportHeight },
+      { maxTextureSize: maxTexSize },
+    );
+  }
+  const pipelineSettings = lensStage ? { ...settings, lensStage } : settings;
 
   try {
     throwIfExportAborted(control?.signal);
@@ -106,8 +217,8 @@ export async function prepareExportImage(
         width: exportWidth,
         height: exportHeight,
         dpr: 1,
-        settings,
-        source: image.originalElement,
+        settings: pipelineSettings,
+        source,
         sourceWidth: image.originalWidth,
         sourceHeight: image.originalHeight,
         registry,
@@ -130,56 +241,7 @@ export async function prepareExportImage(
     throw error;
   }
 
-  onProgress?.(90, `Encoding ${options.format === 'image/jpeg' ? 'JPEG' : 'PNG'} output...`);
-
-  return new Promise<PreparedExport>((resolve, reject) => {
-    exportCanvas.toBlob(
-      (blob) => {
-        disposeRenderer();
-
-        if (control?.signal?.aborted) {
-          reject(createAbortError());
-          return;
-        }
-
-        if (!blob || blob.size === 0) {
-          reject(new Error('Failed to generate export image: blob was empty or encoding failed.'));
-          return;
-        }
-
-        control?.onStage?.('complete');
-        onProgress?.(100, 'Photo preparation complete!');
-        const ext = options.format === 'image/jpeg' ? 'jpg' : 'png';
-        const baseName = image.name.replace(/\.[^/.]+$/, '');
-        const filename = `${baseName}_HD2Lab_FilmStudio.${ext}`;
-
-        let file: File;
-        try {
-          file = new File([blob], filename, { type: options.format });
-        } catch {
-          file = Object.assign(blob, { name: filename, lastModified: Date.now() }) as any;
-        }
-
-        const objectUrl = URL.createObjectURL(blob);
-
-        resolve({
-          blob,
-          file,
-          objectUrl,
-          filename,
-          format: options.format,
-          quality: options.quality,
-          width: exportWidth,
-          height: exportHeight,
-          fileSize: blob.size,
-          formattedSize: formatBytes(blob.size),
-          createdAt: Date.now(),
-        });
-      },
-      options.format,
-      options.quality
-    );
-  });
+  return encodeCanvas(exportCanvas, exportWidth, exportHeight, disposeRenderer);
 }
 
 /**

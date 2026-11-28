@@ -592,3 +592,129 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
   전체 스위트는 실행하지 않았다(Q05 1회 소관).
 - **한계**: 8192px를 넘는 source는 WebGL2 texture 한도를 넘으므로 현재 구현에서 업로드 오류로
   거부된다. 초대형 파노라마는 Q01 통합 시 tile 경로 또는 maxTextureSize 사전 검사가 필요하다.
+
+## 14. CP3-02A/B — perspective homography, cover sizing, derived preview/export sizes
+
+- **Perspective homography**: `homographyFromPerspectiveQuad(quad)`는 단위 정사각형(TL, TR, BR, BL)을
+  `PerspectiveQuad`로 옮기는 projective map을 row-major mat3로 풀고 `validateOpticalTransform`으로
+  invertibility를 강제한다(degenerate quad는 `Optical perspective quad is degenerate`).
+  `createPerspectiveTransform(vertical, horizontal)`은 동결 `createPerspectiveQuad(vertical, horizontal)`을
+  그대로 사용해 UI 슬라이더 값을 계약 shape으로 만든다. 두 함수는 `src/engine/optical/transform.ts`에서 export.
+- **Output size (Q00 delta 4 ruling)**: `geometryOutputSize(geometry, srcW, srcH)`는
+  **straighten을 cover/auto-crop으로 취급해 크기를 바꾸지 않는다**. 90/270은 축 swap,
+  crop은 폭·높이 각각 곱하고, 반올림은 축별 1회(`max(1, round(v))`). 02A 초기 bbox 확장은
+  이 ruling으로 폐기했고 관련 bbox shader/mapping도 제거했다.
+- **Preview/export parity**: sourceStage의 GPU 청크(`GEOMETRY_SHADER_CHUNK`)와 CPU mirror
+  (`geometryOutputToSource`) 모두 동결 cover 매핑을 쓰며, aspect는 `rotatedAspect`(90/270에서 swap)를
+  공유한다. fingerprint는 source/output 크기 + geometry + optical을 포함하므로 preview→export 크기
+  변화 시 캐시가 반드시 무효화된다.
+- **검증**: `tests/geometry-output-size-perspective.test.ts`(크기 ruling + homography),
+  `tests/e2e/source-stage-output-size.spec.ts`(rotation 90 + straighten + crop + perspective에서
+  preview/export 동일 NIS 샘플 ≤4/255, 매핑된 사각형의 직각/대변 보존, 크기별 fingerprint 상이).
+
+## 15. CP3-02C — Geometry overlay and controls (prop-driven, new files only)
+
+- **구성**: `src/components/geometry/GeometryOverlay.tsx`(자르기 오버레이), `GeometryPanel.tsx`(회전/플립/
+  straighten/원근 슬라이더+리셋), `cropGeometry.ts`(순수 클램프/키보드 로직). 모두 controlled props로
+  Q01 `editorStore` 액션에 의존하지 않는다. Q00 지시대로 store 액션은 수정하지 않았다.
+- **좌표계**: 오버레이는 잘리지 않은 corrected 프레임 위에 놓인다. host는
+  `geometryOverlayAspect(geometry, sourceAspect)`(90/270에서 swap)로 프레임 종횡비를 맞추고,
+  `geometry.crop`은 계약대로 post-straighten 출력 NIS를 그대로 쓴다.
+- **조작**: 8개 핸들 + move 영역 드래그(pointer/touch, `touch-action:none`), 핸들/이동 영역 포커스 후
+  방향키(±0.5%, Shift ±5%). 모든 엣지는 `MIN_CROP_EDGE`로 막고 프레임을 벗어나지 않는다. full-frame은
+  `null` crop으로 정규화된다.
+- **모드**: `hidden` prop이면 렌더하지 않으므로 compare/original에서 host가 그대로 내리면 된다.
+- **검증**: `tests/cropGeometry.test.ts` 7개, E2E 실브라우저에서 실제 컴포넌트를 마운트해 드래그/키보드/
+  패널 조작 3개(`tests/e2e/geometry-overlay.spec.ts`). tsc 0.
+
+## 16. CP3-02D — Mask engine, mask UI, capacity reporting
+
+- **Rasterizer** (`src/engine/local/maskRaster.ts`): brush/linear/radial는 기하학만으로, luminance/color는
+  corrected 픽셀을 받아 coverage(0..1)를 만든다. 반경·feather·stroke 거리는 **short-side 정규화 좌표**
+  (`toShortSide`: 중심 기준, 긴 축을 짧은 축으로 스케일)를 쓰므로 preview(96×72)와 export(192×144)에서
+  같은 NIS 지점의 coverage가 ≤8/255 이내로 일치한다(E2E로 확인). brush는 `hardness` 내부 plateau +
+  `smoothstep` feather, stroke 단위 A-buffer union, `flow` 스탬프 배율. invert는 마스크 단위 마지막에 적용.
+- **Stack compose**: 배열 순서대로 `add`(union), `subtract`(`base*(1-v)`), `intersect`(`base*v`)에
+  마스크 opacity를 곱해 합성한다. 비활성 마스크는 건너뛴다.
+- **계약 delta 2 (authorized)**: `src/engine/contracts/masks.ts`에 `MASK_LIMITS`와
+  `normalizeMasksDetailed(value) -> { masks, dropped }`를 추가하고 `normalizeMasks`는 위임만 한다.
+  `validateMasks`는 그대로 strict(초과 시 throw). 잘림은 machinery가 보고하고 UI가 표면화한다.
+- **UI**: `src/stores/maskUiStore.ts`(그룹/마스크 CRUD, 용량 가드, import 시 dropped 집계),
+  `src/components/masks/MaskListPanel.tsx`(그룹/마스크 목록·이름·enable·invert·blend·opacity +
+  `LOCAL_ADJUSTMENT_KEYS` 슬라이더, 8그룹/16마스크 초과 시 명시적 notice),
+  `MaskOverlay.tsx`(corrected-NIS 핸들: linear start/end, radial center/radius, brush point; 드래그/키보드,
+  compare/original용 `hidden`), `MasksWorkspace.tsx`(store 바인딩된 `MaskControls`/`MaskEditingOverlay`).
+  Q01은 controlled props 또는 store 바인딩 컴포넌트를 Viewport/사이드바에 그대로 배치하면 된다.
+- **검증**: `tests/masks-limits.test.ts`(masks/strokes/points dropped 수, normalize 위임, strict 유지),
+  `tests/local-mask-raster.test.ts`(hardness/flow/feather, 해상도 독립, invert, compose 3종, plan 게이트),
+  E2E `tests/e2e/mask-editor.spec.ts`(실컴포넌트로 마스크 생성·조정·핸들 드래그, preview/export parity,
+  16마스크/8그룹 초과 메시지, hidden 모드).
+
+## 17. CP3-02E — Frozen local stage seam
+
+- **API**: `planLocalStage({ state, width, height, corrected }) -> LocalStagePlan | null`.
+  `LocalStagePlan = { width, height, groups: LocalStageGroup[], masks: HTMLCanvasElement[] }`,
+  `LocalStageGroup = { adjustment, opacity, blend }`이며 groups는 `state.groups`와 같은 순서(활성 그룹만),
+  masks는 그룹당 1장, RGB에 coverage를 담는다. 비활성 상태면 `null` → renderer는 CP2 경로와 byte-identical.
+  크기는 integer>0 이어야 하고(아니면 throw), 8그룹 초과는 `Too many local adjustment groups`로 막는다.
+- **좌표/실행 순서**: basis `corrected-nis`, `LOCAL_ADJUSTMENT_EXECUTION_ORDER = ['colorLab','local','detail']`.
+  luminance/color 마스크가 있을 때만 corrected 픽셀을 읽는다(`needsPixels`).
+- **GLSL ES 3.00**: `LOCAL_STAGE_FRAGMENT`는 `u_q02_local_masks[8]`, count/opacity/blend,
+  `u_q02_local_adjust_a/b/c[8]` 슬롯을 노출하고 `q02_local_stage(color, uv)`를 제공한다. sampler 배열은
+  드라이버 호환을 위해 8회 unroll(constant index)했고, `dFdx/dFdy`는 비분기 prologue에서 1회 계산해
+  `q02_local_adjust`에 scalar로 넘긴다. blend int는 `localStageBlendCode`(add=0/subtract=1/intersect=2),
+  adjustment vec4 매핑은 `localStageAdjustmentUniforms`가 담당한다. 텍스처 유닛은 Q00 ruling대로
+  **base 5**(그룹 8개면 5..12)에서 시작하고 Q01은 `MAX_TEXTURE_IMAGE_UNITS - 5`로 그룹 수를 clamp한다
+  (min-16 기기는 8그룹 허용). 바인딩/cache는 Q01 renderer 통합 소관이다.
+- **Integration helpers (additive, Q00 invite)**: `LOCAL_STAGE_TEXTURE_BASE = 5`와
+  `localStageTextureBudget(maxTextureImageUnits) -> { base, groupLimit }`가 디바이스별 바인딩 한도를
+  `min(MAX_LOCAL_GROUPS, units - 5)`로 계산한다(계획은 항상 전 그룹을 만들고 renderer가 clamp).
+  `localStageCacheKey(state) -> string | null`은 활성 그룹의 id/opacity/blend/adjustment/활성 마스크를
+  key-sort한 JSON으로 직렬화한 결정적 캐시 키이며 비활성 상태는 `null`. 프레임마다가 아니라
+  state 변경 시 1회 계산하고 output 크기와 함께 cache key로 쓴다.
+- **검증**: `tests/e2e/local-stage-contract.spec.ts`가 headless WebGL2에서 chunk를 컴파일·링크하고
+  count/coverage/exposure/blend 조합 6종의 픽셀을 CPU 기대값과 ≤2/255로 비교한다. tsc 0, vitest
+  38 files / 343 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
+
+## 18. CP4-02 — Lens blur engine (depth CoC + guarded gather)
+
+- **API**: `planLensBlur(state, outputSize, capability) -> LensBlurPlan | null` (Q00-frozen seam,
+  WO_CP4 §2.2a). `LensBlurState` / `LensBlurCapability` / `normalizeLensBlur` / `isNeutralLensBlur` /
+  `LENS_BLUR_LIMITS` / `LensBlurPlan` come from `contracts/lensBlur.ts` (CP4-01a/01b); normalization
+  clamps `rotationDeg` rather than wrapping and nulls an empty mask stack. `depthMask` is the frozen flat
+  `MaskData[] | null`; coverage = normalized depth
+  (0 near, 1 far), composed with per-mask blend/opacity/invert via `composeMaskStack`. `luminance`/`color`
+  masks are rejected with an explicit error because the planner has no corrected pixels. `null` → radial
+  procedural depth (short-side distance from center, farthest corner = 1).
+- **Plan**: contract 19-field payload `{ width, height, outputWidth, outputHeight, halfRes, maxCocPx,
+  maxCocShortSide, taps, tapCount, psf, depth, guardBand, guardStrength, focusPlane, focusRange, falloff,
+  aperture, quality, highlightBoost }`; `aperture` is the f-number and `taps`/`tapCount` are counts (the
+  PSF offsets/weights live only in the packed `psf` texture; the CPU reference decodes that texture so it
+  matches the GPU upload bit-for-bit). Preview gathers at half resolution (`halfRes`), both quality tiers
+  clamp to `capability.maxTextureSize` and `capability.maxTaps`. `suggestTaps` (PoC OPT-06) tiers 12/24,
+  20/40, 32/64 by CoC pixels, and `null` is returned when the budget resolves below 2 taps so the renderer
+  keeps the byte-equal path. `depth` is rasterized at gather resolution (`width`×`height`), not output size.
+- **CoC**: `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036 short side);
+  `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`.
+  `focusRange = 1` makes the whole depth field sharp (plan `null`). Aperture PSF is the PoC golden-angle
+  spiral filtered by a 5..9-blade polygon (`rotationDeg`), weights normalized, packed as a 64×1 RGBA32F
+  texture (xy offset, z weight).
+- **Quality**: taps whose depth differs from the center pixel by more than `guardBand` (0.08) are
+  down-weighted (`guardStrength`), which suppresses colored halos at foreground/background edges without
+  pre-separating layers. `highlightBoost` applies a luma^4 weight before normalization so bright bokeh
+  discs bloom; 0 keeps the gather energy-preserving.
+- **GLSL ES 3.00**: `LENS_BLUR_FRAGMENT` exposes `u_q02_lens_scene` (graded corrected image),
+  `u_q02_lens_psf`, optional `u_q02_lens_depth` (R32F, `u_q02_lens_use_depth = 1`),
+  `u_q02_lens_taps`, `u_q02_lens_aspect`, focus/falloff/max_coc scalars, `u_q02_lens_guard`
+  (band, strength) and `u_q02_lens_highlight_boost`; entry `vec3 q02_lens_blur(vec3 color, vec2 uv)`.
+  UVs are in scene-texture space (no flip inside the chunk); binding/caching are Q01 renderer work.
+- **UI**: `LensBlurPanel.tsx` (enabled, focus plane/range, aperture, blades, rotation, highlight boost,
+  preview/export quality, depth status + clear) and `LensBlurOverlay.tsx` (paints brush strokes into the
+  flat depth stack; pointer capture, one stroke per press). Both are controlled components; Q01 mounts them.
+- **검증**: after merging pro-engine `ff9fc47` (CP4-01b `be97411`) the engine returns the contract plan;
+  tsc 0, `tests/lens-blur.test.ts` 15/15. That suite covers CoC
+  monotonicity/range/aperture, blade-polygon containment + normalized weights + determinism, PSF packing,
+  neutral/identity `null`, half-res + texture/tap clamps, uniform-image energy conservation, depth-mask
+  rejection rules, halo suppression across a depth step, and preview-vs-export parity after upscale
+  (mean < 0.02, max < 0.08 in 0..1 units). E2E on 5273/chromium: panel/paint harness and a headless
+  WebGL2 gather that matches the CPU reference (mean < 0.005, max < 0.02; 3 specs pass).
