@@ -51,7 +51,10 @@ export interface LensBlurPlan {
   guardStrength: number;
   /** 64×1 RGBA32F texels (256 floats). */
   psf: Float32Array;
-  /** Rasterized manual depth at output resolution; null = procedural depth. */
+  /**
+   * Rasterized manual depth at gather resolution (`width` × `height`, half
+   * when `halfRes`), not output resolution; null = procedural depth.
+   */
   depth: Float32Array | null;
 }
 
