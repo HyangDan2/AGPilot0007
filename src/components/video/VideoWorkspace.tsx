@@ -486,7 +486,6 @@ export function VideoWorkspace() {
 
           {error && <p role="alert" data-testid="video-error" className="text-red-300">{error}</p>}
           {done && !error && <p data-testid="video-done" className="text-emerald-300">Export saved to downloads.</p>}
-          {gradeState === 'unavailable' && <p data-testid="video-grade-note" className="text-[color:var(--ui-text-slate500)]">Graded preview needs the CP4-01b frame renderer; the current export encodes the source frames ungraded.</p>}
         </aside>
       </div>
     </div>

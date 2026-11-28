@@ -75,6 +75,9 @@ test('ingests a video beside a photo and drives the timeline, trim and capabilit
   await expect(summary).toContainText('3.00s', { timeout: 20000 });
   await expect(page.getByTestId('video-time')).toContainText('/ 0:03.00');
 
+  // The probe resolves lazily; badges render "unsupported" until then, so wait
+  // for capabilities before comparing badge state with the select options.
+  await expect(page.getByTestId('video-engine-loading')).toHaveCount(0);
   const badges = page.getByTestId('video-capability');
   await expect(badges).toHaveCount(5);
   for (const capability of ['mp4', 'webm', 'avc', 'vp9', 'audio']) {
@@ -128,9 +131,47 @@ test('mobile profile blocks source resolution above 1080p and shows the memory g
   await expect(page.locator('[data-testid="video-resolution"] option[value="source"]')).toBeDisabled();
 });
 
-test('video export either reports the pending engine binding or completes with a download', async ({ page }, info) => {
+async function meanRgb(page: Page, bytes: Buffer): Promise<number> {
+  return page.evaluate(async (base64) => {
+    const binary = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([binary]));
+    const video = document.createElement('video');
+    video.muted = true;
+    video.src = url;
+    await new Promise((resolve, reject) => {
+      video.onloadeddata = resolve;
+      video.onerror = () => reject(new Error('exported video could not be decoded'));
+    });
+    video.currentTime = Math.min(0.5, video.duration / 2);
+    await new Promise((resolve) => { video.onseeked = resolve; });
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 36;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(video, 0, 0, 64, 36);
+    const data = ctx.getImageData(0, 0, 64, 36).data;
+    let sum = 0;
+    for (let index = 0; index < data.length; index += 4) sum += data[index] + data[index + 1] + data[index + 2];
+    URL.revokeObjectURL(url);
+    return sum / ((data.length / 4) * 3);
+  }, bytes.toString('base64'));
+}
+
+async function trimAndExport(page: Page): Promise<{ name: string; bytes: Buffer }> {
+  await setRange(page, 'video-trim-in', 0.5);
+  await setRange(page, 'video-trim-out', 1.5);
+  await expect(page.getByTestId('video-trim-summary')).toContainText('0.50s – 1.50s');
+  const downloadPromise = page.waitForEvent('download', { timeout: 150000 });
+  await page.getByTestId('video-export').click();
+  await expect(page.getByTestId('video-progress')).toBeVisible();
+  const download = await downloadPromise;
+  await expect(page.getByTestId('video-done')).toBeVisible({ timeout: 150000 });
+  return { name: download.suggestedFilename(), bytes: await readFile((await download.path())!) };
+}
+
+test('graded video export changes pixels with the grade, downloads and hides the ungraded note', async ({ page }, info) => {
   test.skip(fixtureMissing || info.project.name !== 'chromium', 'desktop chromium only');
-  test.setTimeout(180000);
+  test.setTimeout(240000);
   const strip = await openWorkspace(page, await workspaceWith(page, info, 'export', [CLIP], false));
   await strip.getByRole('button', { name: 'Open clip.mp4', exact: true }).click();
   await expect(page.getByTestId('video-trim-summary')).toContainText('3.00s', { timeout: 20000 });
@@ -141,19 +182,25 @@ test('video export either reports the pending engine binding or completes with a
     await expect(exportButton).toBeDisabled();
     return;
   }
+  await expect(page.getByTestId('video-grade-note')).toHaveCount(0);
 
-  const downloadPromise = page.waitForEvent('download', { timeout: 150000 });
-  await setRange(page, 'video-trim-in', 0.5);
-  await setRange(page, 'video-trim-out', 1.5);
-  await expect(page.getByTestId('video-trim-summary')).toContainText('0.50s – 1.50s');
-  await exportButton.click();
-  await expect(page.getByTestId('video-progress')).toBeVisible();
-  const download = await downloadPromise;
-  await expect(page.getByTestId('video-done')).toBeVisible({ timeout: 150000 });
-  const written = await readFile((await download.path())!);
-  info.annotations.push({ type: 'video-export', description: `${download.suggestedFilename()} · ${written.byteLength} bytes` });
-  expect(download.suggestedFilename()).toMatch(/\.(mp4|webm)$/);
-  expect(written.byteLength).toBeGreaterThan(1000);
+  const plain = await trimAndExport(page);
+  expect(plain.name).toMatch(/\.(mp4|webm)$/);
+  expect(plain.bytes.byteLength).toBeGreaterThan(1000);
+  const plainMean = await meanRgb(page, plain.bytes);
+
+  await page.getByRole('button', { name: 'Close video workspace' }).click();
+  await page.getByLabel('Exposure', { exact: true }).fill('0.8');
+  await strip.getByRole('button', { name: 'Open clip.mp4', exact: true }).click();
+  await expect(page.getByTestId('video-trim-summary')).toContainText('3.00s', { timeout: 20000 });
+  const graded = await trimAndExport(page);
+  const gradedMean = await meanRgb(page, graded.bytes);
+
+  info.annotations.push({
+    type: 'video-export',
+    description: `${graded.name} · ${graded.bytes.byteLength} bytes · mean ${plainMean.toFixed(1)} → ${gradedMean.toFixed(1)}`,
+  });
+  expect(Math.abs(gradedMean - plainMean)).toBeGreaterThan(2);
 });
 
 test('video export cancels with a clear error and retries when the engine is bound', async ({ page }, info) => {

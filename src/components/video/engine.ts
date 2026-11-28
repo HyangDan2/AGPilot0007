@@ -1,4 +1,12 @@
 import type { VideoCapabilities, VideoExportProgress, VideoExportSettings, VideoTrim } from '../../engine/contracts/video';
+import type { AdjustmentSettings, FilmId } from '../../types/film';
+import type { ToneCurves } from '../../types/curves';
+import type { ColorMixerSettings } from '../../types/colorMixer';
+import type { SharpeningSettings } from '../../types/sharpening';
+import type { CameraSettings } from '../../types/camera';
+import type { GeometryTransform } from '../../engine/contracts/geometry';
+import type { OpticalTransform } from '../../engine/contracts/optical';
+import type { LocalAdjustmentState } from '../../engine/contracts/localAdjustments';
 
 /**
  * UI-facing video engine surface. Types come from Q01's frozen
@@ -23,17 +31,17 @@ export interface VideoExportHandle {
   onProgress(callback: (progress: VideoExportProgress) => void): () => void;
 }
 
-/** Grade payload for frame rendering; shape follows the shared RenderSettings groups. */
+/** Grade payload for frame rendering; mirrors the shared RenderSettings groups. */
 export interface VideoGradeSettings {
-  filmId: string;
-  adjustments: unknown;
-  curves: unknown;
-  camera: unknown;
-  colorMixer: unknown;
-  sharpening: unknown;
-  geometry: unknown;
-  optical?: unknown;
-  localAdjustments: unknown;
+  filmId: FilmId;
+  adjustments: AdjustmentSettings;
+  curves: ToneCurves;
+  camera: CameraSettings;
+  colorMixer: ColorMixerSettings;
+  sharpening: SharpeningSettings;
+  geometry: GeometryTransform;
+  optical?: OpticalTransform;
+  localAdjustments: LocalAdjustmentState;
 }
 
 export interface VideoEngine {
