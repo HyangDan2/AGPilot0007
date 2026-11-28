@@ -25,10 +25,10 @@ import { fitResolution } from './profiles';
 import { resolveTrim } from './trim';
 import type {
   VideoAudioReport,
-  VideoExportHandle,
   VideoExportOptions,
   VideoExportProgress,
   VideoExportResult,
+  VideoExportTask,
 } from './types';
 
 const AUDIO_HASH_LIMIT_BYTES = 8 * 1024 * 1024;
@@ -145,8 +145,10 @@ async function runExport(
     output = new Output({ format: settings.container === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat(), target });
     renderer = options.renderer ? null : createCanvasFrameRenderer(out.width, out.height);
     const render = options.renderer ?? renderer!;
+    const canvas = options.canvas ?? render.canvas;
+    if (!canvas) throw new Error('Video frame renderer must expose a canvas (or pass VideoExportOptions.canvas)');
     render.resize(out.width, out.height);
-    videoSource = new CanvasSource(render.canvas, {
+    videoSource = new CanvasSource(canvas, {
       codec: settings.videoCodec,
       quality: new Quality('high'),
       keyFrameInterval: 2,
@@ -303,7 +305,7 @@ async function hashOutputAudio(blob: Blob): Promise<string | undefined> {
  * Starts a cancellable export. Resolution/trim/audio decisions happen inside the
  * promise; capability and budget failures reject before any output bytes are written.
  */
-export function startVideoExport(file: Blob, options: VideoExportOptions): VideoExportHandle {
+export function startVideoExport(file: Blob, options: VideoExportOptions): VideoExportTask {
   const listeners = new Set<(progress: VideoExportProgress) => void>();
   const controller = new AbortController();
   const forwardAbort = () => controller.abort();

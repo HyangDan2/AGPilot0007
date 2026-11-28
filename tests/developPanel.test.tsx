@@ -5,17 +5,17 @@ import { DevelopPanel } from '../src/components/raw/DevelopPanel';
 import {
   RAW_NEUTRAL_DEVELOP,
   isNeutralDevelop,
-  normalizeDevelopState,
+  normalizeDevelop,
   type RawDevelopState,
-} from '../src/components/raw/developState';
+} from '../src/engine/contracts/develop';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 const AS_SHOT = { temperatureK: 5200, tint: 0 };
 
-describe('develop state normalisation', () => {
+describe('develop state normalisation (contract)', () => {
   it('clamps and sanitises every field', () => {
-    const normalized = normalizeDevelopState({
+    const normalized = normalizeDevelop({
       wb: { mode: 'custom', temperatureK: 99999, tint: -500 },
       exposureEV: 9,
       highlightRecovery: 7,
@@ -25,17 +25,15 @@ describe('develop state normalisation', () => {
       exposureEV: 5,
       highlightRecovery: 1,
     });
-    expect(normalizeDevelopState({ exposureEV: Number.NaN }).exposureEV).toBe(0);
-    expect(normalizeDevelopState({ wb: { mode: 'bogus' as any, temperatureK: 5000, tint: 0 } }).wb.mode).toBe('as-shot');
+    expect(normalizeDevelop({ exposureEV: Number.NaN }).exposureEV).toBe(0);
+    expect(normalizeDevelop({ wb: { mode: 'bogus' } as any }).wb).toEqual({ mode: 'as-shot' });
   });
 
-  it('identity requires zero exposure/recovery and as-shot or matching custom WB', () => {
-    expect(isNeutralDevelop(RAW_NEUTRAL_DEVELOP, 5200)).toBe(true);
-    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, exposureEV: 0.5 }, 5200)).toBe(false);
-    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, highlightRecovery: 0.2 }, 5200)).toBe(false);
-    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, wb: { mode: 'custom', temperatureK: 5200, tint: 0 } }, 5200)).toBe(true);
-    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, wb: { mode: 'custom', temperatureK: 6500, tint: 0 } }, 5200)).toBe(false);
-    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, wb: { mode: 'as-shot', temperatureK: 3000, tint: 0 } }, 5200)).toBe(true);
+  it('identity is as-shot with zero exposure and recovery', () => {
+    expect(isNeutralDevelop(RAW_NEUTRAL_DEVELOP)).toBe(true);
+    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, exposureEV: 0.5 })).toBe(false);
+    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, highlightRecovery: 0.2 })).toBe(false);
+    expect(isNeutralDevelop({ ...RAW_NEUTRAL_DEVELOP, wb: { mode: 'custom', temperatureK: 5200, tint: 0 } })).toBe(false);
   });
 });
 
@@ -63,10 +61,11 @@ describe('DevelopPanel binding', () => {
   }
 
   const q = (el: HTMLElement, id: string) => el.querySelector<HTMLInputElement>(`[data-testid="${id}"]`)!;
+  const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
 
   it('shows as-shot WB and switches custom mode seeded from the camera value', () => {
     const seen: RawDevelopState[] = [];
-    const el = render(normalizeDevelopState(null), (next) => seen.push(next));
+    const el = render(normalizeDevelop(null), (next) => seen.push(next));
     expect(el.querySelector('[data-testid="develop-as-shot-label"]')!.textContent).toContain('5200K');
     expect(q(el, 'develop-temperature')).toBeNull();
     act(() => q(el, 'develop-wb-custom').click());
@@ -75,10 +74,9 @@ describe('DevelopPanel binding', () => {
 
   it('emits clamped custom temperature, tint, exposure and recovery values', () => {
     const seen: RawDevelopState[] = [];
-    const state = normalizeDevelopState({ wb: { mode: 'custom', temperatureK: 5000, tint: 0 } });
+    const state = normalizeDevelop({ wb: { mode: 'custom', temperatureK: 5000, tint: 0 } });
     const el = render(state, (next) => seen.push(next));
 
-    const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     const change = (id: string, value: string) => {
       const input = q(el, id);
       // Bypass React's value tracker so the synthetic input event is not deduped.
@@ -90,8 +88,10 @@ describe('DevelopPanel binding', () => {
     act(() => change('develop-exposure', '1.5'));
     act(() => change('develop-highlight', '0.5'));
 
-    expect(seen.map((s) => s.wb.temperatureK)).toContain(9000);
-    expect(seen.map((s) => s.wb.tint)).toContain(-20);
+    const customTemps = seen.map((s) => (s.wb.mode === 'custom' ? s.wb.temperatureK : null));
+    const customTints = seen.map((s) => (s.wb.mode === 'custom' ? s.wb.tint : null));
+    expect(customTemps).toContain(9000);
+    expect(customTints).toContain(-20);
     expect(seen.map((s) => s.exposureEV)).toContain(1.5);
     // Controlled component: each event is emitted against the current prop snapshot.
     expect(seen[seen.length - 1]).toMatchObject({ highlightRecovery: 0.5, wb: { mode: 'custom', temperatureK: 5000 } });
@@ -99,10 +99,10 @@ describe('DevelopPanel binding', () => {
 
   it('resets to neutral and disables controls when asked', () => {
     const seen: RawDevelopState[] = [];
-    const state = normalizeDevelopState({ exposureEV: 2 });
+    const state = normalizeDevelop({ exposureEV: 2 });
     const el = render(state, (next) => seen.push(next));
     act(() => q(el, 'develop-reset').click());
-    expect(isNeutralDevelop(seen[0], AS_SHOT.temperatureK)).toBe(true);
+    expect(isNeutralDevelop(seen[0])).toBe(true);
 
     const disabledEl = render(state, () => undefined, true);
     expect(q(disabledEl, 'develop-exposure').disabled).toBe(true);

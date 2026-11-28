@@ -2,9 +2,7 @@ import type { VideoFrameRenderer } from './types';
 
 export interface CanvasFrameRenderer extends VideoFrameRenderer {
   readonly canvas: HTMLCanvasElement;
-}
-
-/**
+}/**
  * Plain 2D-canvas adapter used until Q01's graded WebGL2 renderer (CP4-01b) is mounted.
  * It letterbox-free stretches to the configured output size; grading is the renderer's job.
  */

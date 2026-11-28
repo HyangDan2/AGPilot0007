@@ -1,20 +1,21 @@
 import React from 'react';
 import { RotateCcw, Sparkles, Sun, Thermometer } from 'lucide-react';
 import {
-  DEVELOP_LIMITS,
+  RAW_DEVELOP_STATE_LIMITS,
   isNeutralDevelop,
-  normalizeDevelopState,
+  normalizeDevelop,
   type RawDevelopState,
-} from './developState';
+} from '../../engine/contracts/develop';
 
 export interface DevelopPanelProps {
   state: RawDevelopState;
   onChange: (next: RawDevelopState) => void;
-  /** As-shot white balance reported by the RAW decoder, when known. */
+  /** As-shot white balance reported by the RAW decoder, used to seed custom WB. */
   asShot: { temperatureK: number; tint: number } | null;
   disabled?: boolean;
 }
 
+const DEFAULT_TEMPERATURE_K = 6500;
 const signed = (value: number, digits = 1) => `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
 
 const DevelopSlider: React.FC<{
@@ -54,21 +55,22 @@ const DevelopSlider: React.FC<{
  * AdjustmentPanel; exposure/WB set here stay effective alongside develop (BL-CP3-01).
  */
 export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asShot, disabled }) => {
-  const neutral = isNeutralDevelop(state, asShot?.temperatureK ?? null);
-  const update = (patch: Partial<RawDevelopState>) => onChange(normalizeDevelopState({ ...state, ...patch }));
-  const updateWb = (patch: Partial<RawDevelopState['wb']>) =>
-    onChange(normalizeDevelopState({ ...state, wb: { ...state.wb, ...patch } }));
+  const neutral = isNeutralDevelop(state);
+  const custom = state.wb.mode === 'custom' ? state.wb : null;
+  const update = (patch: Partial<RawDevelopState>) => onChange(normalizeDevelop({ ...state, ...patch }));
 
   const switchMode = (mode: RawDevelopState['wb']['mode']) => {
     if (mode === state.wb.mode) return;
     if (mode === 'custom') {
-      updateWb({
-        mode,
-        temperatureK: asShot?.temperatureK ?? state.wb.temperatureK,
-        tint: asShot?.tint ?? state.wb.tint,
+      update({
+        wb: {
+          mode: 'custom',
+          temperatureK: asShot?.temperatureK ?? DEFAULT_TEMPERATURE_K,
+          tint: asShot?.tint ?? 0,
+        },
       });
     } else {
-      updateWb({ mode });
+      update({ wb: { mode: 'as-shot' } });
     }
   };
 
@@ -79,7 +81,7 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
         <span className="flex-1">RAW Develop</span>
         <button
           type="button"
-          onClick={() => onChange(normalizeDevelopState(null))}
+          onClick={() => onChange(normalizeDevelop(null))}
           disabled={disabled || neutral}
           data-testid="develop-reset"
           title="Reset develop to as-shot"
@@ -98,10 +100,10 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
             type="button"
             onClick={() => switchMode('as-shot')}
             disabled={disabled}
-            aria-pressed={state.wb.mode === 'as-shot'}
+            aria-pressed={!custom}
             data-testid="develop-wb-as-shot"
             className={`px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none ${
-              state.wb.mode === 'as-shot'
+              !custom
                 ? 'bg-amber-600 text-white'
                 : 'bg-[var(--ui-bg-171c26)] text-[color:var(--ui-text-slate300)] hover:bg-[var(--ui-bg-222a38)]'
             }`}
@@ -112,10 +114,10 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
             type="button"
             onClick={() => switchMode('custom')}
             disabled={disabled}
-            aria-pressed={state.wb.mode === 'custom'}
+            aria-pressed={!!custom}
             data-testid="develop-wb-custom"
             className={`px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none ${
-              state.wb.mode === 'custom'
+              custom
                 ? 'bg-amber-600 text-white'
                 : 'bg-[var(--ui-bg-171c26)] text-[color:var(--ui-text-slate300)] hover:bg-[var(--ui-bg-222a38)]'
             }`}
@@ -125,29 +127,29 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
         </div>
       </div>
 
-      {state.wb.mode === 'custom' ? (
+      {custom ? (
         <div className="space-y-3 pl-5">
           <DevelopSlider
             id="develop-temperature"
             label="Temperature"
-            value={state.wb.temperatureK}
-            min={DEVELOP_LIMITS.temperatureK.min}
-            max={DEVELOP_LIMITS.temperatureK.max}
+            value={custom.temperatureK}
+            min={RAW_DEVELOP_STATE_LIMITS.temperatureK.min}
+            max={RAW_DEVELOP_STATE_LIMITS.temperatureK.max}
             step={50}
-            display={`${Math.round(state.wb.temperatureK)}K`}
+            display={`${Math.round(custom.temperatureK)}K`}
             disabled={disabled}
-            onChange={(temperatureK) => updateWb({ temperatureK })}
+            onChange={(temperatureK) => update({ wb: { ...custom, temperatureK } })}
           />
           <DevelopSlider
             id="develop-tint"
             label="Tint"
-            value={state.wb.tint}
-            min={DEVELOP_LIMITS.tint.min}
-            max={DEVELOP_LIMITS.tint.max}
+            value={custom.tint}
+            min={RAW_DEVELOP_STATE_LIMITS.tint.min}
+            max={RAW_DEVELOP_STATE_LIMITS.tint.max}
             step={1}
-            display={signed(state.wb.tint, 0)}
+            display={signed(custom.tint, 0)}
             disabled={disabled}
-            onChange={(tint) => updateWb({ tint })}
+            onChange={(tint) => update({ wb: { ...custom, tint } })}
           />
         </div>
       ) : (
@@ -164,8 +166,8 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
         id="develop-exposure"
         label="Develop exposure"
         value={state.exposureEV}
-        min={DEVELOP_LIMITS.exposureEV.min}
-        max={DEVELOP_LIMITS.exposureEV.max}
+        min={RAW_DEVELOP_STATE_LIMITS.exposureEV.min}
+        max={RAW_DEVELOP_STATE_LIMITS.exposureEV.max}
         step={0.1}
         display={`${signed(state.exposureEV)} EV`}
         disabled={disabled}
@@ -176,8 +178,8 @@ export const DevelopPanel: React.FC<DevelopPanelProps> = ({ state, onChange, asS
         id="develop-highlight"
         label="Highlight recovery"
         value={state.highlightRecovery}
-        min={DEVELOP_LIMITS.highlightRecovery.min}
-        max={DEVELOP_LIMITS.highlightRecovery.max}
+        min={RAW_DEVELOP_STATE_LIMITS.highlightRecovery.min}
+        max={RAW_DEVELOP_STATE_LIMITS.highlightRecovery.max}
         step={0.05}
         display={`${Math.round(state.highlightRecovery * 100)}%`}
         disabled={disabled}
