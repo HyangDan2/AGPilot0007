@@ -43,13 +43,17 @@ export function BatchExportHost() {
 
   if (!entries.length) return null;
 
+  // Video is not batched (CP4): the queue lists and exports photos only.
+  const photoEntries = entries.filter((entry) => entry.kind !== 'video');
+  const photoIds = new Set(photoEntries.map((entry) => entry.id));
   const jobs = new Map((view?.snapshot?.jobs ?? []).map((job) => [job.id, job]));
-  const selected = selection.ids;
+  const selected = selection.ids.filter((id) => photoIds.has(id));
   const running = view?.running ?? false;
   const summary = view?.summary ?? null;
   const progress = Math.round((view?.snapshot?.overallProgress ?? 0) * 100);
   const retryable = (view?.snapshot?.jobs ?? []).filter((job) => job.status === 'failed' || job.status === 'cancelled').length;
 
+  if (!photoEntries.length) return null;
   return (
     <>
       <button
@@ -77,7 +81,7 @@ export function BatchExportHost() {
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold">Batch Export</h2>
-                <p className="text-xs text-[color:var(--ui-text-slate400)]">{entries.length} photos · {selected.length} selected</p>
+                <p className="text-xs text-[color:var(--ui-text-slate400)]">{photoEntries.length} photos · {selected.length} selected</p>
               </div>
               <button type="button" aria-label="Close batch export" onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -112,7 +116,7 @@ export function BatchExportHost() {
             )}
 
             <ul data-testid="batch-export-list" className="min-h-0 flex-1 overflow-y-auto rounded border border-[color:var(--ui-border-slate700)]">
-              {entries.map((entry) => {
+              {photoEntries.map((entry) => {
                 const job = jobs.get(entry.id);
                 const checked = selected.includes(entry.id);
                 return (
