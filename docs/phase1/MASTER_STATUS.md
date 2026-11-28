@@ -1,4 +1,4 @@
-# MASTER STATUS — Phase 1 CP4 (Film Studio 2.0)
+# MASTER STATUS — Phase 1 CP5 (Release Qualification)
 
 Last updated: 2026-11-28 KST · Owner: Q00 Supervisor
 Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-verification of completed work, backlog non-blocking defects.
@@ -12,7 +12,8 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | CP3 (Professional Editing) | **CLOSED** | G3 **PASS** at `f4d900b` (E2E 358/0/102; RAW 6000×4000; cancel/retry 12/12). PO accepted 2026-11-28. Evidence: `WO_CP3_MASTER.md`. |
 | Engine Contract Freeze | **UNCHANGED** | Blobs identical at `47cc881`: optical `539a381`, imageBuffer `f1f9330`, masks `0c6935a`, exportControl `108e708`, moduleRegistry `42ca676`, geometry `44dd349`. |
 | Recipe v8/v9 | **READ ACTIVE** | v9 written by CP3 (optical/localAdjustments); v1–v9 readable. CP4 adds v10 (additive). |
-| CP4 (Advanced Imaging Engine) | **G4 PASS — CP4-09 integrated, re-verifying** | WO-P1-CP4 baseline `f4d900b`; tip `ea4974b`. CP4-01…08 accepted; Q02 parity PASS (≤1.03 LSB). Q05B targeted pass: lens blur / RAW develop / photo core PASS; video defects (trim leak on same-clip reopen, engine chunk at boot) fixed in CP4-09 (`da7b323`, merged at `ea4974b`); Q05B narrow re-verification running. Closure on PASS → CP5. Merge/deploy locked pending PO approval. Evidence: `WO_CP4_MASTER.md`. |
+| CP4 (Advanced Imaging Engine) | **CLOSED** | G4 **PASS** at `47cc881` (CP4-06+07+Q02 parity ≤1.03 LSB); CP4-09 video fixes accepted and independently re-verified at `ea4974b` (reopen 3/3, boot network 0, photo path PASS). Closed by PO Closure Order 2026-11-28. Evidence: `WO_CP4_MASTER.md`. |
+| CP5 (Release Qualification) | **IN PROGRESS** | WO-P1-CP5: performance optimization, remaining must-haves, real-device compatibility, RC preparation. G5 gate: full regression + perf budgets + device matrix + RC artifacts. `WO_CP5_MASTER.md`. |
 
 ## Baseline (verified 2026-11-28 KST)
 
