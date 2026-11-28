@@ -26,29 +26,36 @@ type ExportSummary = {
   metaHeight?: number;
   progressLast?: number;
   progressTotal?: number;
+  rendererPath?: string;
+  gradingWarning?: string | null;
 };
 
 async function openApp(page: import('@playwright/test').Page) {
   await page.goto('/');
-  // First import of mediabunny triggers Vite's dependency optimizer, which
-  // full-reloads the page once; warm it up and let that reload settle.
+  // First import of mediabunny (and the CP4 renderer graph it now pulls in)
+  // triggers Vite's dependency optimizer, which full-reloads the page once;
+  // warm both entries and the LUTs, then let the reload settle.
   await page.evaluate(async () => {
     try {
       const enginePath = '/src/engine/video/index.ts';
       await import(enginePath);
+      await import('/src/engine/renderer/frameRenderer' + '.ts');
+      const lut: any = await import('/src/engine/color/lutLoader' + '.ts');
+      await lut.loadCubeLut('luts/identity.cube').catch(() => undefined);
+      await lut.loadCubeLut('luts/FS-001_VAERN.cube').catch(() => undefined);
     } catch {
       // optimizer reload tears the context down; handled by the wait below
     }
   }).catch(() => undefined);
   await page.waitForLoadState('load');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1500);
 }
 
 async function runInPage(
   page: import('@playwright/test').Page,
   fixtureName: string,
   settings: Record<string, unknown>,
-  opts: { cancelAfterMs?: number; retry?: boolean } = {},
+  opts: { cancelAfterMs?: number; retry?: boolean; grading?: Record<string, unknown> } = {},
 ): Promise<ExportSummary> {
   const attempt = () => page.evaluate(
     async ({ fixtureName, settings, opts }) => {
@@ -58,12 +65,16 @@ async function runInPage(
       const blob = await res.blob();
       const enginePath = '/src/engine/video/index.ts';
       const engine: any = await import(enginePath);
+      const film: any = await import('/src/types/film' + '.ts');
       const meta = await engine.inspectVideo(blob);
       const file = new File([blob], fixtureName, { type: res.headers.get('content-type') || 'video/mp4' });
+      const grading = opts.grading
+        ? { ...opts.grading, adjustments: { ...film.DEFAULT_ADJUSTMENTS, ...(opts.grading.adjustments ?? {}) } }
+        : undefined;
 
       const run = async (cancelAfterMs?: number) => {
         const progress: number[] = [];
-        const handle = engine.startVideoExport(file, { settings });
+        const handle = engine.startVideoExport(file, { settings, grading });
         handle.onProgress((p: { framesDone: number }) => progress.push(p.framesDone));
         if (cancelAfterMs) {
           setTimeout(() => handle.cancel(), cancelAfterMs);
@@ -108,6 +119,8 @@ async function runInPage(
               outputHash: second.result!.audio.outputHash ?? null,
               progressLast: second.progress.at(-1) ?? 0,
               rotationDeg: meta.rotationDeg,
+              rendererPath: second.result!.rendererPath,
+              gradingWarning: second.result!.gradingWarning ?? null,
             };
       }
       if (first.error) {
@@ -129,6 +142,8 @@ async function runInPage(
         rotationDeg: meta.rotationDeg,
         metaWidth: meta.width,
         metaHeight: meta.height,
+        rendererPath: first.result!.rendererPath,
+        gradingWarning: first.result!.gradingWarning ?? null,
       } as ExportSummary;
     },
     { fixtureName, settings, opts },
@@ -156,11 +171,19 @@ test.describe('CP4-03 video export engine', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'WebCodecs H.264 encoder validated on Chromium');
   test.setTimeout(240_000);
 
-  test('1080p export keeps AAC packets SHA-identical and reports progress', async ({ page }) => {
+  test('graded 1080p export keeps AAC packets SHA-identical and reports progress', async ({ page }) => {
     test.skip(!hasFixture('h264_aac_1080p_10s.mp4'), 'local fixture missing');
     await openApp(page);
-    const summary = await runInPage(page, 'h264_aac_1080p_10s.mp4', { ...baseSettings });
+    const summary = await runInPage(
+      page,
+      'h264_aac_1080p_10s.mp4',
+      { ...baseSettings },
+      { grading: { filmId: 'FS-001', adjustments: { grain: 25, filmStrength: 90 } } },
+    );
     expect(summary.ok).toBe(true);
+    console.log('graded-1080p', JSON.stringify(summary));
+    expect(summary.rendererPath).toBe('graded');
+    expect(summary.gradingWarning).toBeNull();
     expect(summary.width).toBe(1920);
     expect(summary.height).toBe(1080);
     expect(summary.frames).toBeGreaterThanOrEqual(59);
@@ -183,6 +206,7 @@ test.describe('CP4-03 video export engine', () => {
       { cancelAfterMs: 400, retry: true },
     );
     expect(summary.ok).toBe(true);
+    expect(summary.rendererPath).toBe('graded');
     expect(summary.width).toBe(1280);
     expect(summary.height).toBe(720);
     expect(summary.audioMode).toBe('passthrough');

@@ -6,6 +6,7 @@ import type {
   VideoExportSettings,
   VideoTrim,
 } from '../contracts/video';
+import type { RenderSettings } from '../pipeline/renderSettings';
 
 export type { VideoAssetMeta, VideoCapabilities, VideoExportHandle, VideoExportProgress, VideoExportSettings, VideoTrim };
 
@@ -34,6 +35,9 @@ export interface VideoAudioReport {
   warning?: string;
 }
 
+/** Which frame-renderer path produced the export. */
+export type VideoRendererPath = 'graded' | 'fallback' | 'injected';
+
 export interface VideoExportResult {
   blob: Blob;
   container: VideoContainer;
@@ -44,14 +48,19 @@ export interface VideoExportResult {
   height: number;
   durationSec: number;
   audio: VideoAudioReport;
+  rendererPath: VideoRendererPath;
+  /** Set when the graded renderer could not start and the plain adapter ran. */
+  gradingWarning?: string;
 }
 
 export interface VideoExportOptions {
   settings: VideoExportSettings;
-  /** Defaults to the plain 2D-canvas adapter; Q01's frame renderer may be injected. */
+  /** Defaults to CP4-01b's createVideoFrameRenderer; a prebuilt renderer may be injected. */
   renderer?: VideoFrameRenderer;
-  /** Canvas backing an injected renderer (required when renderer.canvas is absent). */
+  /** Canvas backing the renderer (required when renderer.canvas is absent). */
   canvas?: HTMLCanvasElement;
+  /** Grading inputs for the default renderer; defaults to neutral/identity. */
+  grading?: RenderSettings;
   signal?: AbortSignal;
   budgetMB?: number;
   /** Optional external streaming sink (e.g. File System Access writable). */
