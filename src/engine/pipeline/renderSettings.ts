@@ -33,6 +33,20 @@ export interface RenderSettings {
 }
 
 /**
+ * A render call covering one tile of a larger frame. The tile canvas holds the
+ * tile's pixels while frame-global effects (grain, vignette, date stamp, local
+ * masks) are evaluated in full-frame coordinates.
+ */
+export interface RenderTileRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  frameWidth: number;
+  frameHeight: number;
+}
+
+/**
  * A single render call. Extends RenderSettings with preview-only flags that are
  * never persisted and never affect exported output when unset.
  */
@@ -46,6 +60,7 @@ export interface RenderRequest extends RenderSettings {
   sharpeningDraft?: boolean;
   mixerReference?: boolean;
   mixerVisualize?: string | null;
+  tile?: RenderTileRegion;
 }
 
 /**

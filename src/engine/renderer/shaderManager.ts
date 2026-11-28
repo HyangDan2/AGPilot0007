@@ -26,6 +26,12 @@ uniform bool u_curves_enabled;
 uniform vec2 u_endpoints;
 uniform float u_lut_size;
 uniform vec2 u_resolution;
+// Tiled export: the quad covers one tile, while frame-global effects must use
+// full-frame coordinates. u_tile_mode = 0 keeps the legacy expression exactly.
+uniform int u_tile_mode;
+uniform vec2 u_tile_origin;
+uniform vec2 u_tile_size;
+uniform vec2 u_frame_size;
 
 // Adjustments
 uniform float u_exposure;        // -3.0 to +3.0
@@ -142,12 +148,22 @@ vec3 grade(vec3 srgb) {
 }
 
 void main() {
-    if(u_detail_stage==1){vec4 raw=texture(u_image,v_uv);fragColor=vec4(q02_local_stage(grade(raw.rgb),v_uv),raw.a);return;}
+    vec2 framePx = v_uv * u_resolution;
+    vec2 frameUv = v_uv;
+    vec2 effectSize = u_resolution;
+    vec2 effectFrame = u_resolution;
+    if (u_tile_mode == 1) {
+        framePx = u_tile_origin + v_uv * u_tile_size;
+        frameUv = framePx / u_frame_size;
+        effectSize = u_tile_size;
+        effectFrame = u_frame_size;
+    }
+    if(u_detail_stage==1){vec4 raw=texture(u_image,v_uv);fragColor=vec4(q02_local_stage(grade(raw.rgb),frameUv),raw.a);return;}
     // Check if in split original section
-    bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && v_uv.x < u_split_pos);
+    bool showOriginal = (u_compare_mode == 1) || (u_compare_mode == 2 && frameUv.x < u_split_pos);
 
     // Draw split line if in split mode
-    if (u_compare_mode == 2 && abs(v_uv.x - u_split_pos) * u_resolution.x < 1.5) {
+    if (u_compare_mode == 2 && abs(frameUv.x - u_split_pos) * effectSize.x < 1.5) {
         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
         return;
     }
@@ -163,12 +179,12 @@ void main() {
     if (u_mixer_reference || u_mixer_visualize >= 0) { fragColor = vec4(clamp(color,0.0,1.0),rawColor.a); return; }
     // Local stage runs after Color Lab (grade) and before detail; the detail
     // pre-pass already applied it, so stage 2 must not apply it twice.
-    if (u_detail_stage==0) { color = q02_local_stage(color, v_uv); }
+    if (u_detail_stage==0) { color = q02_local_stage(color, frameUv); }
     if(u_detail_stage==2){color=sharpenColor(color);if(u_detail_mask){fragColor=vec4(color,rawColor.a);return;}}
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (max(u_optics.x, max(u_optics.y, u_optics.z)) > 0.0) {
-        float shortSide = min(u_resolution.x, u_resolution.y);
-        vec2 radius = vec2(shortSide) / u_resolution * 0.004;
+        float shortSide = min(effectFrame.x, effectFrame.y);
+        vec2 radius = vec2(shortSide) / effectSize * 0.004;
         vec3 soft = vec3(0.0);
         vec3 bright = vec3(0.0);
         float brightWeight = 0.0;
@@ -202,14 +218,14 @@ void main() {
 
     // 11. Film Grain (modulated by luminance: midtone emphasis, falloff in blacks/highlights)
     if (u_grain > 0.01) {
-        float noise = hash(v_uv * u_resolution * 0.75, u_seed) - 0.5;
+        float noise = hash(framePx * 0.75, u_seed) - 0.5;
         float grainMask = 4.0 * lum * (1.0 - lum); // Parabolic peak at midtone 0.5
         color += noise * (u_grain * 0.16) * grainMask;
     }
 
     // 12. Vignette
     if (u_vignette > 0.01) {
-        vec2 coord = (v_uv - 0.5) * vec2(u_resolution.x / min(u_resolution.x, u_resolution.y), 1.0);
+        vec2 coord = (frameUv - 0.5) * vec2(effectFrame.x / min(effectFrame.x, effectFrame.y), 1.0);
         float dist = length(coord);
         float vigFactor = smoothstep(0.85, 0.35, dist);
         color = mix(color * (vigFactor + (1.0 - vigFactor) * (1.0 - u_vignette * 0.8)), color, 1.0 - u_vignette);
@@ -217,7 +233,7 @@ void main() {
 
     float alpha = rawColor.a;
     if (u_stamp_enabled) {
-        vec2 stampUV = (v_uv * u_resolution - u_stamp_rect.xy) / u_stamp_rect.zw;
+        vec2 stampUV = (framePx - u_stamp_rect.xy) / u_stamp_rect.zw;
         if (all(greaterThanEqual(stampUV,vec2(0.0))) && all(lessThanEqual(stampUV,vec2(1.0)))) {
             vec4 stamp = texture(u_stamp, stampUV);
             color = mix(clamp(color,0.0,1.0),stamp.rgb,stamp.a);

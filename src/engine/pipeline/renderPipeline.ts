@@ -10,7 +10,7 @@ import {
 } from '../contracts/renderPlan';
 import { createRenderSession, type RenderSession } from '../contracts/resources';
 import { createAbortError } from '../contracts/exportControl';
-import type { RenderSettings } from './renderSettings';
+import type { RenderSettings, RenderTileRegion } from './renderSettings';
 
 /** Preview-only flags that never influence exported pixels. */
 export interface PreviewRequestFlags {
@@ -31,7 +31,8 @@ export type RenderPipelineSource =
   | HTMLCanvasElement
   | OffscreenCanvas
   | ImageBitmap
-  | HTMLImageElement;
+  | HTMLImageElement
+  | VideoFrame;
 
 export interface RenderPipelineFrame {
   target: RenderTargetKind;
@@ -46,6 +47,8 @@ export interface RenderPipelineFrame {
   sourceHeight?: number;
   signal?: AbortSignal;
   extras?: PreviewRequestFlags;
+  /** Set only by the tiled exporter; absent keeps the full-frame render. */
+  tile?: RenderTileRegion;
 }
 
 export interface RenderPipelineBackend {
@@ -64,6 +67,7 @@ export interface RenderPipelineRequest {
   signal?: AbortSignal;
   registry?: EditModuleRegistry;
   extras?: PreviewRequestFlags;
+  tile?: RenderTileRegion;
 }
 
 export interface RenderPipelineResult {
@@ -81,7 +85,8 @@ function isDomSource(value: RenderPipelineSource): boolean {
     (typeof HTMLCanvasElement !== 'undefined' && value instanceof HTMLCanvasElement) ||
     (typeof OffscreenCanvas !== 'undefined' && value instanceof OffscreenCanvas) ||
     (typeof ImageBitmap !== 'undefined' && value instanceof ImageBitmap) ||
-    (typeof HTMLImageElement !== 'undefined' && value instanceof HTMLImageElement)
+    (typeof HTMLImageElement !== 'undefined' && value instanceof HTMLImageElement) ||
+    (typeof VideoFrame !== 'undefined' && value instanceof VideoFrame)
   );
 }
 
@@ -117,6 +122,7 @@ function prepare(request: RenderPipelineRequest) {
       sourceHeight: request.sourceHeight,
       signal: request.signal,
       extras: request.extras,
+      tile: request.tile,
     } satisfies RenderPipelineFrame,
   };
 }
