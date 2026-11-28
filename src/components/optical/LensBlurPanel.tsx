@@ -40,17 +40,10 @@ export const LensBlurPanel: React.FC<LensBlurPanelProps> = ({
     onBlur: onCommitEnd,
   };
 
-  const depthStrokes = (state.depthMask ?? [])
-    .filter((group) => group.enabled)
-    .reduce(
-      (sum, group) =>
-        sum +
-        group.masks.reduce(
-          (count, mask) => count + (mask.enabled && mask.kind === 'brush' ? mask.strokes.length : 0),
-          0,
-        ),
-      0,
-    );
+  const depthStrokes = (state.depthMask ?? []).reduce(
+    (count, mask) => count + (mask.enabled && mask.kind === 'brush' ? mask.strokes.length : 0),
+    0,
+  );
 
   return (
     <div className={`flex flex-col gap-3 p-3 ${className}`} data-testid="lens-blur-panel">

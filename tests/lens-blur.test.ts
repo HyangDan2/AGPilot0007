@@ -17,7 +17,6 @@ import {
   rasterizeDepthMask,
   suggestTaps,
   type ApertureShape,
-  type DepthMaskGroup,
   type LensBlurPlan,
   type LensBlurState,
 } from '../src/engine/optical/lensBlur';
@@ -114,9 +113,6 @@ const bilinearUpsample = (
   return out;
 };
 
-const depthMask = (masks: DepthMaskGroup['masks']): DepthMaskGroup[] => [
-  { id: 'depth', name: 'Depth', enabled: true, masks },
-];
 
 const linearMask = (extra: Partial<LinearMask> = {}): LinearMask => ({
   id: 'depth-linear',
@@ -287,7 +283,7 @@ describe('lens blur reference gather', () => {
     const height = 64;
     const src = image(width, height, (x) => (x < width / 2 ? [0.05, 0.05, 0.05] : [0.95, 0.95, 0.95]));
     const plan: LensBlurPlan = planLensBlur(
-      state({ focusPlane: 0.5, focusRange: 0.05, depthMask: depthMask([linearMask()]) }),
+      state({ focusPlane: 0.5, focusRange: 0.05, depthMask: [linearMask()] }),
       { width, height },
       CAPABILITY,
     )!;
@@ -303,11 +299,11 @@ describe('lens blur reference gather', () => {
   });
 
   it('rasterizes depth masks and rejects pixel-sampled masks', () => {
-    const depth = rasterizeDepthMask(depthMask([linearMask()]), 32, 16)!;
+    const depth = rasterizeDepthMask([linearMask()], 32, 16)!;
     expect(depth[0]).toBe(0);
     expect(depth[31]).toBe(1);
     expect(rasterizeDepthMask(null, 32, 16)).toBeNull();
-    expect(rasterizeDepthMask([{ ...depthMask([linearMask()])[0], enabled: false }], 32, 16)).toBeNull();
+    expect(rasterizeDepthMask([{ ...linearMask(), enabled: false }], 32, 16)).toBeNull();
 
     const luminance: LuminanceMask = {
       id: 'luma',
@@ -321,7 +317,7 @@ describe('lens blur reference gather', () => {
       hi: 0.8,
       feather: 0,
     };
-    expect(() => rasterizeDepthMask(depthMask([luminance]), 32, 16)).toThrow(
+    expect(() => rasterizeDepthMask([luminance], 32, 16)).toThrow(
       'Depth masks support brush, linear and radial masks only',
     );
   });

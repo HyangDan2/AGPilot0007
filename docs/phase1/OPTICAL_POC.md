@@ -675,3 +675,39 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 - **검증**: `tests/e2e/local-stage-contract.spec.ts`가 headless WebGL2에서 chunk를 컴파일·링크하고
   count/coverage/exposure/blend 조합 6종의 픽셀을 CPU 기대값과 ≤2/255로 비교한다. tsc 0, vitest
   38 files / 343 passed(6 skipped), E2E 10 specs(기존 6 + 신규 4) 통과.
+
+## 18. CP4-02 — Lens blur engine (depth CoC + guarded gather)
+
+- **API**: `planLensBlur(state, outputSize, capability) -> LensBlurPlan | null` (Q00-frozen seam,
+  WO_CP4 §2.2a). `depthMask` is the frozen flat `MaskData[] | null`; coverage = normalized depth
+  (0 near, 1 far), composed with per-mask blend/opacity/invert via `composeMaskStack`. `luminance`/`color`
+  masks are rejected with an explicit error because the planner has no corrected pixels. `null` → radial
+  procedural depth (short-side distance from center, farthest corner = 1).
+- **Plan**: `{ width, height, halfRes, outputWidth, outputHeight, maxCocPx, taps, tapCount, psf, depth,
+  guardBand, guardStrength, focusPlane, focusRange, falloff, aperture, quality, highlightBoost }`.
+  Preview gathers at half resolution (`halfRes`), both quality tiers clamp to `capability.maxTextureSize`
+  and `capability.maxTaps`. `suggestTaps` (PoC OPT-06) tiers 12/24, 20/40, 32/64 by CoC pixels, and
+  `null` is returned when the budget resolves below 2 taps so the renderer keeps the byte-equal path.
+- **CoC**: `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036 short side);
+  `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`.
+  `focusRange = 1` makes the whole depth field sharp (plan `null`). Aperture PSF is the PoC golden-angle
+  spiral filtered by a 5..9-blade polygon (`rotationDeg`), weights normalized, packed as a 64×1 RGBA32F
+  texture (xy offset, z weight).
+- **Quality**: taps whose depth differs from the center pixel by more than `guardBand` (0.08) are
+  down-weighted (`guardStrength`), which suppresses colored halos at foreground/background edges without
+  pre-separating layers. `highlightBoost` applies a luma^4 weight before normalization so bright bokeh
+  discs bloom; 0 keeps the gather energy-preserving.
+- **GLSL ES 3.00**: `LENS_BLUR_FRAGMENT` exposes `u_q02_lens_scene` (graded corrected image),
+  `u_q02_lens_psf`, optional `u_q02_lens_depth` (R32F, `u_q02_lens_use_depth = 1`),
+  `u_q02_lens_taps`, `u_q02_lens_aspect`, focus/falloff/max_coc scalars, `u_q02_lens_guard`
+  (band, strength) and `u_q02_lens_highlight_boost`; entry `vec3 q02_lens_blur(vec3 color, vec2 uv)`.
+  UVs are in scene-texture space (no flip inside the chunk); binding/caching are Q01 renderer work.
+- **UI**: `LensBlurPanel.tsx` (enabled, focus plane/range, aperture, blades, rotation, highlight boost,
+  preview/export quality, depth status + clear) and `LensBlurOverlay.tsx` (paints brush strokes into the
+  flat depth stack; pointer capture, one stroke per press). Both are controlled components; Q01 mounts them.
+- **검증**: tsc 0; vitest 49 files / 412 passed (9 skipped). `tests/lens-blur.test.ts` covers CoC
+  monotonicity/range/aperture, blade-polygon containment + normalized weights + determinism, PSF packing,
+  neutral/identity `null`, half-res + texture/tap clamps, uniform-image energy conservation, depth-mask
+  rejection rules, halo suppression across a depth step, and preview-vs-export parity after upscale
+  (mean < 0.02, max < 0.08 in 0..1 units). E2E on 5273/chromium: panel/paint harness and a headless
+  WebGL2 gather that matches the CPU reference (mean < 0.005, max < 0.02; 3 specs pass).

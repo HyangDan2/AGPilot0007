@@ -9,15 +9,9 @@ import { composeMaskStack } from '../local/maskRaster';
  * provided the depth field is the PoC radial field (center 0, farthest corner 1).
  */
 
-// Temporary mirror of contracts/lensBlur.ts §2.2 until CP4-01a lands on
-// pro-engine; Q01 owns the contract and these shapes were proposed for it.
-export interface DepthMaskGroup {
-  id: string;
-  name: string;
-  enabled: boolean;
-  masks: MaskData[];
-}
-
+// Temporary mirror of contracts/lensBlur.ts §2.2/2.2a until CP4-01a lands on
+// pro-engine; Q01 owns the contract. depthMask is the frozen flat MaskData
+// stack (no parallel group type), coverage = normalized depth.
 export type LensBlurQuality = 'preview' | 'export';
 
 export interface LensBlurState {
@@ -29,7 +23,7 @@ export interface LensBlurState {
   rotationDeg: number;
   quality: LensBlurQuality;
   highlightBoost: number;
-  depthMask: DepthMaskGroup[] | null;
+  depthMask: MaskData[] | null;
 }
 
 export interface LensBlurCapability {
@@ -219,37 +213,22 @@ function isGeometricMask(mask: MaskData): boolean {
 }
 
 /**
- * Depth mask coverage is the depth field itself (0 near, 1 far). Groups are
- * unioned by maximum so painted areas accumulate regardless of paint order.
- * Luminance/color masks need corrected pixels and are rejected here; depth
- * masks are painted with geometric masks.
+ * Depth mask coverage is the depth field itself (0 near, 1 far). The frozen
+ * flat stack composes with per-mask blend/opacity/invert. Luminance/color masks
+ * need corrected pixels and are rejected here; depth masks use geometric masks.
  */
 export function rasterizeDepthMask(
-  groups: readonly DepthMaskGroup[] | null,
+  masks: readonly MaskData[] | null,
   width: number,
   height: number,
 ): Float32Array | null {
-  const active = (groups ?? []).filter((group) => group.enabled);
-  if (active.length === 0) return null;
-  for (const group of active) {
-    for (const mask of group.masks) {
-      if (mask.enabled && !isGeometricMask(mask)) {
-        throw new Error('Depth masks support brush, linear and radial masks only');
-      }
+  if (!masks || !masks.some((mask) => mask.enabled)) return null;
+  for (const mask of masks) {
+    if (mask.enabled && !isGeometricMask(mask)) {
+      throw new Error('Depth masks support brush, linear and radial masks only');
     }
   }
-  let depth: Float32Array | null = null;
-  for (const group of active) {
-    const coverage = composeMaskStack(group.masks, width, height);
-    if (!depth) {
-      depth = coverage;
-      continue;
-    }
-    for (let index = 0; index < coverage.length; index++) {
-      if (coverage[index] > depth[index]) depth[index] = coverage[index];
-    }
-  }
-  return depth;
+  return composeMaskStack(masks, width, height);
 }
 
 function renderSize(

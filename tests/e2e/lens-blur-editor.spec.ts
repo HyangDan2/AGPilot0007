@@ -112,8 +112,8 @@ test('painting creates a depth mask that plans a depth field', async ({ page, br
 
   const state = await lensState(page);
   expect(state.depthMask).toHaveLength(1);
-  expect(state.depthMask[0].masks[0].kind).toBe('brush');
-  const stroke = state.depthMask[0].masks[0].strokes[0];
+  expect(state.depthMask[0].kind).toBe('brush');
+  const stroke = state.depthMask[0].strokes[0];
   expect(stroke.points.length).toBeGreaterThan(1);
   expect(stroke.points[0].x).toBeCloseTo(0.3, 1);
   expect(stroke.points[0].y).toBeCloseTo(0.6, 1);

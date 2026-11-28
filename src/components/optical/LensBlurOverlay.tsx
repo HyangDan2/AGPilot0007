@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { BrushMask } from '../../engine/contracts/masks';
-import type { DepthMaskGroup } from '../../engine/optical/lensBlur';
+import type { BrushMask, MaskData } from '../../engine/contracts/masks';
 
 export interface LensBlurOverlayProps {
-  depthMask: DepthMaskGroup[] | null;
-  onDepthMaskChange: (next: DepthMaskGroup[] | null) => void;
+  depthMask: MaskData[] | null;
+  onDepthMaskChange: (next: MaskData[] | null) => void;
   hidden?: boolean;
   className?: string;
   /** Short-side brush radius (same units as mask strokes). */
@@ -15,16 +14,15 @@ export interface LensBlurOverlayProps {
   onDragEnd?: () => void;
 }
 
-const GROUP_ID = 'lens-depth';
 const MASK_ID = 'lens-depth-brush';
 const MIN_POINT_DISTANCE = 0.004;
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
-function depthBrush(depthMask: DepthMaskGroup[] | null): BrushMask {
-  const existing = depthMask
-    ?.flatMap((group) => group.masks)
-    .find((mask): mask is BrushMask => mask.kind === 'brush' && mask.id === MASK_ID);
+function depthBrush(depthMask: MaskData[] | null): BrushMask {
+  const existing = depthMask?.find(
+    (mask): mask is BrushMask => mask.kind === 'brush' && mask.id === MASK_ID,
+  );
   if (existing) return existing;
   return {
     id: MASK_ID,
@@ -38,27 +36,11 @@ function depthBrush(depthMask: DepthMaskGroup[] | null): BrushMask {
   };
 }
 
-function withBrush(
-  depthMask: DepthMaskGroup[] | null,
-  brush: BrushMask,
-): DepthMaskGroup[] {
-  if (!depthMask || depthMask.length === 0) {
-    return [{ id: GROUP_ID, name: 'Depth', enabled: true, masks: [brush] }];
-  }
-  let replaced = false;
-  const next = depthMask.map((group) => {
-    if (replaced) return group;
-    const index = group.masks.findIndex((mask) => mask.id === MASK_ID);
-    if (index < 0) return group;
-    replaced = true;
-    return {
-      ...group,
-      masks: group.masks.map((mask, maskIndex) => (maskIndex === index ? brush : mask)),
-    };
-  });
-  if (replaced) return next;
-  const [first, ...rest] = next;
-  return [{ ...first, masks: [...first.masks, brush] }, ...rest];
+function withBrush(depthMask: MaskData[] | null, brush: BrushMask): MaskData[] {
+  if (!depthMask || depthMask.length === 0) return [brush];
+  const index = depthMask.findIndex((mask) => mask.id === MASK_ID);
+  if (index < 0) return [...depthMask, brush];
+  return depthMask.map((mask, maskIndex) => (maskIndex === index ? brush : mask));
 }
 
 /**
