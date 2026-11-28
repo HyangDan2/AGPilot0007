@@ -51,6 +51,7 @@ export function VideoWorkspace() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const gradeCanvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<VideoExportHandle | null>(null);
+  const cancelRequested = useRef(false);
   const touchedTrim = useRef(false);
   const fileRef = useRef<File | null>(null);
 
@@ -190,7 +191,7 @@ export function VideoWorkspace() {
     adjustTrim(which, frameStep(which === 'in' ? trimIn : trimOut, fps, direction, duration));
   }, [adjustTrim, duration, fps, trimIn, trimOut]);
 
-  const startExport = useCallback(() => {
+  const startExport = useCallback(async () => {
     const engine = getVideoEngine();
     const file = fileRef.current;
     if (!engine || !file || !entry) return;
@@ -204,6 +205,7 @@ export function VideoWorkspace() {
     setError(null);
     setDone(false);
     setRunning(true);
+    cancelRequested.current = false;
     setProgress({ phase: 'decode', framesDone: 0, framesTotal: 0 });
     const editor = useEditorStore.getState();
     const settings: VideoExportSettings = {
@@ -215,36 +217,43 @@ export function VideoWorkspace() {
       fps,
       trim: { startSec: trim.startSec, endSec: trim.endSec },
     };
-    const handle = engine.exportVideo({
-      file,
-      settings,
-      grade: {
-        filmId: editor.activeFilmId,
-        adjustments: editor.adjustments,
-        curves: editor.curves,
-        camera: editor.camera,
-        colorMixer: editor.colorMixer,
-        sharpening: editor.sharpening,
-        geometry: editor.geometry,
-        optical: editor.optical ?? undefined,
-        localAdjustments: editor.localAdjustments,
-      },
-    });
-    handleRef.current = handle;
-    const unsubscribe = handle.onProgress(setProgress);
-    handle.promise.then(({ blob, filename }) => {
-      triggerSafeDownload(blob, filename);
-      setDone(true);
-    }).catch((exportError) => {
+    try {
+      const handle = await engine.exportVideo({
+        file,
+        settings,
+        grade: {
+          filmId: editor.activeFilmId,
+          adjustments: editor.adjustments,
+          curves: editor.curves,
+          camera: editor.camera,
+          colorMixer: editor.colorMixer,
+          sharpening: editor.sharpening,
+          geometry: editor.geometry,
+          optical: editor.optical ?? undefined,
+          localAdjustments: editor.localAdjustments,
+        },
+      });
+      handleRef.current = handle;
+      const unsubscribe = handle.onProgress(setProgress);
+      if (cancelRequested.current) handle.cancel();
+      handle.promise.then(({ blob, filename }) => {
+        triggerSafeDownload(blob, filename);
+        setDone(true);
+      }).catch((exportError) => {
+        setError(classifyError(exportError));
+      }).finally(() => {
+        unsubscribe();
+        if (handleRef.current === handle) handleRef.current = null;
+        setRunning(false);
+      });
+    } catch (exportError) {
       setError(classifyError(exportError));
-    }).finally(() => {
-      unsubscribe();
-      if (handleRef.current === handle) handleRef.current = null;
       setRunning(false);
-    });
+    }
   }, [audioMode, bitrateMbps, codec, container, entry, fps, resolution, trim.endSec, trim.startSec]);
 
   const cancelExport = useCallback(() => {
+    cancelRequested.current = true;
     handleRef.current?.cancel();
   }, []);
 
@@ -450,6 +459,9 @@ export function VideoWorkspace() {
           )}
           {mobile && (
             <p data-testid="video-mobile-guard" className="text-[color:var(--ui-text-slate400)]">Mobile memory guard: exports are checked against the device budget before starting.</p>
+          )}
+          {!capabilities && (
+            <p data-testid="video-engine-loading" className="text-[color:var(--ui-text-slate400)]">Loading the video engine…</p>
           )}
           {!engineReady && (
             <p data-testid="video-engine-missing" className="text-[color:var(--ui-text-amber-400)]">Video engine not loaded yet. Timeline and trim work now; export enables once the video engine is connected.</p>

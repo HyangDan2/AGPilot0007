@@ -38,7 +38,8 @@ export interface VideoGradeSettings {
 
 export interface VideoEngine {
   probe(): Promise<VideoCapabilities>;
-  exportVideo(request: { file: File; settings: VideoExportSettings; grade: VideoGradeSettings }): VideoExportHandle;
+  /** A promise lets a lazily loaded engine start without blocking the shell bundle. */
+  exportVideo(request: { file: File; settings: VideoExportSettings; grade: VideoGradeSettings }): VideoExportHandle | Promise<VideoExportHandle>;
   /** Single graded frame at the playhead; the documented CP4 preview limitation. */
   renderFrame?(request: { file: File; timeSec: number; grade: VideoGradeSettings }): Promise<ImageBitmap | HTMLCanvasElement | null>;
 }

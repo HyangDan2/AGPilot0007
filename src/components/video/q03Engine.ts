@@ -1,6 +1,19 @@
-import { startVideoExport, probeVideoCapabilities } from '../../engine/video';
 import { getVideoEngine, registerVideoEngine, type VideoEngine } from './engine';
 import type { VideoContainer } from './engine';
+
+type EngineVideoModule = typeof import('../../engine/video');
+
+let engineVideo: Promise<EngineVideoModule> | null = null;
+
+/**
+ * The shell (App → Workspace) must not pull mediabunny into the eager chunk, so
+ * engine/video is only referenced through this dynamic import. Probe and export
+ * are already async paths; the first open pays a one-time chunk load.
+ */
+function loadEngineVideo(): Promise<EngineVideoModule> {
+  engineVideo ??= import('../../engine/video');
+  return engineVideo;
+}
 
 /** Same suffix as the photo exporter so a video keeps the Film Studio naming. */
 export function videoExportFilename(name: string, container: VideoContainer): string {
@@ -14,9 +27,13 @@ export function videoExportFilename(name: string, container: VideoContainer): st
  * graded renderer to CP4-01b (the engine falls back to its 2D canvas adapter).
  */
 const q03Engine: VideoEngine = {
-  probe: probeVideoCapabilities,
-  exportVideo({ file, settings }) {
-    const task = startVideoExport(file, { settings });
+  async probe() {
+    const engine = await loadEngineVideo();
+    return engine.probeVideoCapabilities();
+  },
+  async exportVideo({ file, settings }) {
+    const engine = await loadEngineVideo();
+    const task = engine.startVideoExport(file, { settings });
     return {
       promise: task.promise.then((result) => ({ blob: result.blob, filename: videoExportFilename(file.name, settings.container) })),
       cancel: task.cancel,
