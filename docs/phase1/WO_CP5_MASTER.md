@@ -51,8 +51,4 @@ Policy: Lean Engineering v1.1. Evidence reuse; no full regression before the rel
 ## Ledger
 
 - 2026-11-28 CP5 opened after CP4 CLOSED at `ea4974b` (PO Closure Order). CP5-01 issued to Q01 (baseline measurement only).
-
-## Ledger
-
-- 2026-11-28 CP5 opened after CP4 CLOSED at `ea4974b` (PO Closure Order). CP5-01 issued to Q01 (baseline measurement only).
-- 2026-11-28 **WO-P1-CP5 (PO) received and frozen**: feature freeze; BL-CP4-02 in scope; BL-CP4-03 → Phase 2; CP5-01 metrics expanded (cold/warm start, preview FPS, repeated edit/export memory growth, initial download + precache); CP5-02 ownership matrix; CP5-03 emulation-first / UNVERIFIED policy; CP5-04 RC checklist; G5 single full regression by Q05B; Q00 autonomous inside CP5; main/beta locked. Addendum sent to Q01 for the expanded CP5-01 metric list (still measurement-only).
+- 2026-11-28 **WO-P1-CP5 (PO) received and frozen**: feature freeze; BL-CP4-02 in scope; BL-CP4-03 → Phase 2; CP5-01 metrics expanded (cold/warm start, preview FPS, repeated edit/export memory growth, initial download + precache); CP5-02 ownership matrix; CP5-03 emulation-first / UNVERIFIED policy; CP5-04 RC checklist; G5 single full regression by Q05B; Q00 autonomous inside CP5; main/beta locked.
