@@ -1,6 +1,6 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 // Local-only fixtures (never committed): ffmpeg -f lavfi testsrc …
@@ -143,12 +143,17 @@ test('video export either reports the pending engine binding or completes with a
   }
 
   const downloadPromise = page.waitForEvent('download', { timeout: 150000 });
+  await setRange(page, 'video-trim-in', 0.5);
+  await setRange(page, 'video-trim-out', 1.5);
+  await expect(page.getByTestId('video-trim-summary')).toContainText('0.50s – 1.50s');
   await exportButton.click();
   await expect(page.getByTestId('video-progress')).toBeVisible();
   const download = await downloadPromise;
   await expect(page.getByTestId('video-done')).toBeVisible({ timeout: 150000 });
-  info.annotations.push({ type: 'video-export', description: download.suggestedFilename() });
+  const written = await readFile((await download.path())!);
+  info.annotations.push({ type: 'video-export', description: `${download.suggestedFilename()} · ${written.byteLength} bytes` });
   expect(download.suggestedFilename()).toMatch(/\.(mp4|webm)$/);
+  expect(written.byteLength).toBeGreaterThan(1000);
 });
 
 test('video export cancels with a clear error and retries when the engine is bound', async ({ page }, info) => {

@@ -6,6 +6,7 @@ import {useWorkspaceStore as ws} from '../src/stores/workspaceStore';
 import {classifySupport,memoryGuard,resolutionPixels} from '../src/components/video/capabilities';
 import {clampTrim,formatTime,frameStep,loopTime,trimFraction} from '../src/components/video/timeline';
 import {clearClipboard,copySelection,pasteToSelection} from '../src/poc/q04/integration/parameterPaste';
+import {videoExportFilename} from '../src/components/video/q03Engine';
 
 const photo=(id:string)=>({id,name:id,path:id,kind:'photo' as const,getFile:async()=>new File(['x'],id,{type:'image/png'})});
 const video=(id:string)=>({id,name:id,path:id,kind:'video' as const,video:{durationSec:null,width:null,height:null},getFile:async()=>new File(['v'],id,{type:'video/mp4'})});
@@ -157,5 +158,13 @@ describe('workspace video mode',()=>{
     ws.getState().select('v1');
     expect(ws.getState().activeId).toBeNull();
     expect(copySelection(['film','tone'])).toBeNull();
+  });
+});
+
+describe('Q03 export binding',()=>{
+  it('keeps the Film Studio suffix and swaps the container extension',()=>{
+    expect(videoExportFilename('clip.mp4','webm')).toBe('clip_HD2Lab_FilmStudio.webm');
+    expect(videoExportFilename('trip.2026.mov','mp4')).toBe('trip.2026_HD2Lab_FilmStudio.mp4');
+    expect(videoExportFilename('noext','mp4')).toBe('noext_HD2Lab_FilmStudio.mp4');
   });
 });

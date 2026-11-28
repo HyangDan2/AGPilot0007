@@ -4,8 +4,11 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { triggerSafeDownload } from '../../engine/export/imageExporter';
 import { getVideoEngine, type VideoAudioMode, type VideoCapabilities, type VideoContainer, type VideoCodec, type VideoExportHandle, type VideoExportProgress, type VideoExportSettings, type VideoResolution } from './engine';
+import { bindQ03VideoEngine } from './q03Engine';
 import { isMobileProfile, memoryGuard, probeVideoCapabilities, resolutionPixels } from './capabilities';
 import { clampTrim, formatTime, frameStep, loopTime, trimFraction } from './timeline';
+
+bindQ03VideoEngine();
 
 type Phase = VideoExportProgress['phase'];
 const PHASES: Phase[] = ['decode', 'render', 'encode', 'mux'];
@@ -127,6 +130,10 @@ export function VideoWorkspace() {
   useEffect(() => {
     setCodec(CODE_FOR_CONTAINER[container]);
   }, [container]);
+
+  useEffect(() => {
+    if (capabilities && audioMode === 'passthrough' && !capabilities.audioPassthrough) setAudioMode('none');
+  }, [audioMode, capabilities]);
 
   const trim = clampTrim(trimIn, trimOut, duration, fps);
 
@@ -292,7 +299,7 @@ export function VideoWorkspace() {
   const audioDisabled = audioMode === 'passthrough' && !(capabilities?.audioPassthrough ?? false);
   const sourceHeight = entry.video?.height ?? 0;
   const limitedResolution = mobile && sourceHeight > 1080 && resolution === 'source';
-  const canExport = engineReady && codecSupported && containerSupported && !audioDisabled && !running && duration > 0 && !limitedResolution;
+  const canExport = engineReady && (capabilities?.canDecode ?? false) && codecSupported && containerSupported && !audioDisabled && !running && duration > 0 && !limitedResolution;
   const phase = progress?.phase ?? null;
 
   return (
@@ -467,7 +474,7 @@ export function VideoWorkspace() {
 
           {error && <p role="alert" data-testid="video-error" className="text-red-300">{error}</p>}
           {done && !error && <p data-testid="video-done" className="text-emerald-300">Export saved to downloads.</p>}
-          {gradeState === 'unavailable' && <p data-testid="video-grade-note" className="text-[color:var(--ui-text-slate500)]">Graded preview appears once the video engine is connected; the full grade still applies at export.</p>}
+          {gradeState === 'unavailable' && <p data-testid="video-grade-note" className="text-[color:var(--ui-text-slate500)]">Graded preview needs the CP4-01b frame renderer; the current export encodes the source frames ungraded.</p>}
         </aside>
       </div>
     </div>
