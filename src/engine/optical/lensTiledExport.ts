@@ -46,6 +46,7 @@ export interface LensTileRenderDeps {
     tileHeight: number;
     overlap: number;
     tiles: LensTileRegion[];
+    crops: LensTileRegion[];
   }) => void;
   onProgress?: (progress: number, stage: string) => void;
 }
@@ -157,6 +158,7 @@ export async function renderLensTiled(
     tileHeight: grid.coreEdge,
     overlap: 0,
     tiles: grid.tiles.map((tile) => tile.core),
+    crops: grid.tiles.map((tile) => tile.crop),
   });
 
   const lut = await loadLut(settings);
@@ -252,6 +254,8 @@ export async function renderLensTiled(
         core.height,
       );
       deps.onProgress?.(90 * (index + 1) / grid.tiles.length, 'Rendering lens tiles...');
+      // Yield between tiles so abort signals and UI input are not starved.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
   } finally {
     renderer.destroy();

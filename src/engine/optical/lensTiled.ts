@@ -62,6 +62,8 @@ export interface LensTileTemplate {
   taps: PsfTap[];
   psf: Float32Array;
   halo: number;
+  /** False when the single-pass plan would run the unguarded procedural field. */
+  paintedDepth: boolean;
 }
 
 function assertDimension(value: number, label: string): void {
@@ -142,6 +144,7 @@ export function createLensTileTemplate(
   let maxTapRadius = 0;
   for (const tap of taps) maxTapRadius = Math.max(maxTapRadius, Math.hypot(tap.offset.x, tap.offset.y));
   const maxCocPx = maxCocShortSide * shortSidePx;
+  const paintedDepth = !!normalized.depthMask && normalized.depthMask.some((mask) => mask.enabled);
   return {
     state: normalized,
     aperture: normalized.aperture,
@@ -153,6 +156,7 @@ export function createLensTileTemplate(
     taps,
     psf: psfTextureData(taps),
     halo: Math.ceil(maxCocPx * maxTapRadius) + 2,
+    paintedDepth,
   };
 }
 
@@ -193,7 +197,7 @@ export function planLensTileStage(
     psf: template.psf,
     depth,
     guardBand: DEPTH_GUARD_BAND,
-    guardStrength: DEPTH_GUARD_STRENGTH,
+    guardStrength: template.paintedDepth ? DEPTH_GUARD_STRENGTH : 0,
     highlightBoost: template.state.highlightBoost,
   };
 }

@@ -188,6 +188,16 @@ describe('planLensTileStage', () => {
     }
   });
 
+  it('disables the depth tap guard for the unguarded procedural field', () => {
+    if (!template) throw new Error('template missing');
+    expect(template.paintedDepth).toBe(false);
+    const procedural = planLensTileStage(template, frame, { x: 0, y: 0, width: 300, height: 200 });
+    expect(procedural.guardStrength).toBe(0);
+    const masks = [radial(0.5, 0.5)];
+    const painted = { ...template, paintedDepth: true, state: { ...template.state, depthMask: masks } };
+    expect(planLensTileStage(painted, frame, { x: 0, y: 0, width: 300, height: 200 }).guardStrength).toBe(1);
+  });
+
   it('slices the painted depth stack in global coordinates across a seam', () => {
     if (!template) throw new Error('template missing');
     const masks = [radial(0.5, 0.5), linear()];
