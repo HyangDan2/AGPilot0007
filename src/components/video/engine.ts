@@ -1,42 +1,22 @@
+import type { VideoCapabilities, VideoExportProgress, VideoExportSettings, VideoTrim } from '../../engine/contracts/video';
+
 /**
- * UI-facing video engine surface. Q03 owns the implementation
- * (`src/engine/video/**`); this module only holds the binding so the workspace
- * can be built and tested before that engine lands. Until a binding registers,
- * export stays disabled with an explicit note — there is no local fallback.
+ * UI-facing video engine surface. Types come from Q01's frozen
+ * `engine/contracts/video.ts`; Q03 owns the implementation (`engine/video/**`)
+ * and this module only holds the binding so the workspace can be built and
+ * tested before that engine lands. Until a binding registers, export stays
+ * disabled with an explicit note — there is no local fallback.
  */
-export type VideoContainer = 'mp4' | 'webm';
-export type VideoCodec = 'avc' | 'vp9';
-export type VideoAudioMode = 'passthrough' | 'aac' | 'none';
-export type VideoResolution = 'source' | '1080p' | '720p';
+export type { VideoCapabilities, VideoExportProgress, VideoExportSettings, VideoTrim };
+export type VideoContainer = VideoExportSettings['container'];
+export type VideoCodec = VideoExportSettings['videoCodec'];
+export type VideoAudioMode = VideoExportSettings['audioMode'];
+export type VideoResolution = VideoExportSettings['resolution'];
 
-export interface VideoTrim {
-  startSec: number;
-  endSec: number;
-}
-
-export interface VideoExportSettings {
-  container: VideoContainer;
-  videoCodec: VideoCodec;
-  audioMode: VideoAudioMode;
-  resolution: VideoResolution;
-  bitrateMbps: number;
-  fps: number;
-  trim: VideoTrim;
-}
-
-export interface VideoCapabilities {
-  canDecode: boolean;
-  encoders: { avc: boolean; vp9: boolean };
-  containers: { mp4: boolean; webm: boolean };
-  audioPassthrough: boolean;
-}
-
-export interface VideoExportProgress {
-  phase: 'decode' | 'render' | 'encode' | 'mux';
-  framesDone: number;
-  framesTotal: number;
-}
-
+/**
+ * The contract handle resolves `void`; the workspace needs the finished file to
+ * save it. Q03's binding must resolve the produced blob and filename here.
+ */
 export interface VideoExportHandle {
   promise: Promise<{ blob: Blob; filename: string }>;
   cancel(): void;
