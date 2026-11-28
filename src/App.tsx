@@ -4,6 +4,7 @@ import {ColorMixerButton} from './components/ColorMixer';
 import {ToneCurveButton} from './components/ToneCurve';
 import {CameraEffectsButton} from './components/CameraEffects';
 import { WorkspaceStrip } from './components/Workspace';
+import { VideoWorkspace } from './components/video/VideoWorkspace';
 import { FilterSetModal } from './components/FilterSet';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
@@ -133,6 +134,9 @@ export const App: React.FC = () => {
         </div>
 
         <WorkspaceStrip />
+
+        {/* Single video mount: Q04 workspace overlays the shell when a clip is active */}
+        <VideoWorkspace />
 
         {/* Mobile Drawer Controls (Mobile Only < 768px) */}
         <div className="md:hidden flex-shrink-0">

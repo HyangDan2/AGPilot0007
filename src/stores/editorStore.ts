@@ -7,16 +7,19 @@ import { RETRO90 } from '../films/retro90';
 import { create } from 'zustand';
 import { decodeImageFile, type DecodedImage } from '../engine/image/decoder';
 import type { DecodedSource } from '../engine/contracts/imageBuffer';
-import type { RawDevelopInfo } from '../engine/raw/rawPreview';
+import type { RawDevelopInfo, RawRedevelopDecoded, RawRedeveloper } from '../engine/raw/rawPreview';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
-import { loadSavedRecipes, persistRecipes, validateRecipeJSON, shouldWriteRecipeV9 } from './recipeStore';
+import { loadSavedRecipes, persistRecipes, validateRecipeJSON, shouldWriteRecipeV9, shouldWriteRecipeV10 } from './recipeStore';
 import { IDENTITY_GEOMETRY, normalizeGeometry, type GeometryTransform } from '../engine/contracts/geometry';
 import { normalizeOpticalTransform } from '../engine/optical/transform';
 import type { OpticalTransform } from '../engine/contracts/optical';
 import { normalizeLocalAdjustments, type LocalAdjustmentState } from '../engine/contracts/localAdjustments';
+import { normalizeLensBlur, isNeutralLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
+import { normalizeDevelop, isNeutralDevelop, rawDevelopStateFromInfo, type RawDevelopState } from '../engine/contracts/develop';
 import { RECIPE_SCHEMA_V8 } from '../engine/contracts/recipeV8';
 import { RECIPE_SCHEMA_V9 } from '../engine/contracts/recipeV9';
+import { RECIPE_SCHEMA_V10 } from '../engine/contracts/recipeV10';
 import { useMaskUiStore } from './maskUiStore';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
@@ -38,6 +41,74 @@ export interface EditorImageLoad {
 // Q03 bakes WB/exposure into the developed source; the shader guard needs the
 // develop state, which only exists inside the lazily loaded RAW module.
 const rawDevelopBySource = new WeakMap<DecodedSource, RawDevelopInfo>();
+
+// CP4-07: one latest-wins redeveloper per open RAW. The module stays lazily
+// imported so the initial bundle never pulls the RAW decoder.
+let rawRedeveloper: { source: DecodedSource; instance: RawRedeveloper } | null = null;
+let redeveloperEpoch = 0;
+
+function disposeRedeveloper(): void {
+  rawRedeveloper?.instance.dispose();
+  rawRedeveloper = null;
+}
+
+function commitDevelopPreview(source: DecodedSource, decoded: RawRedevelopDecoded): void {
+  if (rawRedeveloper?.source !== source) return;
+  const image = useEditorStore.getState().image;
+  if (!image || image.previewCanvas === decoded.preview) return;
+  // New object identity: Viewport's image effect re-uploads and re-renders.
+  useEditorStore.setState({
+    image: {
+      ...image,
+      previewCanvas: decoded.preview,
+      previewWidth: decoded.previewWidth,
+      previewHeight: decoded.previewHeight,
+      originalElement: decoded.preview as unknown as HTMLImageElement,
+    },
+  });
+}
+
+async function ensureRedeveloper(source: DecodedSource | null): Promise<RawRedeveloper | null> {
+  if (!source) {
+    disposeRedeveloper();
+    return null;
+  }
+  if (rawRedeveloper?.source === source) return rawRedeveloper.instance;
+  disposeRedeveloper();
+  const epoch = ++redeveloperEpoch;
+  let createRawRedeveloper: typeof import('../engine/raw')['createRawRedeveloper'];
+  try {
+    ({ createRawRedeveloper } = await import('../engine/raw'));
+  } catch {
+    return null;
+  }
+  if (epoch !== redeveloperEpoch) return null;
+  // Partial module mocks (unit tests) may not provide the factory.
+  if (typeof createRawRedeveloper !== 'function') return null;
+  const instance = createRawRedeveloper(source, {
+    onCommit: (decoded) => commitDevelopPreview(source, decoded),
+    onError: (error) => console.error('RAW re-develop failed:', error),
+  });
+  if (!instance) return null;
+  if (epoch !== redeveloperEpoch) {
+    instance.dispose();
+    return null;
+  }
+  rawRedeveloper = { source, instance };
+  const state = useEditorStore.getState();
+  if (state.rawSource === source && state.develop) instance.request(state.develop);
+  return instance;
+}
+
+function queueRedevelop(develop: RawDevelopState | null): void {
+  const source = useEditorStore.getState().rawSource;
+  if (!source || !develop) return;
+  void ensureRedeveloper(source).then((runner) => {
+    if (!runner) return;
+    const state = useEditorStore.getState();
+    if (state.rawSource === source && state.develop) runner.request(state.develop);
+  }).catch(() => undefined);
+}
 
 export async function decodeEditorImage(file: File | Blob, signal?: AbortSignal): Promise<EditorImageLoad> {
   const name = (file as File).name || 'photo.jpg';
@@ -182,6 +253,15 @@ interface EditorState extends MixerUI {
   rawSource: DecodedSource | null;
   /** Develop state of the opened RAW; null for non-RAW images. */
   rawDevelop: RawDevelopInfo | null;
+  /** Editable develop state for the RAW panel; null for non-RAW images. */
+  develop: RawDevelopState | null;
+  setDevelop: (next: RawDevelopState) => void;
+  /** Waits for the pending RAW re-develop so preview/export read the latest state. */
+  flushDevelop: () => Promise<void>;
+  lensBlur: LensBlurState;
+  setLensBlur: (patch: Partial<LensBlurState>) => void;
+  isLensBlurDepthEditing: boolean;
+  setLensBlurDepthEditing: (value: boolean) => void;
   activeFilmId: FilmId;
   adjustments: AdjustmentSettings;
   compareMode: 'none' | 'original' | 'split';
@@ -288,6 +368,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   image: null,
   rawSource: null,
   rawDevelop: null,
+  develop: null,
+  lensBlur: normalizeLensBlur({}),
+  isLensBlurDepthEditing: false,
   activeFilmId: 'FS-001',
   adjustments: { ...DEFAULT_ADJUSTMENTS },
   compareMode: 'none',
@@ -382,6 +465,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   resetGeometry: () => get().setGeometry(IDENTITY_GEOMETRY),
   resetOptical: () => get().setOptical(null),
   resetLocalAdjustments: () => get().setLocalAdjustments(normalizeLocalAdjustments(undefined)),
+  setDevelop: (next) => {
+    const develop = normalizeDevelop(next);
+    set({ develop });
+    queueRedevelop(develop);
+  },
+  flushDevelop: async () => {
+    const runner = rawRedeveloper;
+    if (!runner) return;
+    try {
+      await runner.instance.flush();
+    } catch {
+      // The runner reports decode failures through onError.
+    }
+  },
+  setLensBlur: (patch) => set({ lensBlur: normalizeLensBlur({ ...get().lensBlur, ...patch }) }),
+  setLensBlurDepthEditing: (value) => set({ isLensBlurDepthEditing: value }),
   applyParameterGroups: (patch) => {
     const state=get();
     const filmPatch = patch.film && Object.hasOwn(FILM_PROFILES, patch.film.filmId) ? patch.film : undefined;
@@ -432,10 +531,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       image: img,
       rawSource,
       rawDevelop: rawSource ? rawDevelopBySource.get(rawSource) ?? null : null,
+      develop: rawSource ? rawDevelopStateFromInfo(rawDevelopBySource.get(rawSource) ?? null) : null,
+      lensBlur: normalizeLensBlur({}),
+      isLensBlurDepthEditing: false,
       currentView: 'editor',
       zoom: 1.0,
       pan: { x: 0, y: 0 },
     });
+    disposeRedeveloper();
+    if (rawSource) void ensureRedeveloper(rawSource).catch(() => undefined);
   },
 
   setFilm: (filmId) => {
@@ -557,9 +661,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   saveCurrentAsRecipe: async (name: string) => {
     const state = get();
-    const writeV9 = shouldWriteRecipeV9(state);
+    const writeV10 = shouldWriteRecipeV10(state);
+    const writeV9 = writeV10 || shouldWriteRecipeV9(state);
     const optical = state.optical ? normalizeOpticalTransform(state.optical) : null;
     const localAdjustments = normalizeLocalAdjustments(state.localAdjustments);
+    const lensBlur = normalizeLensBlur(state.lensBlur);
+    const develop = state.develop ? normalizeDevelop(state.develop) : null;
     const newRecipe: CustomRecipe = {
       id: `rcp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: name.trim() || 'Untitled Recipe',
@@ -569,10 +676,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      schemaVersion: writeV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
+      schemaVersion: writeV10 ? RECIPE_SCHEMA_V10 : writeV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
       geometry: normalizeGeometry(state.geometry),
       ...(writeV9 && optical ? { optical } : {}),
       ...(writeV9 && localAdjustments.groups.length > 0 ? { localAdjustments } : {}),
+      ...(writeV10 && !isNeutralLensBlur(lensBlur) ? { lensBlur } : {}),
+      ...(writeV10 && develop && !isNeutralDevelop(develop) ? { develop } : {}),
       sharpening:normalizeSharpening(state.sharpening),
       colorMixer:normalizeColorMixer(state.colorMixer),
       curves: normalizeCurves(state.curves),
@@ -619,6 +728,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const geometry=normalizeGeometry(recipe.geometry);
     const optical=recipe.optical?normalizeOpticalTransform(recipe.optical):null;
     const localAdjustments=normalizeLocalAdjustments(recipe.localAdjustments);
+    const lensBlur=normalizeLensBlur(recipe.lensBlur ?? {});
+    const develop=recipe.develop && state.rawDevelop ? normalizeDevelop(recipe.develop) : null;
     const snapshot = snapshotOf(state,{
       sharpening:normalizeSharpening(recipe.sharpening,recipe.adjustments.sharpness),
       colorMixer:normalizeColorMixer(recipe.colorMixer),
@@ -640,7 +751,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       geometry,
       optical,
       localAdjustments,
+      lensBlur,
+      ...(develop ? { develop } : {}),
     });
+    // Opening a v10 recipe must re-develop the RAW, not just reflect the panel.
+    if (develop) queueRedevelop(develop);
   },
 
   importRecipe: async (jsonStr: string) => {

@@ -1,8 +1,8 @@
 import { FRAGMENT_FEATURE_SOURCE } from '../pipeline/shaderChunks';
 import { LOCAL_STAGE_FRAGMENT } from '../local/maskRaster';
 export const VERTEX_SHADER_SOURCE = `#version 300 es
-in vec2 a_position;
-in vec2 a_uv;
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_uv;
 
 out vec2 v_uv;
 
