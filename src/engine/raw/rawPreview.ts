@@ -5,6 +5,13 @@ import type { DecodedImage } from '../image/decoder';
 import { readCaptureDate } from '../image/captureDate';
 import type { RawDevelopSettings } from '../../types/rawDevelop';
 import { rawDevelopIsIdentity } from '../../types/rawDevelop';
+import type { RawDevelopState } from '../contracts/develop';
+import {
+  createLatestTaskRunner,
+  rawDevelopSettingsEqual,
+  rawDevelopSettingsFromState,
+  type LatestTaskRunner,
+} from './rawRedevelop';
 import {
   DEFAULT_MAX_INPUT_BYTES,
   RawDecodeError,
@@ -88,6 +95,8 @@ interface RawAssetEntry {
   report: RawDevelopReport;
   width: number;
   height: number;
+  previewCanvas: HTMLCanvasElement;
+  previewMaxEdge: number;
 }
 
 const rawAssets = new WeakMap<DecodedSource, RawAssetEntry>();
@@ -357,6 +366,8 @@ export async function openRawForEditing(
     report: decoded.report,
     width: decoded.fullWidth,
     height: decoded.fullHeight,
+    previewCanvas: preview,
+    previewMaxEdge: options.previewMaxEdge ?? RAW_PREVIEW_MAX_EDGE,
   });
 
   const blob = toBlob(input.data);
@@ -425,6 +436,154 @@ export async function resolveRawOriginal(source: DecodedSource, signal?: AbortSi
   }
 }
 
+export interface RawRedevelopDecoded {
+  settings: RawDevelopSettings;
+  report: RawDevelopReport;
+  /** New half-size linear working buffer. */
+  working: CpuImageBuffer;
+  preview: HTMLCanvasElement;
+  previewWidth: number;
+  previewHeight: number;
+  /** Full sensor/default-crop dimensions (develop never changes them). */
+  width: number;
+  height: number;
+  /** True when the requested state already matches the decode (nothing ran). */
+  skipped: boolean;
+}
+
+export interface RawRedevelopOptions {
+  signal?: AbortSignal;
+  previewMaxEdge?: number;
+}
+
+/**
+ * Decodes the half-size preview for a develop state without touching the asset.
+ * A state equal to the current decode returns `skipped: true` (neutral fast path
+ * when the asset is still at its open-time settings).
+ */
+export async function decodeRawRedevelop(
+  source: DecodedSource,
+  develop: RawDevelopState,
+  options: RawRedevelopOptions = {},
+): Promise<RawRedevelopDecoded> {
+  const entry = rawAssets.get(source);
+  if (!entry) {
+    throw new RawDecodeError('decode-failed', 'RAW source is not registered for re-develop', { stage: 'decode' });
+  }
+  const settings = rawDevelopSettingsFromState(develop, entry.report.asShotTemperatureK);
+  if (rawDevelopSettingsEqual(settings, entry.settings)) {
+    return {
+      settings: entry.settings,
+      report: entry.report,
+      working: source.working as CpuImageBuffer,
+      preview: entry.previewCanvas,
+      previewWidth: entry.previewCanvas.width,
+      previewHeight: entry.previewCanvas.height,
+      width: entry.width,
+      height: entry.height,
+      skipped: true,
+    };
+  }
+  const decoded = await decodeDeveloped({ data: entry.data }, {
+    settings,
+    mode: 'preview',
+    signal: options.signal,
+    maxWorkingBytes: undefined,
+  });
+  const rebuilt = buildSource(decoded, { data: entry.data }, source.source.id);
+  const working = rebuilt.working as CpuImageBuffer;
+  const preview = renderLinearRgba16ToCanvas(working, options.previewMaxEdge ?? entry.previewMaxEdge);
+  return {
+    settings: decoded.settings,
+    report: decoded.report,
+    working,
+    preview,
+    previewWidth: preview.width,
+    previewHeight: preview.height,
+    width: entry.width,
+    height: entry.height,
+    skipped: false,
+  };
+}
+
+/**
+ * Applies a decoded re-develop to the registered asset. The `DecodedSource`
+ * identity is preserved; only its working buffer/warnings and the asset's
+ * settings/report/preview reference change. Callers must drop stale decodes
+ * before calling (the debounced redeveloper does this for them).
+ */
+export function applyRawRedevelop(source: DecodedSource, decoded: RawRedevelopDecoded): void {
+  if (decoded.skipped) return;
+  const entry = rawAssets.get(source);
+  if (!entry) return;
+  entry.settings = decoded.settings;
+  entry.report = decoded.report;
+  entry.previewCanvas = decoded.preview;
+  if (!Object.isFrozen(source)) {
+    source.working = decoded.working;
+    source.warnings = [...decoded.report.warnings];
+  }
+}
+
+/** Single-shot re-develop (decode + apply). UI paths should use the redeveloper. */
+export async function redevelopRawPreview(
+  source: DecodedSource,
+  develop: RawDevelopState,
+  options: RawRedevelopOptions = {},
+): Promise<RawRedevelopDecoded> {
+  const decoded = await decodeRawRedevelop(source, develop, options);
+  applyRawRedevelop(source, decoded);
+  return decoded;
+}
+
+export interface RawRedeveloper {
+  /** Debounced (trailing) request; a newer state always wins. */
+  request(develop: RawDevelopState): void;
+  flush(): Promise<RawRedevelopDecoded | null>;
+  cancel(): void;
+  dispose(): void;
+}
+
+export interface RawRedeveloperOptions {
+  debounceMs?: number;
+  previewMaxEdge?: number;
+  onCommit?: (decoded: RawRedevelopDecoded) => void;
+  onError?: (error: unknown) => void;
+}
+
+export const RAW_REDEVELOP_DEBOUNCE_MS = 200;
+
+/**
+ * Debounced latest-wins re-developer for one RAW asset. Returns null for
+ * non-RAW sources (no registered asset), so callers never route SDR into it.
+ * `onCommit` fires after the asset has been updated; replace
+ * `image.previewCanvas`/`originalElement` with `decoded.preview` there.
+ */
+export function createRawRedeveloper(
+  source: DecodedSource,
+  options: RawRedeveloperOptions = {},
+): RawRedeveloper | null {
+  if (!rawAssets.has(source)) return null;
+  const runner: LatestTaskRunner<RawRedevelopDecoded> = createLatestTaskRunner({
+    delayMs: options.debounceMs ?? RAW_REDEVELOP_DEBOUNCE_MS,
+    onCommit: (decoded) => {
+      applyRawRedevelop(source, decoded);
+      options.onCommit?.(decoded);
+    },
+    onError: (error) => options.onError?.(error),
+  });
+  return {
+    request: (develop) =>
+      runner.request((signal) =>
+        decodeRawRedevelop(source, develop, { signal, previewMaxEdge: options.previewMaxEdge }),
+      ),
+    flush: () => runner.flush(),
+    cancel: () => runner.cancel(),
+    dispose: () => runner.dispose(),
+  };
+}
+
+/** Q01 helper: develop settings + identity predicate for shader double-application. */
 export interface RawDevelopInfo {
   settings: RawDevelopSettings;
   report: RawDevelopReport;
@@ -432,8 +591,6 @@ export interface RawDevelopInfo {
   width: number;
   height: number;
 }
-
-/** Q01 helper: develop settings + identity predicate for shader double-application. */
 export function getRawDevelopInfo(source: DecodedSource): RawDevelopInfo | null {
   const entry = rawAssets.get(source);
   if (!entry) return null;
