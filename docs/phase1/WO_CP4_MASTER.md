@@ -74,7 +74,21 @@ export function isNeutralLensBlur(s: LensBlurState): boolean;
 
 - `depthMask` is `MaskData[] | null` using **frozen `contracts/masks.ts`** (flat stack, `normalizeMasks`, MAX_MASKS). There is no `MaskGroup` in the frozen contract; do not add a parallel group type. Per-mask `blend`/`opacity`/`inverted` compose the stack coverage; coverage value = normalized depth (0 near, 1 far). `luminance`/`color` kinds are rejected by the planner with an explicit error (they need corrected pixels); brush/linear/radial are accepted.
 - `LensBlurCapability = { maxTextureSize: number; maxTaps?: number; supportsFloatLinear?: boolean }`.
-- `planLensBlur(state, outputSize, capability): LensBlurPlan | null` — returns `null` when `isNeutralLensBlur` or tap budget resolves to 0 (byte-equal path). `LensBlurPlan = { maxCocPx; taps; halfRes; focusPlane; focusRange }`.
+- `planLensBlur(state, outputSize, capability): LensBlurPlan | null` — returns `null` when `isNeutralLensBlur` or tap budget resolves to 0 (byte-equal path). The contract declares the FULL plan shape the renderer binds (frozen 2026-11-28 after Q02 v1, `2e9dedf`); Q02's planner returns it structurally:
+
+```ts
+export interface LensBlurPlan {
+  width: number; height: number;          // gather dimensions (halfRes applied)
+  outputWidth: number; outputHeight: number;
+  halfRes: boolean;
+  focusPlane: number; focusRange: number; falloff: number;
+  maxCocShortSide: number; maxCocPx: number; aperture: number;
+  taps: number; tapCount: number; quality: 'preview' | 'export';
+  highlightBoost: number; guardBand: number; guardStrength: number;
+  psf: Float32Array;                      // 64x1 RGBA32F (256 floats)
+  depth: Float32Array | null;             // rasterized manual depth at output res
+}
+```
 - CoC (short-side units): `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036); `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`; `coc = maxCoc * t`. Monotonic in `|depth - focusPlane|`.
 - `depthMask: null` → procedural depth = short-side distance from image center normalized so the farthest corner = 1 (PoC radial model).
 
@@ -164,3 +178,8 @@ documented limitation, not a defect.
 
 Each engineer reports: Progress / Completed (SHA) / Test Result (numbers) / Blocker / Next Action.
 Q00 records approved SHAs in this ledger. Q05B stays parked until CP4-05 completes.
+
+## 7. Ledger — deliveries and rulings
+
+- 2026-11-28 CP4-02 v1 accepted for branch (`feature/phase1-q02-optical` = `2e9dedf`, merge `9ae52c9` of pro-engine `67943df`): engine/panel/overlay/tests (7 files, +1,611), OPTICAL_POC §18. Q00 verified at SHA: tsc 0; vitest 49 files / 412 passed / 9 skipped; diff paths Q02-owned only; contract blobs 6/6 unchanged. Q02 E2E 5273 chromium 3/3 (gather vs CPU mean 0.0037/max 0.018). Local type mirror of §2.2a stands until CP4-01a lands, then switch to contract import. Not integrated (Q01 merge pending).
+- 2026-11-28 Ruling: `LensBlurPlan` (full shape above) lives in `contracts/lensBlur.ts` (Q01); Q02's planner returns it structurally. No contracts→engine import.
