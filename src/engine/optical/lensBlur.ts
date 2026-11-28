@@ -7,7 +7,7 @@ import {
   type LensBlurState,
 } from '../contracts/lensBlur';
 import type { MaskData } from '../contracts/masks';
-import { composeMaskStack } from '../local/maskRaster';
+import { composeMaskStack, composeMaskStackRegion, type MaskRegion } from '../local/maskRaster';
 
 /**
  * Lens blur engine (CP4-02). The depth model is an artist-controlled thin-lens
@@ -175,6 +175,51 @@ export function rasterizeDepthMask(
     }
   }
   return composeMaskStack(masks, width, height);
+}
+
+/**
+ * Procedural depth for a pixel sub-rect evaluated in full-frame coordinates, so
+ * a tile's depth slice matches the same rows of the full-frame raster.
+ */
+export function proceduralDepthRegion(
+  frameWidth: number,
+  frameHeight: number,
+  region: MaskRegion,
+  out?: Float32Array,
+): Float32Array {
+  const count = region.width * region.height;
+  const result = out && out.length === count ? out : new Float32Array(count);
+  for (let y = 0; y < region.height; y++) {
+    const v = (region.y + y + 0.5) / frameHeight;
+    for (let x = 0; x < region.width; x++) {
+      const u = (region.x + x + 0.5) / frameWidth;
+      result[y * region.width + x] = proceduralDepth(u, v, frameWidth, frameHeight);
+    }
+  }
+  return result;
+}
+
+/**
+ * Per-tile depth: the mask stack rasterized in global coordinates, or the
+ * procedural field when no geometric mask is enabled. Painted depth cannot be
+ * null for a tile because the shader's procedural branch works in tile UVs.
+ */
+export function rasterizeDepthMaskRegion(
+  masks: readonly MaskData[] | null,
+  frameWidth: number,
+  frameHeight: number,
+  region: MaskRegion,
+  out?: Float32Array,
+): Float32Array {
+  if (!masks || !masks.some((mask) => mask.enabled)) {
+    return proceduralDepthRegion(frameWidth, frameHeight, region, out);
+  }
+  for (const mask of masks) {
+    if (mask.enabled && !isGeometricMask(mask)) {
+      throw new Error('Depth masks support brush, linear and radial masks only');
+    }
+  }
+  return composeMaskStackRegion(masks, frameWidth, frameHeight, region, out);
 }
 
 function renderSize(
