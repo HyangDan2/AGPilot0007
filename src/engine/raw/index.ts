@@ -51,6 +51,8 @@ export {
   readWhiteBalanceInfo,
   resolveRawDevelopSettings,
   deriveForwardMatrixFromColorMatrices,
+  cameraToLinearSrgb,
+  deriveDevelopDeltaMatrix,
   RAW_DEVELOP_SHADER_UNIFORMS,
   type RawDevelopDecodeOptions,
   type RawDevelopReport,

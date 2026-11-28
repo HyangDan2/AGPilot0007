@@ -27,14 +27,18 @@ import {
   type RawSourceInput,
 } from './rawSourceDecoder';
 import {
+  cameraToLinearSrgb,
   createRawDevelopReport,
+  deriveDevelopDeltaMatrix,
   rawDevelopDecodeOptions,
   rawWhiteBalanceMultipliers,
   readWhiteBalanceInfo,
   resolveRawDevelopSettings,
   type RawDevelopReport,
+  type RawWhiteBalanceInfo,
+  type RawWhiteBalanceResult,
 } from './rawDevelop';
-import { canvasToPngBlob, renderLinearRgb16ToCanvas, renderLinearRgba16ToCanvas } from './canvas';
+import { canvasToPngBlob, renderLinearRgb16ToCanvas, renderLinearRgba16ToCanvas, renderLinearRgba16ToCanvasDelta } from './canvas';
 
 /**
  * RAW develop seam (CP3-03 §2–3).
@@ -97,6 +101,15 @@ interface RawAssetEntry {
   height: number;
   previewCanvas: HTMLCanvasElement;
   previewMaxEdge: number;
+  /** Latest full decode: the delta-develop base for later exposure/WB edits. */
+  metadata: RawMetadata;
+  info: RawWhiteBalanceInfo;
+  base: {
+    working: CpuImageBuffer;
+    settings: RawDevelopSettings;
+    multipliers: [number, number, number];
+    previewCanvas: HTMLCanvasElement;
+  };
 }
 
 const rawAssets = new WeakMap<DecodedSource, RawAssetEntry>();
@@ -122,6 +135,8 @@ export function accountRawOpenMemory(input: {
 interface DevelopedDecode {
   format: RawFormatName;
   metadata: RawMetadata;
+  info: RawWhiteBalanceInfo;
+  whiteBalance: RawWhiteBalanceResult;
   settings: RawDevelopSettings;
   report: RawDevelopReport;
   rgb: Uint16Array;
@@ -252,7 +267,7 @@ async function decodeDeveloped(
 
     // Copy out of WASM-owned memory so the RAW handle can be released before returning.
     const rgb = frame.data.slice();
-    return { format, metadata, settings, report, rgb, width, height, fullWidth: metadata.width, fullHeight: metadata.height };
+    return { format, metadata, info, whiteBalance, settings, report, rgb, width, height, fullWidth: metadata.width, fullHeight: metadata.height };
   } catch (error) {
     return mapDecodeError(error, 'decode');
   } finally {
@@ -368,6 +383,14 @@ export async function openRawForEditing(
     height: decoded.fullHeight,
     previewCanvas: preview,
     previewMaxEdge: options.previewMaxEdge ?? RAW_PREVIEW_MAX_EDGE,
+    metadata: decoded.metadata,
+    info: decoded.info,
+    base: {
+      working,
+      settings: decoded.settings,
+      multipliers: decoded.whiteBalance.multipliers,
+      previewCanvas: preview,
+    },
   });
 
   const blob = toBlob(input.data);
@@ -449,6 +472,8 @@ export interface RawRedevelopDecoded {
   height: number;
   /** True when the requested state already matches the decode (nothing ran). */
   skipped: boolean;
+  /** True when the preview was derived from the existing decode (no flashraw run). */
+  delta?: boolean;
 }
 
 export interface RawRedevelopOptions {
@@ -484,6 +509,8 @@ export async function decodeRawRedevelop(
       skipped: true,
     };
   }
+  const delta = decodeDevelopDelta(entry, settings, options);
+  if (delta) return delta;
   const decoded = await decodeDeveloped({ data: entry.data }, {
     settings,
     mode: 'preview',
@@ -493,6 +520,15 @@ export async function decodeRawRedevelop(
   const rebuilt = buildSource(decoded, { data: entry.data }, source.source.id);
   const working = rebuilt.working as CpuImageBuffer;
   const preview = renderLinearRgba16ToCanvas(working, options.previewMaxEdge ?? entry.previewMaxEdge);
+  // This decode replaces the delta base, so later exposure/WB edits stay exact.
+  entry.metadata = decoded.metadata;
+  entry.info = decoded.info;
+  entry.base = {
+    working,
+    settings: decoded.settings,
+    multipliers: decoded.whiteBalance.multipliers,
+    previewCanvas: preview,
+  };
   return {
     settings: decoded.settings,
     report: decoded.report,
@@ -503,6 +539,61 @@ export async function decodeRawRedevelop(
     width: entry.width,
     height: entry.height,
     skipped: false,
+  };
+}
+
+/**
+ * CP5-02 fast path: exposure/WB edits reuse the open-time (or last full)
+ * decode. The decoder balances camera RGB and applies exposure on linear
+ * values, so a 3x3 delta in linear sRGB reproduces a fresh decode up to f16
+ * rounding — no flashraw run, no new 48 MB working buffer. Highlight recovery
+ * changes the decode algorithm itself, so those still re-decode, and a base
+ * decoded with recovery baked in is not linear, so deltas on it would drift.
+ */
+function decodeDevelopDelta(
+  entry: RawAssetEntry,
+  settings: RawDevelopSettings,
+  options: RawRedevelopOptions,
+): RawRedevelopDecoded | null {
+  if (entry.base.settings.highlightRecovery !== 'off' || settings.highlightRecovery !== 'off') return null;
+  const targetWhiteBalance = rawWhiteBalanceMultipliers(settings, entry.info);
+  const report = createRawDevelopReport(settings, entry.info, targetWhiteBalance, entry.metadata);
+  const atBase = rawDevelopSettingsEqual(settings, entry.base.settings);
+  if (!atBase) {
+    const matrix = deriveDevelopDeltaMatrix({
+      exposureEv: settings.exposureEv - entry.base.settings.exposureEv,
+      baseMultipliers: entry.base.multipliers,
+      targetMultipliers: targetWhiteBalance.multipliers,
+      cameraToSrgb: cameraToLinearSrgb(entry.info.forwardMatrix),
+    });
+    if (!matrix) return null;
+    throwIfAborted(options.signal);
+    const preview = renderLinearRgba16ToCanvasDelta(entry.base.working, matrix, options.previewMaxEdge ?? entry.previewMaxEdge);
+    return {
+      settings,
+      report,
+      working: entry.base.working,
+      preview,
+      previewWidth: preview.width,
+      previewHeight: preview.height,
+      width: entry.width,
+      height: entry.height,
+      skipped: false,
+      delta: true,
+    };
+  }
+  const preview = entry.base.previewCanvas;
+  return {
+    settings: entry.base.settings,
+    report,
+    working: entry.base.working,
+    preview,
+    previewWidth: preview.width,
+    previewHeight: preview.height,
+    width: entry.width,
+    height: entry.height,
+    skipped: false,
+    delta: true,
   };
 }
 
