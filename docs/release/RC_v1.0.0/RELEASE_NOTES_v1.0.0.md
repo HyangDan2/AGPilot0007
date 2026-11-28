@@ -3,9 +3,10 @@
 Release candidate documentation for Film Studio (AGPilot0007), HD2Lab.
 App version: **1.0.0** (`package.json`). No version bump is proposed in CP5.
 
-Status: **RC draft**. Numbers marked `TBD-CP5-FINAL` are not yet accepted by Q00
-and must be replaced before publication. No deployment happens in CP5 without
-PO approval (see `DEPLOY_PLAN_BETA.md`).
+Status: **RC**. Final CP5 numbers are accepted (evidence tip `da97ba6`), measured
+serially on the M1 box while idle (load 1.5–3.5), headless Chromium with ANGLE
+Metal, 3-run medians. No deployment happens in CP5 without PO approval (see
+`DEPLOY_PLAN_BETA.md`).
 
 ## Highlights since 0.x
 
@@ -40,20 +41,38 @@ PO approval (see `DEPLOY_PLAN_BETA.md`).
 
 ### CP5 — Performance and delivery
 
-Measured changes accepted so far (M1 Mac, Chromium `channel:'chromium'` with ANGLE
-Metal, 3-run medians; full method in `PWA_UPDATE_VERIFICATION.md` and
+Measured on the same environment as above; final numbers from the serial run at
+`da97ba6` (full method in `PWA_UPDATE_VERIFICATION.md` and
 `docs/phase1/CP5_BASELINE.md`):
 
-| Item | Before | After | Status |
+| Item | Before | Final | Status |
 |---|---|---|---|
-| PWA precache entries | 73 | 53 | accepted |
-| Install transfer (precache) | 4,100,872 B | 3,502,282 B (−14.6%) | accepted |
-| Precache raw size | 24,082.93 KiB | 12,459.7 KiB | accepted |
-| photo-only boot video-engine requests | — | 0 | accepted |
+| PWA precache | 73 entries / 24,082.93 KiB | 53 entries / 12,346.27 KiB | final |
+| Install transfer (precache) | 4,100,872 B | 3,502,282 B (−14.6%) | accepted (CP5-02) |
+| Photo-only boot video-engine requests | — | 0 | final |
+| Cold TTI proxy | 75 ms | ≈74 ms (budget ≤250 ms) | final |
+| Warm TTI (SW) | 62.3 ms | ≈52 ms; warm transfer 0 B | final |
+| Cold boot payload | 321.5 KB / 13 requests | ≈323 KB body / 13 resources | final |
+| Develop settle after slider release (EV / WB) | 1,710 ms | 270 / 269 ms (budget ≤500 ms) | final |
+| RAW first open (6000×4000 → first paint sd>3) | 1,260 ms (24MP first session) | ≈706 ms (budget ≤1,000 ms) | final |
+| Lens 24MP PNG single-pass export | 1,543 ms (lens ON) | ≈1.9 s (budget 2.5 s) | final |
+| Lens-ON tiled export above texture limit | 1,491 ms (17,000×1,200, no lens) | ≈1.26 s (17,000×1,200, 5 tiles, maxTex 16384) | final |
+| Slider drag p95 | 33.3 ms | 33.3–33.4 ms | at the boundary — baseline class, not a win |
 | SW update activation | — | PASS (`controllerchange`) | accepted |
-| Develop settle (release → stable) | 1,710 ms | `TBD-CP5-FINAL` (target ≤500 ms) | Q03 in progress |
-| First-session open (24MP) | 1,260 ms | `TBD-CP5-FINAL` (target ≤800 ms) | Q01 in progress |
-| Lens-ON tiled export | 1,543 ms / 307.8 MB (24MP lens export) | `TBD-CP5-FINAL` (target ≤2.5 s, heap ≤150 MB) | Q02 in progress |
+
+Notes on the numbers:
+
+- The slider p95 sits exactly at the 33.3 ms frame-interval boundary; it is
+  reported as unchanged, not as an improvement. (The UX metric,
+  dispatch→frame p95, remains ≤16 ms.)
+- Lens-ON export at 24MP previously measured a 307.8 MB memory floor; peak heap
+  was not re-reported in the final serial run, so no heap win is claimed here.
+- Photo-only boot makes 0 video-engine requests. The service worker still
+  fetches the video chunk once at install (offline enablement) — see
+  `SUPPORT_AND_LIMITS.md`.
+- Real iOS/Android device numbers and MAUM heap remain UNVERIFIED
+  (`crossOriginIsolated=false`, JS-heap floors only); mobile emulation is not
+  device silicon.
 
 Performance budget reference (confirmed by Q00):
 
@@ -73,7 +92,10 @@ Performance budget reference (confirmed by Q00):
 
 - Source stage is skipped for images wider or taller than 8192 px (one warning,
   legacy texture path) — BL-08.
-- 24MP RAW open takes about 1.7–1.9 s and peaks near 299 MB — BL-06.
+- Tiled lens export beyond the single-pass texture limit is a Phase-2/mobile
+  option (BL-CP5-01), not the v1.0.0 RC default.
+- 24MP RAW memory remains the constraint at ~299 MB per open (BL-06); the
+  accepted first-paint time is ≈706 ms.
 - 24MP source warp costs about 190 ms — BL-07.
 - Peak RSS/GPU memory, real-device mobile and WAN behavior are UNVERIFIED
   (cannot be measured in the current harness).

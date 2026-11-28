@@ -33,12 +33,17 @@ claim must state the renderer. Where `MAX_TEXTURE_SIZE` matters, Metal reports
   `Source stage skipped: WxH exceeds the 8192px WebGL2 safety limit; using the
   legacy texture path.` There is no tiling for the preview path (BL-08).
 - **Tiled export** is available for very large sources; tested at
-  17,000×1,200 (1,491 ms, 22 MB floor).
-- **24MP RAW** open takes about 1.7–1.9 s and peaks near 299 MB (BL-06).
-  JPEG 24MP opens in ~250 ms; its warp step costs ~190 ms (BL-07).
-- **JS heap** budgets: ≤350 MB during export, RAW steady state ≤200 MB. RAW
-  re-open showed heap retention (185 MB warm vs ~135 MB cold) — flagged and
-  being addressed in CP5.
+  17,000×1,200 (1,491 ms, 22 MB floor). Lens-ON tiled export at the same size
+  (5 tiles, maxTex 16384) measured ≈1.26 s. Tiled lens export beyond the
+  single-pass texture limit is a Phase-2/mobile option (BL-CP5-01), not the
+  v1.0.0 RC default.
+- **24MP RAW** peaks near 299 MB (BL-06); the accepted CP5 first-paint time is
+  ≈706 ms on the 6000×4000 fixture. JPEG 24MP opens in ~250 ms; its warp step
+  costs ~190 ms (BL-07).
+- **JS heap** budgets: ≤350 MB during export, RAW steady state ≤200 MB. The
+  baseline RAW re-open showed heap retention (185 MB warm vs ~135 MB cold);
+  the final CP5 run did not re-report a heap figure, so no heap improvement is
+  claimed.
 - Peak RSS and GPU memory are **UNVERIFIED**: `measureUserAgentSpecificMemory`
   is unavailable because the site is not cross-origin isolated, so only
   `performance.memory` JS-heap floors are reported.
@@ -86,7 +91,8 @@ behavior and constrained networks are UNVERIFIED.
 | ID | Limitation |
 |---|---|
 | BL-03 | Real-device performance and SwiftShader limits (post-Beta) |
-| BL-06 | RAW 24MP open ~1.7–1.9 s, ~299 MB |
+| BL-06 | RAW 24MP memory ~299 MB per open |
 | BL-07 | 24MP source warp ~190 ms (over 60 fps budget) |
 | BL-08 | No tiling for >8192 px preview sources; legacy path + one warning |
 | BL-09 | Live settings serialization omits geometry/optical (settings preview only) |
+| BL-CP5-01 | Tiled lens export beyond the single-pass texture limit is a Phase-2/mobile option, not enabled by default in the v1.0.0 RC |

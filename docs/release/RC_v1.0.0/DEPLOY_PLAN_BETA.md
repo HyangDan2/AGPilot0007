@@ -60,8 +60,8 @@ successful beta run, not rebuilt from `beta` HEAD.
 
 All must hold before PO approves either deploy:
 
-1. CP5 qualification signed off by Q00 (final numbers replace every
-   `TBD-CP5-FINAL` in the release notes).
+1. CP5 qualification signed off by Q00 (final numbers recorded in the release
+   notes, evidence tip `da97ba6`).
 2. Q05 verification PASS for the RC; no open blocking defects.
 3. App version confirmed 1.0.0 (`package.json`); no bump without approval.
 4. PR #17 merged to the pro-engine integration branch by Q01 (not by Q04),
