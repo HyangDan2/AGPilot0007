@@ -40,6 +40,8 @@ export interface TiledRenderDeps {
   createCanvas?: (width: number, height: number) => HTMLCanvasElement;
   createRenderer?: (canvas: HTMLCanvasElement) => WebGL2FilmRenderer;
   loadLut?: (settings: RenderSettings) => Promise<ParsedLut3D>;
+  /** Receives the tile geometry actually rendered (single tile when it fits). */
+  onPlan?: (plan: TilePlan) => void;
 }
 
 const MIN_TILE_EDGE = 256;
@@ -260,6 +262,14 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
   const lut = await loadLut(settings);
 
   if (decision.quality !== 'tile') {
+    deps.onPlan?.({
+      columns: 1,
+      rows: 1,
+      tileWidth: output.width,
+      tileHeight: output.height,
+      overlap: 0,
+      tiles: [{ x: 0, y: 0, width: output.width, height: output.height }],
+    });
     return renderFullFrame(source, image, settings, output, lut, registry, createCanvas, createRenderer);
   }
 
@@ -280,6 +290,7 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
     );
   }
   const plan = planTiles(output.width, output.height, Math.min(decision.tile?.width ?? maxTileEdge, maxTileEdge), requestedOverlap);
+  deps.onPlan?.(plan);
   const corrected = correctedFrame(source, image, settings, output);
   const tileSettings: RenderSettings = {
     ...settings,
