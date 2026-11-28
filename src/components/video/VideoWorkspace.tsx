@@ -54,6 +54,8 @@ export function VideoWorkspace() {
   const cancelRequested = useRef(false);
   const touchedTrim = useRef(false);
   const fileRef = useRef<File | null>(null);
+  /** Incremented per session so callbacks from a closed/previous session can't write state. */
+  const sessionRef = useRef(0);
 
   const [url, setUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
@@ -77,10 +79,16 @@ export function VideoWorkspace() {
 
   const entryId = entry?.id;
   const getFile = entry?.getFile;
+  // The workspace is mounted once for the app lifetime, so this effect must also
+  // run when the session closes (activeId null): otherwise the previous clip's
+  // trim/preview state leaks into a same-clip reopen.
   useEffect(() => {
-    if (!entryId || !getFile) return;
-    let cancelled = false;
-    let objectUrl: string | null = null;
+    sessionRef.current += 1;
+    handleRef.current?.cancel();
+    handleRef.current = null;
+    cancelRequested.current = false;
+    fileRef.current = null;
+    touchedTrim.current = false;
     setUrl(null);
     setDuration(0);
     setCurrentTime(0);
@@ -88,10 +96,13 @@ export function VideoWorkspace() {
     setTrimIn(0);
     setTrimOut(0);
     setProgress(null);
+    setRunning(false);
     setDone(false);
     setError(null);
     setGradeState('idle');
-    touchedTrim.current = false;
+    if (!entryId || !getFile) return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
     void getFile().then((file) => {
       if (cancelled) return;
       fileRef.current = file;
@@ -102,12 +113,14 @@ export function VideoWorkspace() {
     });
     return () => {
       cancelled = true;
-      fileRef.current = null;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [entryId, getFile]);
+  }, [activeId, entryId, getFile]);
 
   useEffect(() => {
+    // No session means no probe: at boot this effect must not touch the engine,
+    // or the lazy video chunk (mediabunny) loads for photo-only users.
+    if (!activeId) return;
     let cancelled = false;
     const engine = getVideoEngine();
     const probe = engine ? engine.probe() : probeVideoCapabilities();
@@ -206,6 +219,7 @@ export function VideoWorkspace() {
     setDone(false);
     setRunning(true);
     cancelRequested.current = false;
+    const session = sessionRef.current;
     setProgress({ phase: 'decode', framesDone: 0, framesTotal: 0 });
     const editor = useEditorStore.getState();
     const settings: VideoExportSettings = {
@@ -233,22 +247,31 @@ export function VideoWorkspace() {
           localAdjustments: editor.localAdjustments,
         },
       });
+      if (sessionRef.current !== session) {
+        handle.cancel();
+        return;
+      }
       handleRef.current = handle;
-      const unsubscribe = handle.onProgress(setProgress);
+      const unsubscribe = handle.onProgress((next) => {
+        if (sessionRef.current === session) setProgress(next);
+      });
       if (cancelRequested.current) handle.cancel();
       handle.promise.then(({ blob, filename }) => {
+        if (sessionRef.current !== session) return;
         triggerSafeDownload(blob, filename);
         setDone(true);
       }).catch((exportError) => {
-        setError(classifyError(exportError));
+        if (sessionRef.current === session) setError(classifyError(exportError));
       }).finally(() => {
         unsubscribe();
         if (handleRef.current === handle) handleRef.current = null;
-        setRunning(false);
+        if (sessionRef.current === session) setRunning(false);
       });
     } catch (exportError) {
-      setError(classifyError(exportError));
-      setRunning(false);
+      if (sessionRef.current === session) {
+        setError(classifyError(exportError));
+        setRunning(false);
+      }
     }
   }, [audioMode, bitrateMbps, codec, container, entry, fps, resolution, trim.endSec, trim.startSec]);
 

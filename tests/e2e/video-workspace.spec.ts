@@ -108,6 +108,13 @@ test('ingests a video beside a photo and drives the timeline, trim and capabilit
   await expect(strip.getByText('1 photos · 1 videos', { exact: true })).toBeVisible();
   await expect(strip.getByRole('button', { name: 'Edit photo-0.png', exact: true })).toBeVisible();
 
+  // Same-clip reopen must start a fresh session: the exact full-range summary
+  // rules out the previous session's trim text satisfying the wait.
+  await strip.getByRole('button', { name: 'Open clip.mp4', exact: true }).click();
+  await expect(page.getByTestId('video-trim-summary')).toHaveText('0.00s – 3.00s · 3.00s · 90 frames @ 30fps', { timeout: 20000 });
+  await page.getByRole('button', { name: 'Close video workspace' }).click();
+  await expect(workspace).toHaveCount(0);
+
   info.annotations.push({ type: 'video-console-errors', description: errors.length ? errors.join(' | ') : 'none' });
   // iOS WebKit logs a benign WebKitBlobResource notice for ranged blob reads of
   // the local fixture; the app itself must not throw.
@@ -192,7 +199,7 @@ test('graded video export changes pixels with the grade, downloads and hides the
   await page.getByRole('button', { name: 'Close video workspace' }).click();
   await page.getByLabel('Exposure', { exact: true }).fill('0.8');
   await strip.getByRole('button', { name: 'Open clip.mp4', exact: true }).click();
-  await expect(page.getByTestId('video-trim-summary')).toContainText('3.00s', { timeout: 20000 });
+  await expect(page.getByTestId('video-trim-summary')).toHaveText('0.00s – 3.00s · 3.00s · 90 frames @ 30fps', { timeout: 20000 });
   const graded = await trimAndExport(page);
   const gradedMean = await meanRgb(page, graded.bytes);
 
