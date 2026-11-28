@@ -273,7 +273,9 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
     return renderFullFrame(source, image, settings, output, lut, registry, createCanvas, createRenderer);
   }
 
-  if (settings.localAdjustments || settings.localStage) {
+  const local = settings.localAdjustments;
+  const localActive = !!local && local.enabled && local.groups.some((group) => group.enabled);
+  if (settings.localStage || localActive) {
     throw new Error('Tiled export does not support local adjustments yet.');
   }
 

@@ -16,6 +16,7 @@ import { composeDevelop, rawDevelopStateFromInfo } from '../engine/contracts/dev
 import { geometryOutputSize } from '../engine/optical/geometry';
 import { GeometryOverlay } from './geometry/GeometryOverlay';
 import { MaskEditingOverlay } from './masks/MasksWorkspace';
+import { LensBlurOverlay } from './optical/LensBlurOverlay';
 import { createQ02RenderRegistry } from '../engine/optical/modules';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
@@ -71,6 +72,8 @@ export const Viewport: React.FC = () => {
     localAdjustments,
     rawDevelop,
     isCropEditing,
+    lensBlur,
+    isLensBlurDepthEditing,
     setGeometry,
     compareMode,
     setCompareMode,
@@ -753,6 +756,14 @@ export const Viewport: React.FC = () => {
                     const state = useEditorStore.getState();
                     state.setLocalAdjustments(state.localAdjustments, true);
                   }}
+                />
+              )}
+              {image && isLensBlurDepthEditing && (
+                <LensBlurOverlay
+                  className="z-10"
+                  depthMask={lensBlur.depthMask}
+                  hidden={isPressHolding || compareMode === 'original'}
+                  onDepthMaskChange={(depthMask) => useEditorStore.getState().setLensBlur({ depthMask })}
                 />
               )}
 

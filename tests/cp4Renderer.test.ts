@@ -246,7 +246,7 @@ describe('CP4 renderTiled', () => {
     const loadLut = vi.fn(async () => lut);
     const localSettings: RenderSettings = {
       ...identitySettings(),
-      localAdjustments: { groups: [] } as never,
+      localAdjustments: { enabled: true, groups: [{ enabled: true }] } as never,
     };
 
     await expect(

@@ -15,6 +15,8 @@ import { IDENTITY_GEOMETRY, normalizeGeometry, type GeometryTransform } from '..
 import { normalizeOpticalTransform } from '../engine/optical/transform';
 import type { OpticalTransform } from '../engine/contracts/optical';
 import { normalizeLocalAdjustments, type LocalAdjustmentState } from '../engine/contracts/localAdjustments';
+import { normalizeLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
+import { rawDevelopStateFromInfo, type RawDevelopState } from '../engine/contracts/develop';
 import { RECIPE_SCHEMA_V8 } from '../engine/contracts/recipeV8';
 import { RECIPE_SCHEMA_V9 } from '../engine/contracts/recipeV9';
 import { useMaskUiStore } from './maskUiStore';
@@ -182,6 +184,13 @@ interface EditorState extends MixerUI {
   rawSource: DecodedSource | null;
   /** Develop state of the opened RAW; null for non-RAW images. */
   rawDevelop: RawDevelopInfo | null;
+  /** Editable develop state for the RAW panel; null for non-RAW images. */
+  develop: RawDevelopState | null;
+  setDevelop: (next: RawDevelopState) => void;
+  lensBlur: LensBlurState;
+  setLensBlur: (patch: Partial<LensBlurState>) => void;
+  isLensBlurDepthEditing: boolean;
+  setLensBlurDepthEditing: (value: boolean) => void;
   activeFilmId: FilmId;
   adjustments: AdjustmentSettings;
   compareMode: 'none' | 'original' | 'split';
@@ -288,6 +297,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   image: null,
   rawSource: null,
   rawDevelop: null,
+  develop: null,
+  lensBlur: normalizeLensBlur({}),
+  isLensBlurDepthEditing: false,
   activeFilmId: 'FS-001',
   adjustments: { ...DEFAULT_ADJUSTMENTS },
   compareMode: 'none',
@@ -382,6 +394,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   resetGeometry: () => get().setGeometry(IDENTITY_GEOMETRY),
   resetOptical: () => get().setOptical(null),
   resetLocalAdjustments: () => get().setLocalAdjustments(normalizeLocalAdjustments(undefined)),
+  setDevelop: (next) => set({ develop: next }),
+  setLensBlur: (patch) => set({ lensBlur: normalizeLensBlur({ ...get().lensBlur, ...patch }) }),
+  setLensBlurDepthEditing: (value) => set({ isLensBlurDepthEditing: value }),
   applyParameterGroups: (patch) => {
     const state=get();
     const filmPatch = patch.film && Object.hasOwn(FILM_PROFILES, patch.film.filmId) ? patch.film : undefined;
@@ -432,6 +447,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       image: img,
       rawSource,
       rawDevelop: rawSource ? rawDevelopBySource.get(rawSource) ?? null : null,
+      develop: rawSource ? rawDevelopStateFromInfo(rawDevelopBySource.get(rawSource) ?? null) : null,
+      lensBlur: normalizeLensBlur({}),
+      isLensBlurDepthEditing: false,
       currentView: 'editor',
       zoom: 1.0,
       pan: { x: 0, y: 0 },
