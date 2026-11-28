@@ -12,7 +12,7 @@ import { useEditorStore, startMaskBridge } from '../stores/editorStore';
 import { WebGL2FilmRenderer } from '../engine/renderer/webglRenderer';
 import { createWebGLPipelineBackend, type WebGLPipelineBackend } from '../engine/renderer/webglPipelineBackend';
 import { runRenderPipelineSync } from '../engine/pipeline/renderPipeline';
-import { withRawDevelopGuard } from '../engine/pipeline/renderSettings';
+import { composeDevelop, rawDevelopStateFromInfo } from '../engine/contracts/develop';
 import { geometryOutputSize } from '../engine/optical/geometry';
 import { GeometryOverlay } from './geometry/GeometryOverlay';
 import { MaskEditingOverlay } from './masks/MasksWorkspace';
@@ -236,7 +236,7 @@ export const Viewport: React.FC = () => {
           sourceWidth:current.previewWidth,
           sourceHeight:current.previewHeight,
           registry:renderRegistryRef.current,
-          settings: withRawDevelopGuard({
+          settings: composeDevelop({
             adjustments: adjustmentsRef.current,
             camera: cameraRef.current,
             curves: curvesRef.current,
@@ -246,7 +246,7 @@ export const Viewport: React.FC = () => {
             geometry: geometryRef.current,
             optical: opticalRef.current ?? undefined,
             localAdjustments: localRef.current,
-          }, rawDevelopRef.current),
+          }, rawDevelopStateFromInfo(rawDevelopRef.current), { developBaked: true }),
           extras:{
             sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
             mixerVisualize:visualizeRef.current,
@@ -648,7 +648,7 @@ export const Viewport: React.FC = () => {
     const rect=canvas.getBoundingClientRect(),u=(clientX-rect.left)/rect.width,v=(clientY-rect.top)/rect.height;
     if(u<0||u>1||v<0||v>1)return null;
     const x=Math.min(canvas.width-1,Math.floor(u*canvas.width)),y=Math.min(canvas.height-1,Math.floor(v*canvas.height));
-    const options={sharpening:state.sharpening,sharpeningMask:state.sharpeningMask,sourceWidth:state.image?.originalWidth,sourceHeight:state.image?.originalHeight,adjustments:withRawDevelopGuard({adjustments:state.adjustments},state.rawDevelop).adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
+    const options={sharpening:state.sharpening,sharpeningMask:state.sharpeningMask,sourceWidth:state.image?.originalWidth,sourceHeight:state.image?.originalHeight,adjustments:composeDevelop({adjustments:state.adjustments},rawDevelopStateFromInfo(state.rawDevelop),{developBaked:true}).adjustments,camera:state.camera,curves:state.curves,colorMixer:state.colorMixer,filmId:state.activeFilmId,compareMode:compareModeRef.current,splitPos:splitPosRef.current,seed:42,mixerVisualize:visualizeRef.current};
     try{
       renderer.render({...options,compareMode:'none',mixerReference:true,mixerVisualize:null});
       const sx=Math.max(0,x-1),sy=Math.max(0,canvas.height-1-y-1),w=Math.min(3,canvas.width-sx),h=Math.min(3,canvas.height-sy);

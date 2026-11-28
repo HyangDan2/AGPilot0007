@@ -21,12 +21,14 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | `main` | `b850f82` | — | — | untouched |
 | `beta` | `d8ec276` | — | — | untouched |
 | `feature/phase1-pro-engine` (Q01) | `86352e2` (code `f4d900b`) | #17 | `beta` | Draft, G3 PASS |
-| `feature/phase1-q02-optical` (Q02) | `ced1414` | #18 | pro-engine | Draft |
-| `feature/phase1-q03-imaging` (Q03) | `818adb1` | #20 | pro-engine | Draft |
-| `feature/phase1-q04-application` (Q04) | `6ae218c` | #19 | pro-engine | Draft |
-| `feature/phase1-cp3-q02-local` | `a08cbd2` | #23 | pro-engine | Draft |
-| `feature/phase1-cp3-q03-raw` | `b61b59e` | #22 | pro-engine | Draft |
-| `feature/phase1-cp3-q04-workspace` | `95c1e3c` | #19 | pro-engine | Draft |
+| `feature/phase1-q02-optical` (Q02) | `2e9dedf` (CP4-02 v1) | #18 merged | pro-engine | active, no PR surface |
+| `feature/phase1-q03-imaging` (Q03) | `818adb1` | #20 merged | pro-engine | active |
+| `feature/phase1-q04-application` (Q04) | `6ae218c` | #19 merged | pro-engine | active |
+| `feature/phase1-cp3-q02-local` | `a08cbd2` | merged | pro-engine | frozen |
+| `feature/phase1-cp3-q03-raw` | `b61b59e` | merged | pro-engine | frozen |
+| `feature/phase1-cp3-q04-workspace` | `95c1e3c` | merged | pro-engine | active branch name for Q04 CP4 |
+
+PR surface: only **#17** (`feature/phase1-pro-engine` → `beta`) is open, **Draft**. Per-branch PRs (#18/#19/#20/#22/#23) are already MERGED historically, so CP4 branch commits have no per-branch Draft PR. Review surface = PR #17 + `WO_CP4_MASTER.md` ledger; PO merges nothing before explicit approval.
 
 No merge to `main`/`beta`, no deployment.
 

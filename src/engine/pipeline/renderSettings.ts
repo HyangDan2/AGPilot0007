@@ -49,14 +49,14 @@ export interface RenderRequest extends RenderSettings {
 }
 
 /**
- * Q03 develops RAW white balance and exposure into the linear source. When the
- * develop is non-identity those shader controls must stay at their neutral
- * defaults, otherwise they would be applied twice.
+ * @deprecated CP4 composes RAW develop as a decoder-baked baseline via
+ * `composeDevelop`; user exposure/white balance stay additive. Kept only for the
+ * locked `src/poc` batch path, which still imports it, and it no longer zeroes
+ * anything (BL-CP3-01).
  */
 export function withRawDevelopGuard<T extends RenderSettings>(
   settings: T,
-  develop: { identity: boolean } | null | undefined,
+  _develop: { identity: boolean } | null | undefined,
 ): T {
-  if (!develop || develop.identity) return settings;
-  return { ...settings, adjustments: { ...settings.adjustments, exposure: 0, temperature: 0, tint: 0 } };
+  return settings;
 }

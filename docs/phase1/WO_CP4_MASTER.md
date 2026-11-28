@@ -64,11 +64,33 @@ export interface LensBlurState {
   rotationDeg: number;
   quality: 'preview' | 'export';
   highlightBoost: number;          // 0..2
-  depthMask: MaskGroup[] | null;   // manual depth/focus mask; null = procedural depth
+  depthMask: import('./masks').MaskData[] | null; // flat stack from frozen masks.ts; null = procedural depth
 }
 export function normalizeLensBlur(s: Partial<LensBlurState>): LensBlurState;
 export function isNeutralLensBlur(s: LensBlurState): boolean;
 ```
+
+### 2.2a lensBlur seam addendum (frozen 2026-11-28, Q02 proposal accepted with one correction)
+
+- `depthMask` is `MaskData[] | null` using **frozen `contracts/masks.ts`** (flat stack, `normalizeMasks`, MAX_MASKS). There is no `MaskGroup` in the frozen contract; do not add a parallel group type. Per-mask `blend`/`opacity`/`inverted` compose the stack coverage; coverage value = normalized depth (0 near, 1 far). `luminance`/`color` kinds are rejected by the planner with an explicit error (they need corrected pixels); brush/linear/radial are accepted.
+- `LensBlurCapability = { maxTextureSize: number; maxTaps?: number; supportsFloatLinear?: boolean }`.
+- `planLensBlur(state, outputSize, capability): LensBlurPlan | null` — returns `null` when `isNeutralLensBlur` or tap budget resolves to 0 (byte-equal path). The contract declares the FULL plan shape the renderer binds (frozen 2026-11-28 after Q02 v1, `2e9dedf`); Q02's planner returns it structurally:
+
+```ts
+export interface LensBlurPlan {
+  width: number; height: number;          // gather dimensions (halfRes applied)
+  outputWidth: number; outputHeight: number;
+  halfRes: boolean;
+  focusPlane: number; focusRange: number; falloff: number;
+  maxCocShortSide: number; maxCocPx: number; aperture: number;
+  taps: number; tapCount: number; quality: 'preview' | 'export';
+  highlightBoost: number; guardBand: number; guardStrength: number;
+  psf: Float32Array;                      // 64x1 RGBA32F (256 floats)
+  depth: Float32Array | null;             // rasterized manual depth at output res
+}
+```
+- CoC (short-side units): `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036); `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`; `coc = maxCoc * t`. Monotonic in `|depth - focusPlane|`.
+- `depthMask: null` → procedural depth = short-side distance from image center normalized so the farthest corner = 1 (PoC radial model).
 
 ### 2.3 `src/engine/contracts/video.ts` (Q01 stub, Q03 implements engine)
 
@@ -156,3 +178,14 @@ documented limitation, not a defect.
 
 Each engineer reports: Progress / Completed (SHA) / Test Result (numbers) / Blocker / Next Action.
 Q00 records approved SHAs in this ledger. Q05B stays parked until CP4-05 completes.
+
+## 7. Ledger — deliveries and rulings
+
+- 2026-11-28 CP4-02 v1 accepted for branch (`feature/phase1-q02-optical` = `2e9dedf`, merge `9ae52c9` of pro-engine `67943df`): engine/panel/overlay/tests (7 files, +1,611), OPTICAL_POC §18. Q00 verified at SHA: tsc 0; vitest 49 files / 412 passed / 9 skipped; diff paths Q02-owned only; contract blobs 6/6 unchanged. Q02 E2E 5273 chromium 3/3 (gather vs CPU mean 0.0037/max 0.018). Local type mirror of §2.2a stands until CP4-01a lands, then switch to contract import. Not integrated (Q01 merge pending).
+- 2026-11-28 Ruling: `LensBlurPlan` (full shape above) lives in `contracts/lensBlur.ts` (Q01); Q02's planner returns it structurally. No contracts→engine import.
+- 2026-11-28 Process ruling (Q02 flag): PR #18 is **MERGED** (historical CP2), and `gh pr list` shows only **#17** (pro-engine→beta, Draft) open — per-branch PRs #18/#19/#20/#22/#23 are all merged, so CP4 branch commits have no per-branch PR surface. **No new per-branch PRs** during CP4 (avoid churn; Draft #17 remains the single review surface). Branch reuse is correct — no renames, no rebase; fast-forward pushes of Q02's branch are fine. Q02 continues on `feature/phase1-q02-optical`.
+- 2026-11-28 **CP4-01a approved** at `cac6e7e` (`f22d45b` code + `76c7d5a` ledger merge + `cac6e7e` seam alignment; pushed after ledger `927d69f`). Q00 verified at SHA: tsc 0; vitest 48 files / 416 passed (verify worktree raw-load artifact accounts for the 2-test delta vs Q01's 418/9); no deleted files; diff = Q01 paths + tests only; contract blobs 6/6 byte-identical. Contract review: develop.ts (normalize/validate/isNeutral/composeDevelop; baked default keeps user exposure/WB additive — BL-CP3-01 fixed at Viewport ×2 + ExportModal), lensBlur.ts (MaskData[] depthMask, capability, limits), video.ts (matches §2.3 + VideoExportHandle), recipeV10 (geometry required; lensBlur/develop optional; unknown keys rejected), frame/tile stubs throw/reject as specified. Q01 decisions accepted: (1) conditional write — v10 only when lensBlur/develop active, else v8/v9 (CP3 version-lowering rule); (2) future-version fixtures 10→11; (3) raw-routing test rewritten to composeDevelop semantics (asserts baked develop + user exposure kept); (4) npm ci env only.
+  - **Required correction (Q01, first commit of 01b):** `contracts/lensBlur.ts` `LensBlurPlan` currently declares only the 5-field minimum; expand to the frozen full shape in §2.2a (width/height/outputWidth/outputHeight/halfRes/falloff/maxCocShortSide/aperture/tapCount/quality/highlightBoost/guardBand/guardStrength/psf/depth) — renderer binding needs the typed payload. cac6e7e predates ledger `857a7e6`.
+  - Cleared for consumption: Q02/Q03/Q04 may pull `cac6e7e`. Q02 imports state types now but keeps its planner return typed locally until the plan expansion lands.
+- 2026-11-28 **CP4-03 approved for branch** at `0336af5` (`feature/phase1-q03-imaging`; merge `5180f06` of pro-engine `406df67`; engine `52b7038`). Q00 verified at SHA: tsc 0; vitest 54 files / **453 passed**; worktree clean; diff = Q03 paths + tests + package + docs (mediabunny ^1.66.4, THIRD_PARTY_NOTICES with full MPL-2.0 text at §Mediabunny, LibRaw-Wasm excluded); no Base64/btoa in engine; contract blobs 6/6; deleted `developState.ts` intentional (contract import supersedes). Engine: capabilities (isConfigSupported + encodable-codec/container pairing), AVC profiles, trim ±1 frame, audio plan with packet-passthrough SHA check, rotation baked, cancel=>AbortError with renderer/input disposal, budget pre-check. E2E 7/7 chromium-only with existsSync-guarded local fixtures (Q03 evidence; not rerun per Lean). Blocker: CP4-01b renderer stub — canvas adapter behind the same seam; swap + one browser pass before CP4-05.
+  - PR ruling update: Q03 opened **Draft #24** before receiving the no-new-PR ruling; it is accepted as the CP4-03 review surface (no churn). Q02/Q04 need no new PRs; Draft #17 remains the release surface.
