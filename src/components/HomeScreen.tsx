@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Layers,
 } from 'lucide-react';
-import { useEditorStore } from '../stores/editorStore';
+import { RAW_FILE_ACCEPT, decodeEditorImage, useEditorStore } from '../stores/editorStore';
 import { FILM_LIST, FILM_PROFILES } from '../films/registry';
 import { decodeImageFile } from '../engine/image/decoder';
 import { getAssetUrl } from '../utils/assets';
@@ -35,8 +35,8 @@ export const HomeScreen: React.FC = () => {
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     try {
-      const decoded = await decodeImageFile(files[0]);
-      setImage(decoded);
+      const { image: decoded, rawSource } = await decodeEditorImage(files[0]);
+      setImage(decoded, rawSource);
     } catch (err) {
       alert(`Error loading image: ${err}`);
     }
@@ -86,7 +86,7 @@ export const HomeScreen: React.FC = () => {
         type="file"
         ref={fileInputRef}
         onChange={(e) => handleFiles(e.target.files)}
-        accept="image/jpeg,image/png,image/webp"
+        accept={`image/jpeg,image/png,image/webp,${RAW_FILE_ACCEPT}`}
         className="hidden"
       />
 

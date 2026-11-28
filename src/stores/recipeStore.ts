@@ -1,25 +1,73 @@
-import {normalizeSharpening,validateSharpening} from '../types/sharpening';
-import { normalizeColorMixer, validateColorMixer } from '../types/colorMixer';
-import { normalizeCurves, CURVE_CHANNELS } from '../types/curves';
-import { normalizeCamera, isValidStampDate } from '../types/camera';
 import { get, set } from 'idb-keyval';
 import { CustomRecipe, FilmId, DEFAULT_ADJUSTMENTS } from '../types/film';
+import { normalizeRecipeFeatures, validateRecipeFeatures } from '../engine/pipeline/recipeFeatures';
+import {
+  assertRecipePersistable,
+  assertRecipeVersionSupported,
+  detectRecipeSchemaVersion,
+  resolveRecipeStorageKey,
+} from '../engine/contracts/recipeValidation';
+import { IDENTITY_GEOMETRY } from '../engine/contracts/geometry';
+import {
+  RECIPE_SCHEMA_V8,
+  normalizeRecipeV8Geometry,
+  validateRecipeV8Geometry,
+} from '../engine/contracts/recipeV8';
+import {
+  RECIPE_SCHEMA_V9,
+  hasRecipeV9Fields,
+  validateRecipeV9,
+} from '../engine/contracts/recipeV9';
+import {
+  RECIPE_SCHEMA_V10,
+  hasRecipeV10Fields,
+  validateRecipeV10,
+} from '../engine/contracts/recipeV10';
+import { normalizeDevelop, isNeutralDevelop, type RawDevelopState } from '../engine/contracts/develop';
+import { normalizeLensBlur, isNeutralLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
+import { normalizeLocalAdjustments, localAdjustmentsActive, type LocalAdjustmentState } from '../engine/contracts/localAdjustments';
+import { normalizeOpticalTransform, opticalIsIdentity } from '../engine/optical/transform';
+import type { OpticalTransform } from '../engine/contracts/optical';
 
 import { FILM_PROFILES } from '../films/registry';
 import { ADJUSTMENT_DEFINITIONS } from '../types/adjustments';
 import { getMargarinePreset } from '../presets/margarine';
 
-const RECIPES_IDB_KEY = ((import.meta as any).env?.BASE_URL || '').includes('/beta/')
-  ? 'hd2lab_film_studio_beta_recipes_v1'
-  : 'hd2lab_film_studio_recipes_v1';
-export const CURRENT_SCHEMA_VERSION = 7;
+const RECIPES_IDB_KEY = resolveRecipeStorageKey((import.meta as any).env?.BASE_URL || '');
+/** Highest version the app can write; v10 is emitted only when v10 features are active. */
+export const CURRENT_SCHEMA_VERSION = RECIPE_SCHEMA_V10;
+
+/** v9 is written when optical or local adjustments are active (and no v10 feature is). */
+export function shouldWriteRecipeV9(state: {
+  optical?: OpticalTransform | null;
+  localAdjustments?: LocalAdjustmentState | null;
+}): boolean {
+  return localAdjustmentsActive(state.localAdjustments) || (!!state.optical && !opticalIsIdentity(state.optical));
+}
+
+/** v10 is written when lens blur or a non-neutral RAW develop is active. */
+export function shouldWriteRecipeV10(state: {
+  lensBlur?: LensBlurState | null;
+  develop?: RawDevelopState | null;
+}): boolean {
+  return (!!state.lensBlur && !isNeutralLensBlur(state.lensBlur)) || (!!state.develop && !isNeutralDevelop(state.develop));
+}
 
 export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
   try {
     const data = await get<CustomRecipe[]>(RECIPES_IDB_KEY);
     if (!Array.isArray(data)) return [];
-    // Migration handling if schema version changes
-    return data.map((r) => migrateRecipe(r));
+    // Migrate in memory only; stored v1-v7 records stay untouched until an
+    // explicit persistence action rewrites them as v8.
+    const migrated: CustomRecipe[] = [];
+    for (const entry of data) {
+      try {
+        migrated.push(migrateRecipe(entry));
+      } catch (err) {
+        console.error('Skipped invalid stored recipe:', err);
+      }
+    }
+    return migrated;
   } catch (err) {
     console.error('Failed to load recipes from IndexedDB:', err);
     return [];
@@ -28,6 +76,7 @@ export async function loadSavedRecipes(): Promise<CustomRecipe[]> {
 
 export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
   try {
+    for (const recipe of recipes) assertRecipePersistable(recipe, RECIPES_IDB_KEY);
     await set(RECIPES_IDB_KEY, recipes);
   } catch (err) {
     console.error('Failed to persist recipes to IndexedDB:', err);
@@ -35,6 +84,25 @@ export async function persistRecipes(recipes: CustomRecipe[]): Promise<void> {
 }
 
 function migrateRecipe(recipe: any): CustomRecipe {
+  const declaredVersion = detectRecipeSchemaVersion(recipe);
+  const hasGeometry = !!recipe && typeof recipe === 'object' && Object.prototype.hasOwnProperty.call(recipe, 'geometry');
+  const hasV10Fields = hasRecipeV10Fields(recipe);
+  const hasV9Fields = hasRecipeV9Fields(recipe);
+  if (hasV10Fields && (declaredVersion === null || declaredVersion < RECIPE_SCHEMA_V10)) {
+    throw new Error('Unexpected v10 field in recipe');
+  }
+  if (hasV9Fields && (declaredVersion === null || declaredVersion < RECIPE_SCHEMA_V9)) {
+    throw new Error('Unexpected v9 field in recipe');
+  }
+  if (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V10) {
+    validateRecipeV10(recipe);
+  } else if (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9) {
+    validateRecipeV9(recipe);
+  } else if (hasGeometry || (declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V8)) {
+    validateRecipeV8Geometry(recipe);
+  }
+  const keepsV10 = declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V10;
+  const keepsV9 = !keepsV10 && declaredVersion !== null && declaredVersion >= RECIPE_SCHEMA_V9 && hasV9Fields;
   const baseFilmId: FilmId = Object.hasOwn(FILM_PROFILES, recipe.baseFilmId) ? recipe.baseFilmId : 'FS-001';
   const adjustments = { ...DEFAULT_ADJUSTMENTS };
   for (const def of ADJUSTMENT_DEFINITIONS) {
@@ -50,11 +118,21 @@ function migrateRecipe(recipe: any): CustomRecipe {
     adjustments,
     createdAt: typeof recipe.createdAt === 'number' ? recipe.createdAt : Date.now(),
     updatedAt: typeof recipe.updatedAt === 'number' ? recipe.updatedAt : Date.now(),
-    schemaVersion: CURRENT_SCHEMA_VERSION,
-    camera: normalizeCamera(recipe.camera),
-    curves: normalizeCurves(recipe.curves),
-    sharpening:normalizeSharpening(recipe.sharpening,adjustments.sharpness),
-    colorMixer: normalizeColorMixer(recipe.colorMixer),
+    schemaVersion: keepsV10 ? RECIPE_SCHEMA_V10 : keepsV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
+    geometry: hasGeometry ? normalizeRecipeV8Geometry(recipe) : IDENTITY_GEOMETRY,
+    ...((keepsV9 || keepsV10) && Object.prototype.hasOwnProperty.call(recipe, 'optical')
+      ? { optical: normalizeOpticalTransform(recipe.optical) }
+      : {}),
+    ...((keepsV9 || keepsV10) && Object.prototype.hasOwnProperty.call(recipe, 'localAdjustments')
+      ? { localAdjustments: normalizeLocalAdjustments(recipe.localAdjustments) }
+      : {}),
+    ...(keepsV10 && Object.prototype.hasOwnProperty.call(recipe, 'lensBlur')
+      ? { lensBlur: normalizeLensBlur(recipe.lensBlur) }
+      : {}),
+    ...(keepsV10 && Object.prototype.hasOwnProperty.call(recipe, 'develop')
+      ? { develop: normalizeDevelop(recipe.develop) }
+      : {}),
+    ...normalizeRecipeFeatures(recipe, adjustments),
   };
 }
 
@@ -78,18 +156,11 @@ export function validateRecipeJSON(jsonStr: string): CustomRecipe {
     throw new Error('Recipe missing valid "baseFilmId" property');
   }
 
-  if (parsed.schemaVersion !== undefined && (!Number.isInteger(parsed.schemaVersion) || parsed.schemaVersion < 1 || parsed.schemaVersion > CURRENT_SCHEMA_VERSION)) throw new Error('Unsupported recipe version');
-  if (parsed.camera?.dateStamp?.enabled && !isValidStampDate(parsed.camera.dateStamp.date)) throw new Error('Invalid imprint date');
+  assertRecipeVersionSupported(parsed.schemaVersion);
   if (!Object.hasOwn(FILM_PROFILES, parsed.baseFilmId)) throw new Error('Unknown base film');
   if (parsed.presetId && getMargarinePreset(parsed.presetId)?.baseFilmId !== parsed.baseFilmId) {
     throw new Error('Unknown or incompatible preset');
   }
-  if (parsed.curves !== undefined) {
-    if (!parsed.curves || typeof parsed.curves !== 'object') throw new Error('Invalid tone curves');
-    const normalized = normalizeCurves(parsed.curves);
-    for (const channel of CURVE_CHANNELS) if (parsed.curves[channel] !== undefined && JSON.stringify(parsed.curves[channel]) !== JSON.stringify(normalized[channel])) throw new Error('Invalid tone curve points');
-  }
-  if(parsed.sharpening!==undefined)validateSharpening(parsed.sharpening);
-  if(parsed.colorMixer!==undefined)validateColorMixer(parsed.colorMixer);
+  validateRecipeFeatures(parsed);
   return migrateRecipe(parsed);
 }

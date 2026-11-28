@@ -1,0 +1,267 @@
+[
+  {
+    "probe": "buffer-budget-overflow",
+    "ok": false,
+    "memory": {
+      "budgetMB": 1,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1920,
+      "codedHeight": 1080,
+      "displayWidth": 1920,
+      "displayHeight": 1080,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.1,
+          0.13333333333333333,
+          0.16666666666666666,
+          0.2,
+          0.26666666666666666
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.640028",
+      "width": 1920,
+      "height": 1080,
+      "bitrate": 6220800,
+      "framerate": 30,
+      "level": "4.0",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.640028",
+          "profile": "high",
+          "level": "4.0",
+          "bitrate": 6220800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "buffer",
+      "mode": "buffer",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 25.6,
+      "budgetMB": 1,
+      "chunks": 0,
+      "bytes": 0,
+      "backpressureWrites": 0
+    },
+    "aborted": false,
+    "error": "MemoryBudgetError: estimated output 25.6MB exceeds the 1MB memory budget",
+    "memoryBudgetDetail": {
+      "estimateMB": 25.6,
+      "budgetMB": 1,
+      "hint": "use a streaming target or shorten the export"
+    },
+    "peakHeapDeltaMB": 0
+  },
+  {
+    "probe": "file-picker-unsupported",
+    "ok": false,
+    "memory": {
+      "budgetMB": 512,
+      "heapLimitMB": 4192
+    },
+    "container": "mp4",
+    "inputInfo": {
+      "codec": "avc",
+      "codedWidth": 1280,
+      "codedHeight": 720,
+      "displayWidth": 1280,
+      "displayHeight": 720,
+      "rotation": 0,
+      "averagePacketRate": 30,
+      "vfr": false,
+      "timing": {
+        "sampledPackets": 120,
+        "firstTimestamps": [
+          0,
+          0.03333333333333333,
+          0.06666666666666667,
+          0.13333333333333333,
+          0.1,
+          0.16666666666666666,
+          0.23333333333333334,
+          0.2
+        ],
+        "durationsMinMs": 33.333,
+        "durationsMaxMs": 33.333,
+        "uniqueDurations": 1,
+        "deltaStdMs": 0,
+        "variableFrameRate": false
+      },
+      "audio": {
+        "codec": "aac",
+        "canDecode": true,
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "format": {
+        "name": "MP4",
+        "mimeType": "video/mp4"
+      }
+    },
+    "encoder": {
+      "container": "mp4",
+      "codec": "avc",
+      "codecString": "avc1.64001f",
+      "width": 1280,
+      "height": 720,
+      "bitrate": 2764800,
+      "framerate": 30,
+      "level": "3.1",
+      "profile": "high",
+      "bpp": 0.1,
+      "candidates": [
+        {
+          "codec": "avc",
+          "codecString": "avc1.64001f",
+          "profile": "high",
+          "level": "3.1",
+          "bitrate": 2764800,
+          "supported": true,
+          "error": null
+        }
+      ]
+    },
+    "videoCodec": "avc",
+    "targetInfo": {
+      "requested": "file",
+      "mode": "file-picker",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "estimateMB": 11,
+      "budgetMB": 512,
+      "chunks": 0,
+      "bytes": 0,
+      "backpressureWrites": 0
+    },
+    "aborted": false,
+    "error": "OutputTargetError: file picker dismissed at runtime: AbortError: Failed to execute 'showSaveFilePicker' on 'Window': The user aborted a request.",
+    "targetDetail": {
+      "mode": "file-picker",
+      "detected": {
+        "showSaveFilePicker": true,
+        "fileSystemWritableFileStream": true,
+        "harnessSink": true,
+        "secureContext": true,
+        "userActivation": {
+          "isActive": true,
+          "hasBeenActive": true
+        },
+        "requiresUserGesture": true,
+        "canOpenPickerNow": true,
+        "defaultMode": "harness-stream",
+        "note": "the file picker needs an active user gesture; background/automation code is gated off and the streaming or budgeted buffer target is used instead"
+      },
+      "pickerError": "AbortError"
+    },
+    "peakHeapDeltaMB": 0
+  },
+  {
+    "probe": "buffer-under-budget",
+    "ok": true,
+    "assertions": {
+      "pass": true,
+      "checks": [
+        {
+          "name": "display dimensions",
+          "expected": "640x360",
+          "actual": "640x360",
+          "pass": true
+        },
+        {
+          "name": "video packet count == encoded frames",
+          "expected": 63,
+          "actual": 63,
+          "pass": true
+        },
+        {
+          "name": "A/V start offset preserved from input (<=1ms)",
+          "expected": -21.33,
+          "actual": -21.33,
+          "pass": true
+        },
+        {
+          "name": "audio packet hash matches input (passthrough)",
+          "expected": "2806d6a6a30abc3b3d7a1eef4e418cd43838598596bacef7a32f459ef4b2b239",
+          "actual": "2806d6a6a30abc3b3d7a1eef4e418cd43838598596bacef7a32f459ef4b2b239",
+          "pass": true
+        },
+        {
+          "name": "decoded frame count == packet count",
+          "expected": 63,
+          "actual": 63,
+          "pass": true
+        },
+        {
+          "name": "output decode without error + monotonic timestamps",
+          "expected": "true",
+          "actual": "true",
+          "pass": true
+        }
+      ]
+    },
+    "heapSlopeMBPerMinute": null,
+    "peakHeapDeltaMB": 11.7,
+    "outputBase64": "absent"
+  }
+]

@@ -1,0 +1,1364 @@
+{
+  "pass": true,
+  "total": 114,
+  "failures": [],
+  "checks": [
+    {
+      "name": "cr3_canon_r6m3: detected format",
+      "pass": true,
+      "actual": "CR3"
+    },
+    {
+      "name": "cr3_canon_r6m3: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 149299200
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "cr3_canon_r6m3: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: no early clipping of linear values",
+      "pass": true,
+      "actual": {
+        "stats": {
+          "samples": 120793,
+          "max": 1.87019,
+          "p999": 1.66916,
+          "mean": 0.23052,
+          "over1Frac": 0.06389443096868196,
+          "over2Frac": 0,
+          "atOneFrac": 0,
+          "zeroFrac": 0,
+          "nonFinite": 0,
+          "halfSaturated": 0
+        },
+        "preservesOverOne": true,
+        "clippedAtOneFrac": 0
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 37324800,
+        "mae": 0.000021925319501331493,
+        "rmse": 0.000049458782157692096,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.0066857424554183816,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 37324800,
+        "mae": 0.00004385063900046723,
+        "rmse": 0.00009891756431538353,
+        "maxAbs": 0.0009765625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006896835348079561,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 37324800,
+        "mae": 0.000011383971770474618,
+        "rmse": 0.000026730441668810144,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.0055225480109739366,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 37324800,
+        "mae": 0.000010962659753507137,
+        "rmse": 0.00002472939107884776,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.005412460348079561,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr3_canon_r6m3: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "cr2_canon_1000d: detected format",
+      "pass": true,
+      "actual": "CR2"
+    },
+    {
+      "name": "cr2_canon_1000d: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 120932352
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "cr2_canon_1000d: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: no early clipping of linear values",
+      "pass": true,
+      "actual": null
+    },
+    {
+      "name": "cr2_canon_1000d: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 30233088,
+        "mae": 0.00003407951639172617,
+        "rmse": 0.000049250287096828486,
+        "maxAbs": 0.0006008148193359375,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.008821890770800521,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 30233088,
+        "mae": 0.0000681590325623744,
+        "rmse": 0.00009850057419359008,
+        "maxAbs": 0.001201629638671875,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.011975422424596522,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 30233088,
+        "mae": 0.0000174097328362497,
+        "rmse": 0.000025093109823934277,
+        "maxAbs": 0.00048172473907470703,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.0066074626581313824,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 30233088,
+        "mae": 0.000017039758040397313,
+        "rmse": 0.000024625144351563074,
+        "maxAbs": 0.00030040740966796875,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006592942143389388,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "cr2_canon_1000d: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "raf_fuji_xt4: detected format",
+      "pass": true,
+      "actual": "RAF"
+    },
+    {
+      "name": "raf_fuji_xt4: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 311500800
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "raf_fuji_xt4: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: no early clipping of linear values",
+      "pass": true,
+      "actual": {
+        "stats": {
+          "samples": 120178,
+          "max": 3.33737,
+          "p999": 3.22252,
+          "mean": 0.25669,
+          "over1Frac": 0.038051889696949524,
+          "over2Frac": 0.012265140042270632,
+          "atOneFrac": 0,
+          "zeroFrac": 0,
+          "nonFinite": 0,
+          "halfSaturated": 0
+        },
+        "preservesOverOne": true,
+        "clippedAtOneFrac": 0
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 77875200,
+        "mae": 0.00002183651085587432,
+        "rmse": 0.000045064803898645285,
+        "maxAbs": 0.0009765625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006861067451512163,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 77875200,
+        "mae": 0.00004367302149069688,
+        "rmse": 0.00009012960779721752,
+        "maxAbs": 0.001953125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.008528710038625905,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 77875200,
+        "mae": 0.000010497826928123065,
+        "rmse": 0.00002201314564597479,
+        "maxAbs": 0.00046944618225097656,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.005338824169953978,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 77875200,
+        "mae": 0.0000109181550797458,
+        "rmse": 0.000022531598806903027,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.005573224852071006,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "raf_fuji_xt4: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "raf_fuji_xt4: >=24MP memory measured",
+      "pass": true,
+      "actual": {
+        "linear": 668.8,
+        "rgba8": 267.1
+      }
+    },
+    {
+      "name": "nef_nikon_z6: detected format",
+      "pass": true,
+      "actual": "NEF"
+    },
+    {
+      "name": "nef_nikon_z6: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "nef_nikon_z6: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 163986048
+      }
+    },
+    {
+      "name": "nef_nikon_z6: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "nef_nikon_z6: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "nef_nikon_z6: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "nef_nikon_z6: no early clipping of linear values",
+      "pass": true,
+      "actual": null
+    },
+    {
+      "name": "nef_nikon_z6: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 40996512,
+        "mae": 0.00003393898316388969,
+        "rmse": 0.00005351930675774882,
+        "maxAbs": 0.0009763240814208984,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.008941199680597218,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "nef_nikon_z6: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 40996512,
+        "mae": 0.00006787796444835819,
+        "rmse": 0.00010703861351497317,
+        "maxAbs": 0.0019526481628417969,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.010478257272228427,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "nef_nikon_z6: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 40996512,
+        "mae": 0.000022828540152916734,
+        "rmse": 0.000043840780419989524,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.0072088815750959495,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "nef_nikon_z6: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 40996512,
+        "mae": 0.000016967641597720955,
+        "rmse": 0.000026748196674913747,
+        "maxAbs": 0.0004876852035522461,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006293242703184115,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "nef_nikon_z6: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "arw_sony_a7m3: detected format",
+      "pass": true,
+      "actual": "ARW"
+    },
+    {
+      "name": "arw_sony_a7m3: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 288000000
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "arw_sony_a7m3: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: no early clipping of linear values",
+      "pass": true,
+      "actual": null
+    },
+    {
+      "name": "arw_sony_a7m3: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.00005193803587194351,
+        "rmse": 0.00008643318753972296,
+        "maxAbs": 0.0009765625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.010018472222222222,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.00010387607174388701,
+        "rmse": 0.00017286637507944592,
+        "maxAbs": 0.001953125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.011776680555555556,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.000027045982511478035,
+        "rmse": 0.00004477142811825402,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.007893097222222221,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.00002563044283865343,
+        "rmse": 0.000041832843296188876,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.007679097222222223,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "arw_sony_a7m3: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "arw_sony_a7m3: >=24MP memory measured",
+      "pass": true,
+      "actual": {
+        "linear": 238.6,
+        "rgba8": 243.2
+      }
+    },
+    {
+      "name": "orf_olympus_em10: detected format",
+      "pass": true,
+      "actual": "ORF"
+    },
+    {
+      "name": "orf_olympus_em10: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "orf_olympus_em10: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 191102976
+      }
+    },
+    {
+      "name": "orf_olympus_em10: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "orf_olympus_em10: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "orf_olympus_em10: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[0]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "orf_olympus_em10: no early clipping of linear values",
+      "pass": true,
+      "actual": null
+    },
+    {
+      "name": "orf_olympus_em10: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 47775744,
+        "mae": 0.00003402725607320847,
+        "rmse": 0.00004503147321759684,
+        "maxAbs": 0.00048828125,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.00878225988484868,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "orf_olympus_em10: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 47775744,
+        "mae": 0.00006805451206536244,
+        "rmse": 0.00009006294643516687,
+        "maxAbs": 0.0009765625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.013218318483957048,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "orf_olympus_em10: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 47775744,
+        "mae": 0.000019179999328418845,
+        "rmse": 0.00002550469737791211,
+        "maxAbs": 0.0004839897155761719,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.007051821108217593,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "orf_olympus_em10: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 47775744,
+        "mae": 0.000017013628106878762,
+        "rmse": 0.000022515736608844928,
+        "maxAbs": 0.000244140625,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006465728717903378,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "orf_olympus_em10: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "dng_ricoh_gr3: detected format",
+      "pass": true,
+      "actual": "DNG"
+    },
+    {
+      "name": "dng_ricoh_gr3: color contract accepted",
+      "pass": true,
+      "actual": {
+        "accepted": true,
+        "contract": true
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: scene-linear f32 buffer contract",
+      "pass": true,
+      "actual": {
+        "channels": 3,
+        "dataType": "f32",
+        "transfer": "linear",
+        "primaries": "srgb",
+        "source": "sensor",
+        "orientation": 1,
+        "bytes": 288000000
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: sRGB bridge within 2 codes of decoder",
+      "pass": true,
+      "actual": 1
+    },
+    {
+      "name": "dng_ricoh_gr3: orientation applied + sensor source",
+      "pass": true,
+      "actual": {
+        "decodedDimensionsMatchCrop": true,
+        "orientationApplied": true,
+        "fileOrientation": 1,
+        "sourceIsSensor": true,
+        "channelsRGB": true
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: WB applied before camera matrix",
+      "pass": true,
+      "actual": {
+        "preMatrix": true,
+        "evidence": "matrix-exact",
+        "best": "color[1]@21: xyzToSrgb * inverse(colorMatrix)"
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: no early clipping of linear values",
+      "pass": true,
+      "actual": null
+    },
+    {
+      "name": "dng_ricoh_gr3: f16 vs f32 after exposure+1",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.000037890577472275054,
+        "rmse": 0.00005961122847598722,
+        "maxAbs": 0.0009486675262451172,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.009297125,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: f16 vs f32 after exposure+2",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.00007578115494372227,
+        "rmse": 0.00011922245695197423,
+        "maxAbs": 0.0018973350524902344,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.01061936111111111,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: f16 vs f32 after whiteBalance-daylight",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.000019065325260888333,
+        "rmse": 0.000029759853870127024,
+        "maxAbs": 0.0004868507385253906,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.0069345,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: f16 vs f32 after highlights-blend",
+      "pass": true,
+      "actual": {
+        "samples": 72000000,
+        "mae": 0.000018945275841688676,
+        "rmse": 0.000029805525063669237,
+        "maxAbs": 0.00046515464782714844,
+        "over001": 0,
+        "over005": 0,
+        "display8": {
+          "differingFrac": 0.006906194444444445,
+          "meanAbsCode": 1,
+          "p99Code": 0,
+          "maxCode": 1
+        }
+      }
+    },
+    {
+      "name": "dng_ricoh_gr3: f16 display-8 diff after adjustments is small",
+      "pass": true,
+      "actual": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "dng_ricoh_gr3: >=24MP memory measured",
+      "pass": true,
+      "actual": {
+        "linear": 715.3,
+        "rgba8": 261.4
+      }
+    },
+    {
+      "name": "robustness jpeg-as-raw: UnsupportedFormatError",
+      "pass": true,
+      "actual": {
+        "name": "UnsupportedFormatError",
+        "kind": "UnsupportedFormat",
+        "code": null,
+        "message": "unsupported or unrecognised file format: no recognisable header"
+      }
+    },
+    {
+      "name": "robustness random-bytes: UnsupportedFormatError",
+      "pass": true,
+      "actual": {
+        "name": "UnsupportedFormatError",
+        "kind": "UnsupportedFormat",
+        "code": null,
+        "message": "unsupported or unrecognised file format: no recognisable header"
+      }
+    },
+    {
+      "name": "robustness truncated-cr3-strict: CorruptFileError",
+      "pass": true,
+      "actual": {
+        "name": "CorruptFileError",
+        "kind": "CorruptFile",
+        "code": null,
+        "message": "corrupt file: truncated image data: expected 10679528 bytes at offset 3957760, but only 9324990 bytes remain before EOF"
+      }
+    },
+    {
+      "name": "robustness truncated-raf-strict: CorruptFileError",
+      "pass": true,
+      "actual": {
+        "name": "CorruptFileError",
+        "kind": "CorruptFile",
+        "code": null,
+        "message": "corrupt file: truncated image data: expected 22706560 bytes at offset 4264448, but only 20009459 bytes remain before EOF"
+      }
+    },
+    {
+      "name": "robustness max-dimension-limit: LimitExceededError",
+      "pass": true,
+      "actual": {
+        "name": "LimitExceededError",
+        "kind": "LimitExceeded",
+        "code": null,
+        "message": "limit exceeded: dimension 4512x2994 exceeds 1000"
+      }
+    },
+    {
+      "name": "robustness max-samples-limit: LimitExceededError",
+      "pass": true,
+      "actual": {
+        "name": "LimitExceededError",
+        "kind": "LimitExceeded",
+        "code": null,
+        "message": "limit exceeded: 4512x2994x1 samples exceeds limit 2000000"
+      }
+    },
+    {
+      "name": "robustness truncated-cr3-recover: decoded or rejected with CorruptFileError",
+      "pass": true,
+      "actual": {
+        "name": "CorruptFileError",
+        "kind": "CorruptFile",
+        "code": null,
+        "message": "corrupt file: truncated image data: expected 10679528 bytes at offset 3957760, but only 9324990 bytes remain before EOF"
+      }
+    },
+    {
+      "name": "robustness truncated-raf-recover: decoded or rejected with CorruptFileError",
+      "pass": true,
+      "actual": {
+        "name": "CorruptFileError",
+        "kind": "CorruptFile",
+        "code": null,
+        "message": "corrupt file: truncated image data: expected 22706560 bytes at offset 4264448, but only 20009459 bytes remain before EOF"
+      }
+    },
+    {
+      "name": "robustness truncated-dng-strict: decoded or rejected with CorruptFileError",
+      "pass": true,
+      "actual": {
+        "decoded": true
+      }
+    },
+    {
+      "name": "robustness truncated-dng-recover: decoded or rejected with CorruptFileError",
+      "pass": true,
+      "actual": {
+        "decoded": true
+      }
+    },
+    {
+      "name": "robustness jpeg-as-raw: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-cr3-strict: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-cr3-recover: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-raf-strict: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-raf-recover: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-dng-strict: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness truncated-dng-recover: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness random-bytes: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness max-dimension-limit: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "robustness max-samples-limit: file handle released",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "release cr3_canon_r6m3: no heap growth across repeats (<=16MB, gc-aware)",
+      "pass": true,
+      "actual": {
+        "settledGrowthMB": 0,
+        "series": [
+          {
+            "i": 0,
+            "enteredMB": 74.1,
+            "outputMB": 71.2
+          },
+          {
+            "i": 0,
+            "settledMB": 74.1,
+            "beforeMB": 2.8,
+            "gc": true
+          },
+          {
+            "i": 1,
+            "enteredMB": 159.5,
+            "outputMB": 71.2
+          },
+          {
+            "i": 1,
+            "settledMB": 74.1,
+            "beforeMB": 74.1,
+            "gc": true
+          },
+          {
+            "i": 2,
+            "enteredMB": 159.4,
+            "outputMB": 71.2
+          },
+          {
+            "i": 2,
+            "settledMB": 74.1,
+            "beforeMB": 74.1,
+            "gc": true
+          },
+          {
+            "i": 3,
+            "enteredMB": 159.6,
+            "outputMB": 71.2
+          },
+          {
+            "i": 3,
+            "settledMB": 74.1,
+            "beforeMB": 74.1,
+            "gc": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "release cr3_canon_r6m3: all frames/files closed",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "release raf_fuji_xt4: no heap growth across repeats (<=16MB, gc-aware)",
+      "pass": true,
+      "actual": {
+        "settledGrowthMB": 0,
+        "series": [
+          {
+            "i": 0,
+            "enteredMB": 177.3,
+            "outputMB": 148.5
+          },
+          {
+            "i": 0,
+            "settledMB": 151.5,
+            "beforeMB": 74.1,
+            "gc": true
+          },
+          {
+            "i": 1,
+            "enteredMB": 325.9,
+            "outputMB": 148.5
+          },
+          {
+            "i": 1,
+            "settledMB": 151.5,
+            "beforeMB": 151.5,
+            "gc": true
+          },
+          {
+            "i": 2,
+            "enteredMB": 325.8,
+            "outputMB": 148.5
+          },
+          {
+            "i": 2,
+            "settledMB": 151.5,
+            "beforeMB": 151.5,
+            "gc": true
+          },
+          {
+            "i": 3,
+            "enteredMB": 325.9,
+            "outputMB": 148.5
+          },
+          {
+            "i": 3,
+            "settledMB": 151.5,
+            "beforeMB": 151.5,
+            "gc": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "release raf_fuji_xt4: all frames/files closed",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "release arw_sony_a7m3: no heap growth across repeats (<=16MB, gc-aware)",
+      "pass": true,
+      "actual": {
+        "settledGrowthMB": -24.4,
+        "series": [
+          {
+            "i": 0,
+            "enteredMB": 164.8,
+            "outputMB": 137.3
+          },
+          {
+            "i": 0,
+            "settledMB": 164.7,
+            "beforeMB": 151.5,
+            "gc": true
+          },
+          {
+            "i": 1,
+            "enteredMB": 302.3,
+            "outputMB": 137.3
+          },
+          {
+            "i": 1,
+            "settledMB": 140.3,
+            "beforeMB": 164.7,
+            "gc": true
+          },
+          {
+            "i": 2,
+            "enteredMB": 302.3,
+            "outputMB": 137.3
+          },
+          {
+            "i": 2,
+            "settledMB": 140.3,
+            "beforeMB": 140.3,
+            "gc": true
+          },
+          {
+            "i": 3,
+            "enteredMB": 302.2,
+            "outputMB": 137.3
+          },
+          {
+            "i": 3,
+            "settledMB": 140.3,
+            "beforeMB": 140.3,
+            "gc": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "release arw_sony_a7m3: all frames/files closed",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "release cancel_cr3: cancel fires and resources are released",
+      "pass": true,
+      "actual": {
+        "key": "cancel_cr3",
+        "path": "cr3/IMG_4243.CR3",
+        "cancelAfterMs": 0,
+        "stagesCompleted": 1,
+        "cancelled": true,
+        "error": "AbortError: cancelled between decode stages",
+        "heap": {
+          "beforeMB": 140.3,
+          "afterMB": 145.3,
+          "gc": true
+        },
+        "released": true,
+        "note": "FlashRaw cannot interrupt a decode in flight; cancellation is cooperative between stages and still releases the frame and the file."
+      }
+    }
+  ]
+}

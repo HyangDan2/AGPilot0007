@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         scope: base,
-        includeAssets: ['favicon.ico', 'favicon.svg', 'favicon-32x32.png', 'apple-touch-icon.png', 'social-preview.png', 'luts/*.cube', 'thumbnails/*.jpg'],
+        // globPatterns already covers luts/icons/txt; listing them again here
+        // duplicated every LUT and icon in the precache manifest.
+        includeAssets: ['thumbnails/*.jpg'],
         manifest: {
           name: isBeta ? 'Film Studio Beta | HD2Lab' : 'Film Studio | HD2Lab',
           id: base,
@@ -53,6 +55,9 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,cube,json,txt}'],
+          // Social image is never read by the app; manifest icons are already
+          // injected by the plugin, so the glob must not list them again.
+          globIgnores: ['social-preview.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512-maskable.png'],
           navigateFallback: 'index.html',
           ...(isBeta
             ? { cacheId: 'film-studio-beta', navigateFallbackAllowlist: [/^\/AGPilot0007\/beta(?:\/|$)/] }
@@ -73,7 +78,9 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'happy-dom',
-      exclude: ['node_modules', 'dist', 'tests/e2e/**', '**/.private/**'],
+      // Wall-clock perf assertions cannot be deterministic next to parallel
+      // workers; they run serially via vitest.perf.config.ts (`npm run test:perf`).
+      exclude: ['node_modules', 'dist', 'tests/e2e/**', 'tests/q04Perf.test.ts', '**/.private/**'],
     },
   };
 });

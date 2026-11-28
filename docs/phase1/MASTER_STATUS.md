@@ -1,0 +1,135 @@
+# MASTER STATUS — Phase 1 CP5 (Release Qualification)
+
+Last updated: 2026-11-28 KST · Owner: Q00 Supervisor
+Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-verification of completed work, backlog non-blocking defects.
+
+## Current Gate
+
+| Gate | State | Note |
+| --- | --- | --- |
+| CP1 Closure / G1 | **PASS** | PO accepted 2026-11-27. Q05 audit green. |
+| CP2-06 / G2 | **PASS** | Q05 independent QA at `0a4d4e2`: 97 passed / 1 skipped / 0 failed, exit 0. |
+| CP3 (Professional Editing) | **CLOSED** | G3 **PASS** at `f4d900b` (E2E 358/0/102; RAW 6000×4000; cancel/retry 12/12). PO accepted 2026-11-28. Evidence: `WO_CP3_MASTER.md`. |
+| Engine Contract Freeze | **UNCHANGED** | Blobs identical at `47cc881`: optical `539a381`, imageBuffer `f1f9330`, masks `0c6935a`, exportControl `108e708`, moduleRegistry `42ca676`, geometry `44dd349`. |
+| Recipe v8/v9 | **READ ACTIVE** | v9 written by CP3 (optical/localAdjustments); v1–v9 readable. CP4 adds v10 (additive). |
+| CP4 (Advanced Imaging Engine) | **CLOSED** | G4 **PASS** at `47cc881` (CP4-06+07+Q02 parity ≤1.03 LSB); CP4-09 video fixes accepted and independently re-verified at `ea4974b` (reopen 3/3, boot network 0, photo path PASS). Closed by PO Closure Order 2026-11-28. Evidence: `WO_CP4_MASTER.md`. |
+| CP5 (Release Qualification) | **IN PROGRESS** | WO-P1-CP5: performance optimization, remaining must-haves, real-device compatibility, RC preparation. G5 gate: full regression + perf budgets + device matrix + RC artifacts. `WO_CP5_MASTER.md`. |
+
+## Baseline (verified 2026-11-28 KST)
+
+| Ref | SHA | PR | Base | State |
+| --- | --- | --- | --- | --- |
+| `main` | `b850f82` | — | — | untouched |
+| `beta` | `d8ec276` | — | — | untouched |
+| `feature/phase1-pro-engine` (Q01) | `ea4974b` | #17 | `beta` | Draft, CP4-09 integrated |
+| `feature/phase1-q02-optical` (Q02) | `cd9a7d6` | #18 merged | pro-engine | active, no PR surface |
+| `feature/phase1-q03-imaging` (Q03) | `f5ec7d4` | #20 merged | pro-engine | active |
+| `feature/phase1-q04-application` (Q04) | `43c5ef6` | #19 merged | pro-engine | active |
+| `feature/phase1-cp3-q02-local` | `a08cbd2` | merged | pro-engine | frozen |
+| `feature/phase1-cp3-q03-raw` | `b61b59e` | merged | pro-engine | frozen |
+| `feature/phase1-cp3-q04-workspace` | `95c1e3c` | merged | pro-engine | active branch name for Q04 CP4 |
+
+PR surface: only **#17** (`feature/phase1-pro-engine` → `beta`) is open, **Draft**. Per-branch PRs (#18/#19/#20/#22/#23) are already MERGED historically, so CP4 branch commits have no per-branch Draft PR. Review surface = PR #17 + `WO_CP4_MASTER.md` ledger; PO merges nothing before explicit approval.
+
+No merge to `main`/`beta`, no deployment.
+
+## CP3 Closure Evidence (G3 PASS at `f4d900b`, verified by Q00)
+
+| Item | Result |
+| --- | --- |
+| tsc / units | 0 errors; vitest 397 passed / 9 skipped / 0 failed |
+| Build | pass; precache verified; RAW fixtures 21/21 |
+| E2E (5573) | **358 passed / 0 failed / 102 skipped** (22.2m, exit 0) |
+| RAW real | 6000×4000 DNG, 4 projects, develop guard verified |
+| Batch cancel/retry | 12/12 saved, `data-ok`, unique downloads (58.2 s / 43.6 s drain) |
+| Contracts | 6/6 blobs identical; test diff = +4/−2 test-only (`95c1e3c`) |
+| Blocking defects | 0. Backlog: BL-CP3-01 (develop guard precedence) → folded into CP4 Q03; fixture-path doc drift |
+
+## CP2 Integration Evidence (serial merges, verified at `6973126`)
+
+| Area | Result | Owner |
+| --- | --- | --- |
+| Render plan + seam (a) | sourceStage sync, identity→null, gates first, cache; 8192 guard with warn | Q01/Q02 |
+| Geometry/optical E2E | optical 17 + stage 2 + geometry 1 + render-parity + sourceStage 3 = 23/23 (5273) | Q02 |
+| Warp cost | Viewport: 12MP cold 49.8ms / warm 0.3ms; 24MP 188.8ms; legacy 0.2ms | Q01 |
+| RAW path | decodeEditorImage (dynamic import, initial bundle free); browser upload 4/4 | Q03 |
+| RAW 24MP | cold open 1.69–1.94s; ~299MB/open (16f working + full canvas + preview) | Q03/Q01 |
+| Workspace | per-photo fresh EditState; RAW rawSource preserved on select; batch+workspace E2E 5/5 (5473) | Q04 |
+| v8 recipes | write 8, v1–v7 read/migrate; v8 missing/unknown geometry rejected; E2E 4/4 | Q01 |
+| Units | 34 files / 305 passed / 6 skipped (RAW fixtures) | Q01 |
+| Builds | tsc 0; build + build:beta pass, precache 71 (12118/12118 KiB) | Q01 |
+| Contracts | 5/5 blob-identical across all heads | Q00 |
+
+E2E ran single-slot on per-agent ports; runs at load ≥8 are contention-marked and used only for passes, failures rerun.
+
+## G2 Evidence — Q05 CP2-06 (`0a4d4e2` = code `6973126` + docs; diff = MASTER_STATUS only)
+
+| Item | Result |
+| --- | --- |
+| npm ci / tsc | PASS (fresh clone, 0 errors) |
+| Units | **PASS 34 files / 305 passed / 6 skipped** (skip = RAW fixture gates) |
+| Build / beta | PASS, precache 71 (12118.01 / 12117.86 KiB) |
+| Perf (serial) | **PASS 4/4**, load 4.62, analyze 0.75ms / search 2.80ms (<20ms) |
+| Full E2E (5573, single run) | **PASS 97 passed / 1 skipped / 0 failed, 4.6m, exit 0**; load 4.17→3.59; log `.private/e2e-logs/q05/e2e-0a4d4e2.log` |
+| Contracts | 5/5 blobs identical |
+| Deleted tests vs `4dea9b6` | 0 |
+| Integration a–e | sourceStage parity PASS; 8192 warn-once PASS; RAW routing wired PASS (decode UNVERIFIED); v8/v7 recipe PASS; per-photo state + batch cancel PASS |
+| Blocking defects | 0. Observations: live settings literals omit geometry/optical (BL-09); oversize skip (BL-08) |
+
+E2E skip 1 = `margarine.spec.ts` mobile-only sheet (expected in chromium). `docs/screenshots` restored, tree clean.
+
+## WO Status
+
+| WO | Owner | State |
+| --- | --- | --- |
+| WO-CP2-00 Isolation | Q00/Q01/Q05 | **CLOSED** (`3f3fea6`) |
+| WO-CP2-01 CP1 Closure | all | **CLOSED** (G1 PASS) |
+| WO-CP2-02 Core Product Pipeline | Q01 | **CLOSED** (`b4b7f5d`, v8 `3b15ba0`) |
+| WO-CP2-03 Geometry & Optical | Q02 | **CLOSED** (`ced1414`, integrated) |
+| WO-CP2-04 RAW Source Decoder | Q03 | **CLOSED** (`818adb1`, integrated) |
+| WO-CP2-05 Workspace & Batch | Q04 | **CLOSED** (`6ae218c`, integrated) |
+| WO-CP2-06 Independent QA | Q05 | **CLOSED** (G2 PASS @ `0a4d4e2`) |
+
+## Backlog (non-blocking, do not stop CP2)
+
+| ID | Item | Owner | Gate |
+| --- | --- | --- | --- |
+| BL-01 | Q03 RAW 114 assertions — no independent rerun (testdata local) | Q03/Q05 | G2 |
+| BL-02 | Q03 video suite — engineer-only evidence | Q03/Q05 | G2 |
+| BL-03 | Real-device perf (iOS/Android), SwiftShader limits | Q04 | post-Beta |
+| BL-04 | PR #17 mergeability UNKNOWN in GitHub API | Q00 | before PO merge |
+| BL-05 | Q02 half-res high-frequency quality | Q02 | G2 QA |
+| BL-06 | RAW 24MP open 1.7–1.9s and ~299MB/open | Q03/Q04 | post-Beta |
+| BL-07 | 24MP source warp ~190ms exceeds 60fps (preview source ≤2048 limits impact) | Q01/Q02 | post-Beta |
+| BL-08 | sourceStage skips >8192px sources with one warn (no tiling) | Q01/Q02 | G2 review |
+| BL-09 | Live Viewport/ExportModal settings omit `geometry`/`optical` — imported v8 framing stored but never applied (no geometry UI yet) | Q01/Q02 | next WO |
+| BL-10 | Q04 docs stale on v7-only storage (`CP1_1_INTERFACE_REQUIREMENTS.md:97`, `WORKSPACE_POC.md:56`) | Q04 | next doc pass |
+
+## Ownership Boundaries (CP2)
+
+- Frozen: 5 contract blobs above — no edits without WO + Q05 re-audit.
+- Contract edits authorized for v8 activation only: `recipeV8.ts`, `recipeValidation.ts`, `types/film.ts` (write ceiling 8).
+- Q01: pipeline orchestrator, RenderPlan runner, source-stage hook, renderer lifecycle.
+- Q02: `src/engine/optical/*` stage modules + sourceStage; no shared-file edits.
+- Q03: `src/engine/raw/*`, RAW UI routing (Header/HomeScreen/ImageDropzone/editorStore `decodeEditorImage`).
+- Q04: workspace/batch, `workspaceStore.select`, `BatchExportHost`; App.tsx single mount.
+- Cross-owner note: Q01 aligned 3 Q04-owned PoC/test files to v8 (`poc/q04/editState.ts`, `editStateAdapter.ts`, `tests/q04Workspace.test.ts`) — Q04 review pending, no test weakening.
+
+## Next Actions
+
+1. PO decision: approve (or reject) `feature/phase1-pro-engine` (`0a4d4e2`) merge to `beta`. No merge happens before explicit approval.
+2. Beta deployment is a separate WO (not covered by G2).
+3. Post-CP2 WOs: live geometry/optical UI wiring (BL-09), >8192 tiling (BL-08), RAW open perf/memory (BL-06), 24MP warp budget (BL-07), doc refreshes (BL-10).
+4. Q01–Q05 stand by; PR #17–#20 stay Draft.
+
+## G2 Preconditions
+
+| Condition | State |
+| --- | --- |
+| Blocking defects = 0 | PASS (Q05: 0 reproduced) |
+| TypeScript errors = 0 | PASS |
+| Required unit tests pass | PASS (305/6 skipped) |
+| Required E2E pass | PASS (97/1/0, exit 0) |
+| Stable/Beta build succeeds | PASS (precache 71) |
+| Contract blobs identical | PASS (5/5) |
+| Real RAW decode / webkit / real devices | UNVERIFIED |

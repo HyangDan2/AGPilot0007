@@ -1,0 +1,249 @@
+{
+  "ok": true,
+  "frames": 1350,
+  "timing": {
+    "wallMs": 79132,
+    "fps": 17.06,
+    "perFrameMs": {
+      "median": 46.3,
+      "p95": 130.5,
+      "max": 550.6
+    },
+    "encodeAwaitMs": {
+      "median": 46.1,
+      "p95": 129.8,
+      "max": 550.5
+    }
+  },
+  "heapSlopeMBPerMinute": -0.68,
+  "peakHeapDeltaMB": 18.8,
+  "heapSeries": [
+    {
+      "frame": 30,
+      "heapMB": 22.4
+    },
+    {
+      "frame": 60,
+      "heapMB": 31.4
+    },
+    {
+      "frame": 90,
+      "heapMB": 23.5
+    },
+    {
+      "frame": 120,
+      "heapMB": 29.4
+    },
+    {
+      "frame": 150,
+      "heapMB": 31.4
+    },
+    {
+      "frame": 180,
+      "heapMB": 22.4
+    },
+    {
+      "frame": 210,
+      "heapMB": 24.5
+    },
+    {
+      "frame": 240,
+      "heapMB": 29.8
+    },
+    {
+      "frame": 270,
+      "heapMB": 31.7
+    },
+    {
+      "frame": 300,
+      "heapMB": 23.4
+    },
+    {
+      "frame": 330,
+      "heapMB": 25.5
+    },
+    {
+      "frame": 360,
+      "heapMB": 30.9
+    },
+    {
+      "frame": 390,
+      "heapMB": 20.6
+    },
+    {
+      "frame": 420,
+      "heapMB": 22.6
+    },
+    {
+      "frame": 450,
+      "heapMB": 28.1
+    },
+    {
+      "frame": 480,
+      "heapMB": 30
+    },
+    {
+      "frame": 510,
+      "heapMB": 21.7
+    },
+    {
+      "frame": 540,
+      "heapMB": 23.6
+    },
+    {
+      "frame": 570,
+      "heapMB": 29.2
+    },
+    {
+      "frame": 600,
+      "heapMB": 20.6
+    },
+    {
+      "frame": 630,
+      "heapMB": 22.6
+    },
+    {
+      "frame": 660,
+      "heapMB": 28
+    },
+    {
+      "frame": 690,
+      "heapMB": 30
+    },
+    {
+      "frame": 720,
+      "heapMB": 21.6
+    },
+    {
+      "frame": 750,
+      "heapMB": 23.5
+    },
+    {
+      "frame": 780,
+      "heapMB": 28.9
+    },
+    {
+      "frame": 810,
+      "heapMB": 31
+    },
+    {
+      "frame": 840,
+      "heapMB": 21.6
+    },
+    {
+      "frame": 870,
+      "heapMB": 27.8
+    },
+    {
+      "frame": 900,
+      "heapMB": 29.7
+    },
+    {
+      "frame": 930,
+      "heapMB": 20.7
+    },
+    {
+      "frame": 960,
+      "heapMB": 22.7
+    },
+    {
+      "frame": 990,
+      "heapMB": 28.8
+    },
+    {
+      "frame": 1020,
+      "heapMB": 30.7
+    },
+    {
+      "frame": 1050,
+      "heapMB": 21.8
+    },
+    {
+      "frame": 1080,
+      "heapMB": 27.7
+    },
+    {
+      "frame": 1110,
+      "heapMB": 29.6
+    },
+    {
+      "frame": 1140,
+      "heapMB": 20.7
+    },
+    {
+      "frame": 1170,
+      "heapMB": 22.7
+    },
+    {
+      "frame": 1200,
+      "heapMB": 28.7
+    },
+    {
+      "frame": 1230,
+      "heapMB": 30.7
+    },
+    {
+      "frame": 1260,
+      "heapMB": 21.6
+    },
+    {
+      "frame": 1290,
+      "heapMB": 27.8
+    },
+    {
+      "frame": 1320,
+      "heapMB": 29.8
+    },
+    {
+      "frame": 1350,
+      "heapMB": 20.6
+    }
+  ],
+  "output": {
+    "file": "out/long_45s.mp4",
+    "bytes": 26669627,
+    "mimeType": "video/mp4; codecs=\"avc1.64001f, mp4a.40.2\"",
+    "duration": 45
+  },
+  "verification": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "display dimensions",
+        "expected": "1280x720",
+        "actual": "1280x720",
+        "pass": true
+      },
+      {
+        "name": "video packet count == encoded frames",
+        "expected": 1350,
+        "actual": 1350,
+        "pass": true
+      },
+      {
+        "name": "A/V start offset preserved from input (<=1ms)",
+        "expected": -21.33,
+        "actual": -21.33,
+        "pass": true
+      },
+      {
+        "name": "A/V end delta preserved from input (<=5ms)",
+        "expected": 0,
+        "actual": 0,
+        "pass": true
+      },
+      {
+        "name": "audio packet hash matches input (passthrough)",
+        "expected": "4c033a960349f634205b421b1e3c73dd3af5c2b8ff93faacd8ce0ba7a1aa8137",
+        "actual": "4c033a960349f634205b421b1e3c73dd3af5c2b8ff93faacd8ce0ba7a1aa8137",
+        "pass": true
+      },
+      {
+        "name": "first/last frame decodes (long export)",
+        "expected": "true",
+        "actual": "true",
+        "pass": true
+      }
+    ]
+  }
+}

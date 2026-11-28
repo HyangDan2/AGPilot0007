@@ -86,7 +86,7 @@ test('shared renderer exports PNG and JPEG with date, proportional geometry, and
   const dateInOriginal=Array.from({length:600*80},(_,n)=>{const x=n%600,y=Math.floor(n/600),i=(y*640+x)*4;return split[i]!==originalOff[i]||split[i+1]!==originalOff[i+1]||split[i+2]!==originalOff[i+2];}).some(Boolean);
   const formats=[];
   for(const format of ['image/png','image/jpeg'] as const){
-    const prepared=await prepareExportImage(image,lut,DEFAULT_ADJUSTMENTS,{format,quality:1,scale:1},undefined,camera,'FS-010');
+    const prepared=await prepareExportImage(image,lut,{adjustments:DEFAULT_ADJUSTMENTS,camera,filmId:'FS-010'},{format,quality:1,scale:1});
     const img=await createImageBitmap(prepared.blob);const c=document.createElement('canvas');c.width=640;c.height=480;const cctx=c.getContext('2d')!;cctx.drawImage(img,0,0);const data=cctx.getImageData(0,0,640,480).data;let maxDiff=0,orange=0;
     for(let y=0;y<480;y++)for(let x=0;x<640;x++){const j=(y*640+x)*4,i=((479-y)*640+x)*4;for(let k=0;k<3;k++)maxDiff=Math.max(maxDiff,Math.abs(data[j+k]-on[i+k]));if(x>320&&y>380&&data[j]>data[j+2]+30)orange++;}
     formats.push({format,maxDiff,orange,size:prepared.blob.size,width:prepared.width,height:prepared.height});img.close();URL.revokeObjectURL(prepared.objectUrl);
@@ -102,7 +102,7 @@ test('shared renderer exports PNG and JPEG with date, proportional geometry, and
   const unsupportedLut=await loadCubeLut('luts/FS-009_RIMVA.cube');
   const unsupportedExports:number[][]=[];
   for(const settings of [undefined,{...camera,dateStamp:{...camera.dateStamp,enabled:false}}]){
-    const prepared=await prepareExportImage(image,unsupportedLut,DEFAULT_ADJUSTMENTS,{format:'image/png',quality:1,scale:1},undefined,settings,'FS-009');
+    const prepared=await prepareExportImage(image,unsupportedLut,{adjustments:DEFAULT_ADJUSTMENTS,camera:settings,filmId:'FS-009'},{format:'image/png',quality:1,scale:1});
     const data=Array.from(new Uint8Array(await prepared.blob.arrayBuffer()));unsupportedExports.push(data);URL.revokeObjectURL(prepared.objectUrl);
   }
   const unsupportedExportEqual=unsupportedExports[0].length===unsupportedExports[1].length&&unsupportedExports[0].every((v,i)=>v===unsupportedExports[1][i]);
@@ -127,7 +127,7 @@ test('camera recipes round-trip through UI and the prepared PNG contains only th
  const openRecipes=async()=>{if(isMobile){await page.locator('#main-nav-menu-button').click();await page.getByRole('button',{name:'Film Recipes',exact:true}).click();}else await page.getByRole('button',{name:'Recipes',exact:true}).click();};
  await openRecipes();const dialog=page.getByRole('dialog',{name:'Film Recipe Manager'});await dialog.locator('input[type=text]').fill('Retro date');await dialog.getByRole('button',{name:'Save',exact:true}).click();
  const downloadPromise=page.waitForEvent('download');await dialog.getByTitle('Export JSON',{exact:true}).click();const download=await downloadPromise;const stream=await download.createReadStream();const chunks:Buffer[]=[];for await(const chunk of stream!)chunks.push(Buffer.from(chunk));const json=Buffer.concat(chunks).toString();const recipe=JSON.parse(json);
- expect(recipe.schemaVersion).toBe(7);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
+ expect(recipe.schemaVersion).toBe(8);expect(recipe.baseFilmId).toBe('FS-010');expect(recipe.camera.dateStamp.enabled).toBe(true);
  await dialog.locator('input[type=file]').setInputFiles({name:'retro.json',mimeType:'application/json',buffer:Buffer.from(json)});await expect(dialog.getByRole('button',{name:'Apply',exact:true})).toHaveCount(2);
  await page.getByRole('button',{name:'Close recipe manager',exact:true}).click();
  if(isMobile){camera=await openCamera(page,true);}await camera.getByRole('button',{name:'Reset Camera Effects',exact:true}).click();if(isMobile && await page.getByRole('button',{name:'Close camera effects',exact:true}).isVisible())await page.getByRole('button',{name:'Close camera effects',exact:true}).click();

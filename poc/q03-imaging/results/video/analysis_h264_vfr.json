@@ -1,0 +1,62 @@
+{
+  "path": "video/h264_vfr_360p_6s.mp4",
+  "fileBytes": 768304,
+  "format": {
+    "name": "MP4",
+    "mimeType": "video/mp4"
+  },
+  "duration": 6,
+  "video": {
+    "codec": "avc",
+    "codecString": "avc1.64001e",
+    "canDecode": true,
+    "codedWidth": 640,
+    "codedHeight": 360,
+    "displayWidth": 640,
+    "displayHeight": 360,
+    "rotation": 0,
+    "duration": 5.9,
+    "decoderConfig": {
+      "codec": "avc1.64001e",
+      "codedWidth": 640,
+      "codedHeight": 360
+    },
+    "packetStats": {
+      "packetCount": 126,
+      "averagePacketRate": 21.356,
+      "averageBitrate": 934415
+    },
+    "timing": {
+      "sampledPackets": 120,
+      "firstTimestamps": [
+        0,
+        0.1,
+        0.03333333333333333,
+        0.06666666666666667,
+        0.3333333333333333,
+        0.16666666666666666,
+        0.13333333333333333,
+        0.2
+      ],
+      "durationsMinMs": 33.333,
+      "durationsMaxMs": 133.333,
+      "uniqueDurations": 2,
+      "deltaStdMs": 34.993,
+      "variableFrameRate": true
+    }
+  },
+  "audio": {
+    "codec": "aac",
+    "codecString": "mp4a.40.2",
+    "canDecode": true,
+    "sampleRate": 48000,
+    "numberOfChannels": 1,
+    "duration": 6,
+    "decoderConfig": {
+      "codec": "mp4a.40.2",
+      "sampleRate": 48000,
+      "numberOfChannels": 1
+    }
+  },
+  "inputBytes": 768304
+}

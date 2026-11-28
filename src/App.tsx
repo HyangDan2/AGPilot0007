@@ -4,6 +4,7 @@ import {ColorMixerButton} from './components/ColorMixer';
 import {ToneCurveButton} from './components/ToneCurve';
 import {CameraEffectsButton} from './components/CameraEffects';
 import { WorkspaceStrip } from './components/Workspace';
+import { VideoWorkspace } from './components/video/VideoWorkspace';
 import { FilterSetModal } from './components/FilterSet';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
@@ -14,6 +15,10 @@ import { AdjustmentPanel } from './components/AdjustmentPanel';
 import { MobileControls } from './components/MobileControls';
 import { RecipeModal } from './components/RecipeModal';
 import { ExportModal } from './components/ExportModal';
+import { BatchExportHost } from './components/q04/BatchExportHost';
+import { CopyPasteHost } from './components/q04/CopyPasteHost';
+import { ExifFilterHost } from './components/exif/ExifFilterHost';
+import { RecommendHost } from './components/recommend/RecommendHost';
 import { useEditorStore } from './stores/editorStore';
 import { MargarineModal } from './components/MargarineModal';
 import { Sliders, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -130,6 +135,9 @@ export const App: React.FC = () => {
 
         <WorkspaceStrip />
 
+        {/* Single video mount: Q04 workspace overlays the shell when a clip is active */}
+        <VideoWorkspace />
+
         {/* Mobile Drawer Controls (Mobile Only < 768px) */}
         <div className="md:hidden flex-shrink-0">
           <MobileControls />
@@ -148,6 +156,10 @@ export const App: React.FC = () => {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
       />
+      <BatchExportHost />
+      <CopyPasteHost />
+      <ExifFilterHost />
+      <RecommendHost />
       {/* Floating Light/Dark toggle (Navy & Lavender) */}
       <ThemeFab />
     </div>
