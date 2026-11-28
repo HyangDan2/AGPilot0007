@@ -125,8 +125,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         },
       };
 
+      // Commit any pending RAW re-develop so the resolved original matches the panel.
+      await useEditorStore.getState().flushDevelop();
+      const exportImage = useEditorStore.getState().image ?? image;
+
       const result = await prepareExportImage(
-        image,
+        exportImage,
         lut,
         composeDevelop(
           { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments, lensBlur },

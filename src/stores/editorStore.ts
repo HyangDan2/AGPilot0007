@@ -7,7 +7,7 @@ import { RETRO90 } from '../films/retro90';
 import { create } from 'zustand';
 import { decodeImageFile, type DecodedImage } from '../engine/image/decoder';
 import type { DecodedSource } from '../engine/contracts/imageBuffer';
-import type { RawDevelopInfo } from '../engine/raw/rawPreview';
+import type { RawDevelopInfo, RawRedevelopDecoded, RawRedeveloper } from '../engine/raw/rawPreview';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
 import { loadSavedRecipes, persistRecipes, validateRecipeJSON, shouldWriteRecipeV9, shouldWriteRecipeV10 } from './recipeStore';
@@ -41,6 +41,74 @@ export interface EditorImageLoad {
 // Q03 bakes WB/exposure into the developed source; the shader guard needs the
 // develop state, which only exists inside the lazily loaded RAW module.
 const rawDevelopBySource = new WeakMap<DecodedSource, RawDevelopInfo>();
+
+// CP4-07: one latest-wins redeveloper per open RAW. The module stays lazily
+// imported so the initial bundle never pulls the RAW decoder.
+let rawRedeveloper: { source: DecodedSource; instance: RawRedeveloper } | null = null;
+let redeveloperEpoch = 0;
+
+function disposeRedeveloper(): void {
+  rawRedeveloper?.instance.dispose();
+  rawRedeveloper = null;
+}
+
+function commitDevelopPreview(source: DecodedSource, decoded: RawRedevelopDecoded): void {
+  if (rawRedeveloper?.source !== source) return;
+  const image = useEditorStore.getState().image;
+  if (!image || image.previewCanvas === decoded.preview) return;
+  // New object identity: Viewport's image effect re-uploads and re-renders.
+  useEditorStore.setState({
+    image: {
+      ...image,
+      previewCanvas: decoded.preview,
+      previewWidth: decoded.previewWidth,
+      previewHeight: decoded.previewHeight,
+      originalElement: decoded.preview as unknown as HTMLImageElement,
+    },
+  });
+}
+
+async function ensureRedeveloper(source: DecodedSource | null): Promise<RawRedeveloper | null> {
+  if (!source) {
+    disposeRedeveloper();
+    return null;
+  }
+  if (rawRedeveloper?.source === source) return rawRedeveloper.instance;
+  disposeRedeveloper();
+  const epoch = ++redeveloperEpoch;
+  let createRawRedeveloper: typeof import('../engine/raw')['createRawRedeveloper'];
+  try {
+    ({ createRawRedeveloper } = await import('../engine/raw'));
+  } catch {
+    return null;
+  }
+  if (epoch !== redeveloperEpoch) return null;
+  // Partial module mocks (unit tests) may not provide the factory.
+  if (typeof createRawRedeveloper !== 'function') return null;
+  const instance = createRawRedeveloper(source, {
+    onCommit: (decoded) => commitDevelopPreview(source, decoded),
+    onError: (error) => console.error('RAW re-develop failed:', error),
+  });
+  if (!instance) return null;
+  if (epoch !== redeveloperEpoch) {
+    instance.dispose();
+    return null;
+  }
+  rawRedeveloper = { source, instance };
+  const state = useEditorStore.getState();
+  if (state.rawSource === source && state.develop) instance.request(state.develop);
+  return instance;
+}
+
+function queueRedevelop(develop: RawDevelopState | null): void {
+  const source = useEditorStore.getState().rawSource;
+  if (!source || !develop) return;
+  void ensureRedeveloper(source).then((runner) => {
+    if (!runner) return;
+    const state = useEditorStore.getState();
+    if (state.rawSource === source && state.develop) runner.request(state.develop);
+  }).catch(() => undefined);
+}
 
 export async function decodeEditorImage(file: File | Blob, signal?: AbortSignal): Promise<EditorImageLoad> {
   const name = (file as File).name || 'photo.jpg';
@@ -188,6 +256,8 @@ interface EditorState extends MixerUI {
   /** Editable develop state for the RAW panel; null for non-RAW images. */
   develop: RawDevelopState | null;
   setDevelop: (next: RawDevelopState) => void;
+  /** Waits for the pending RAW re-develop so preview/export read the latest state. */
+  flushDevelop: () => Promise<void>;
   lensBlur: LensBlurState;
   setLensBlur: (patch: Partial<LensBlurState>) => void;
   isLensBlurDepthEditing: boolean;
@@ -395,7 +465,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   resetGeometry: () => get().setGeometry(IDENTITY_GEOMETRY),
   resetOptical: () => get().setOptical(null),
   resetLocalAdjustments: () => get().setLocalAdjustments(normalizeLocalAdjustments(undefined)),
-  setDevelop: (next) => set({ develop: next }),
+  setDevelop: (next) => {
+    const develop = normalizeDevelop(next);
+    set({ develop });
+    queueRedevelop(develop);
+  },
+  flushDevelop: async () => {
+    const runner = rawRedeveloper;
+    if (!runner) return;
+    try {
+      await runner.instance.flush();
+    } catch {
+      // The runner reports decode failures through onError.
+    }
+  },
   setLensBlur: (patch) => set({ lensBlur: normalizeLensBlur({ ...get().lensBlur, ...patch }) }),
   setLensBlurDepthEditing: (value) => set({ isLensBlurDepthEditing: value }),
   applyParameterGroups: (patch) => {
@@ -455,6 +538,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       zoom: 1.0,
       pan: { x: 0, y: 0 },
     });
+    disposeRedeveloper();
+    if (rawSource) void ensureRedeveloper(rawSource).catch(() => undefined);
   },
 
   setFilm: (filmId) => {
@@ -669,6 +754,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       lensBlur,
       ...(develop ? { develop } : {}),
     });
+    // Opening a v10 recipe must re-develop the RAW, not just reflect the panel.
+    if (develop) queueRedevelop(develop);
   },
 
   importRecipe: async (jsonStr: string) => {
