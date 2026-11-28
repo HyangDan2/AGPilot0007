@@ -1,81 +1,88 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedImage } from '../src/engine/image/decoder';
 import type { DecodedSource } from '../src/engine/contracts/imageBuffer';
-import { decodeEditorImage } from '../src/stores/editorStore';
+import { decodeEditorImage, useEditorStore } from '../src/stores/editorStore';
 import { decodeImageFile } from '../src/engine/image/decoder';
-import { decodeRawToSource } from '../src/engine/raw';
+import { getRawDevelopInfo, openRawForEditing } from '../src/engine/raw';
+import { withRawDevelopGuard } from '../src/engine/pipeline/renderSettings';
+import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 
 vi.mock('../src/engine/image/decoder', () => ({ decodeImageFile: vi.fn() }));
-vi.mock('../src/engine/raw', () => ({ decodeRawToSource: vi.fn() }));
+vi.mock('../src/engine/raw', () => ({ openRawForEditing: vi.fn(), getRawDevelopInfo: vi.fn() }));
 
-const fakeRaw = {
-  source: {
-    id: 'raw-test',
-    name: 'sample.cr3',
-    mimeType: 'image/x-cr3',
-    width: 4,
-    height: 2,
-    precision: 'hdr-linear16',
-    hasAlpha: false,
-    decoderId: 'flashraw@0.5.0',
-  },
+const fakeSource = {
+  id: 'raw-test',
+  name: 'sample.cr3',
+  mimeType: 'image/x-cr3',
+  width: 3000,
+  height: 2000,
+  precision: 'hdr-linear16',
+  hasAlpha: false,
+  decoderId: 'raw-develop@1.0.0',
   working: {
     id: 'raw-test:working',
     sourceId: 'raw-test',
-    width: 4,
-    height: 2,
+    width: 3000,
+    height: 2000,
     format: 'rgba16f',
     colorSpace: 'linear-srgb',
-    memoryBytes: 4 * 2 * 8,
+    memoryBytes: 3000 * 2000 * 8,
     storage: 'cpu',
-    data: new Uint16Array(4 * 2 * 4),
+    data: new Uint16Array(4),
   },
   warnings: [],
 } as unknown as DecodedSource;
 
-let originalGetContext: typeof HTMLCanvasElement.prototype.getContext;
+const fakeImage = {
+  name: 'sample.cr3',
+  sourceUrl: 'blob:raw-test',
+  originalWidth: 6000,
+  originalHeight: 4000,
+  previewCanvas: {},
+  previewWidth: 2048,
+  previewHeight: 1365,
+  originalElement: {},
+  resolveOriginal: () => Promise.resolve({} as HTMLImageElement),
+} as unknown as DecodedImage;
+
+const opened = {
+  source: fakeSource,
+  image: fakeImage,
+  report: { warnings: [] },
+  width: 6000,
+  height: 4000,
+  memory: { totalBytes: 1, withinOpenLimit: true },
+} as unknown as Awaited<ReturnType<typeof openRawForEditing>>;
+
 let originalCreateObjectURL: typeof URL.createObjectURL;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  originalGetContext = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = ((type: string) => {
-    if (type !== '2d') return null;
-    return {
-      createImageData: (width: number, height: number) => ({
-        width,
-        height,
-        data: new Uint8ClampedArray(width * height * 4),
-      }),
-      putImageData: () => {},
-    };
-  }) as typeof HTMLCanvasElement.prototype.getContext;
+  vi.mocked(getRawDevelopInfo).mockReturnValue(null);
   originalCreateObjectURL = URL.createObjectURL;
   URL.createObjectURL = vi.fn(() => 'blob:raw-test');
 });
 
 afterEach(() => {
-  HTMLCanvasElement.prototype.getContext = originalGetContext;
   URL.createObjectURL = originalCreateObjectURL;
 });
 
 describe('decodeEditorImage routing', () => {
-  it('routes RAW files through the RAW decoder and returns the working source', async () => {
-    vi.mocked(decodeRawToSource).mockResolvedValue(fakeRaw);
+  it('routes RAW files through the develop seam and returns its source', async () => {
+    vi.mocked(openRawForEditing).mockResolvedValue(opened);
     const file = new File([new Uint8Array([1, 2, 3])], 'sample.cr3', { type: 'image/x-cr3' });
 
     const result = await decodeEditorImage(file);
 
-    expect(decodeRawToSource).toHaveBeenCalledWith(
+    expect(openRawForEditing).toHaveBeenCalledWith(
       { data: file, name: 'sample.cr3', type: 'image/x-cr3', size: file.size },
       { signal: undefined },
     );
     expect(decodeImageFile).not.toHaveBeenCalled();
-    expect(result.rawSource).toBe(fakeRaw);
-    expect(result.image.originalWidth).toBe(4);
-    expect(result.image.originalHeight).toBe(2);
-    expect(result.image.previewWidth).toBe(4);
-    expect(result.image.name).toBe('sample.cr3');
+    expect(result.rawSource).toBe(fakeSource);
+    expect(result.image).toBe(fakeImage);
+    expect(result.image.originalWidth).toBe(6000);
+    expect(result.image.previewWidth).toBe(2048);
   });
 
   it('keeps JPEG/PNG/WebP on the existing decoder with no RAW source', async () => {
@@ -87,17 +94,54 @@ describe('decodeEditorImage routing', () => {
 
     expect(result.image).toBe(plainImage);
     expect(result.rawSource).toBeNull();
-    expect(decodeRawToSource).not.toHaveBeenCalled();
+    expect(openRawForEditing).not.toHaveBeenCalled();
     expect(decodeImageFile).toHaveBeenCalledWith(file, 'photo.jpg', undefined);
   });
 
   it('propagates AbortError unchanged instead of wrapping it', async () => {
     const aborted = new DOMException('RAW decode cancelled', 'AbortError');
-    vi.mocked(decodeRawToSource).mockRejectedValue(aborted);
+    vi.mocked(openRawForEditing).mockRejectedValue(aborted);
     const controller = new AbortController();
     const file = new File(['raw'], 'sample.cr3', { type: 'image/x-cr3' });
 
     await expect(decodeEditorImage(file, controller.signal)).rejects.toBe(aborted);
     expect(decodeImageFile).not.toHaveBeenCalled();
+  });
+
+  it('labels RAW decoder failures instead of falling back to a preview', async () => {
+    vi.mocked(openRawForEditing).mockRejectedValue(
+      Object.assign(new Error('too large'), { code: 'budget-exceeded' }),
+    );
+    const file = new File(['raw'], 'sample.cr3', { type: 'image/x-cr3' });
+
+    await expect(decodeEditorImage(file)).rejects.toThrow(/memory budget/);
+    expect(decodeImageFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('RAW develop state and shader guard', () => {
+  it('exposes the develop info with the opened source and drops it for non-RAW images', async () => {
+    const info = { settings: {}, report: {}, identity: false, width: 6000, height: 4000 } as never;
+    vi.mocked(openRawForEditing).mockResolvedValue(opened);
+    vi.mocked(getRawDevelopInfo).mockReturnValue(info);
+    const file = new File(['raw'], 'sample.cr3', { type: 'image/x-cr3' });
+
+    const result = await decodeEditorImage(file);
+    useEditorStore.getState().setImage(result.image, result.rawSource);
+    expect(useEditorStore.getState().rawDevelop).toBe(info);
+
+    const plain = { name: 'photo.jpg', sourceUrl: 'blob:jpeg' } as DecodedImage;
+    useEditorStore.getState().setImage(plain);
+    expect(useEditorStore.getState().rawDevelop).toBeNull();
+  });
+
+  it('neutralizes shader exposure and white balance only when the develop is non-identity', () => {
+    const settings = { adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1.2, temperature: 30, tint: -12 } };
+
+    expect(withRawDevelopGuard(settings, null)).toBe(settings);
+    expect(withRawDevelopGuard(settings, { identity: true })).toBe(settings);
+    const guarded = withRawDevelopGuard(settings, { identity: false });
+    expect(guarded.adjustments).toMatchObject({ exposure: 0, temperature: 0, tint: 0 });
+    expect(guarded.adjustments.contrast).toBe(DEFAULT_ADJUSTMENTS.contrast);
   });
 });

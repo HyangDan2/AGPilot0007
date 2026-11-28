@@ -1,4 +1,4 @@
-import { DecodedImage } from '../image/decoder';
+import { DecodedImage, resolveDecodedImageOriginal } from '../image/decoder';
 import { ParsedLut3D } from '../color/lutLoader';
 import { WebGL2FilmRenderer } from '../renderer/webglRenderer';
 import type { RenderSettings } from '../pipeline/renderSettings';
@@ -6,6 +6,8 @@ import { ExportOptions, PreparedExport } from '../../types/export';
 import { createAbortError, throwIfExportAborted, type ExportControl } from '../contracts/exportControl';
 import { assertRenderPlanParity, runRenderPipeline } from '../pipeline/renderPipeline';
 import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
+import { createQ02RenderRegistry } from '../optical/modules';
+import { geometryOutputSize } from '../optical/geometry';
 
 export type { ExportOptions, PreparedExport };
 
@@ -38,16 +40,21 @@ export async function prepareExportImage(
   control?: ExportControl
 ): Promise<PreparedExport> {
   throwIfExportAborted(control?.signal);
-  assertRenderPlanParity(settings);
+  const registry = createQ02RenderRegistry();
+  assertRenderPlanParity(settings, registry);
   onProgress?.(10, 'Initializing export pipeline...');
 
-  // Target dimensions preserving exact aspect ratio
-  const origW = image.originalWidth;
-  const origH = image.originalHeight;
-  const aspect = origW / origH;
+  // RAW keeps a preview canvas in originalElement; the resolver starts the
+  // full-resolution develop. Failures propagate so a preview is never exported
+  // silently in place of the original.
+  const source = await resolveDecodedImageOriginal(image);
+
+  // Geometry output (quarter turns swap axes, crop multiplies) is the export base.
+  const output = geometryOutputSize(settings.geometry, image.originalWidth, image.originalHeight);
+  const aspect = output.width / output.height;
 
   const scale = options.scale && options.scale > 0 && options.scale <= 1 ? options.scale : 1.0;
-  let exportWidth = options.targetWidth ? Math.round(options.targetWidth) : Math.round(origW * scale);
+  let exportWidth = options.targetWidth ? Math.round(options.targetWidth) : Math.round(output.width * scale);
   let exportHeight = Math.round(exportWidth / aspect);
 
   // Create temporary probe canvas to inspect GPU constraints
@@ -91,7 +98,7 @@ export async function prepareExportImage(
   };
 
   onProgress?.(50, 'Uploading image textures and 3D LUT...');
-  renderer.setImage(image.originalElement, exportWidth, exportHeight);
+  renderer.setImage(source, exportWidth, exportHeight);
   renderer.setLut(lut);
 
   try {
@@ -105,6 +112,10 @@ export async function prepareExportImage(
         height: exportHeight,
         dpr: 1,
         settings,
+        source,
+        sourceWidth: image.originalWidth,
+        sourceHeight: image.originalHeight,
+        registry,
         signal: control?.signal,
         extras: {
           compareMode: 'none',
