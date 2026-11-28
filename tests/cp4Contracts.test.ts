@@ -13,12 +13,11 @@ import {
   normalizeLensBlur,
   validateLensBlur,
 } from '../src/engine/contracts/lensBlur';
+import type { LensBlurPlan } from '../src/engine/contracts/lensBlur';
 import type { VideoCapabilities, VideoExportHandle, VideoExportSettings } from '../src/engine/contracts/video';
 import { RECIPE_SCHEMA_MAX, assertRecipePersistable, RECIPE_STORAGE_KEYS } from '../src/engine/contracts/recipeValidation';
 import { IDENTITY_GEOMETRY } from '../src/engine/contracts/geometry';
 import { validateRecipeJSON, CURRENT_SCHEMA_VERSION, shouldWriteRecipeV10 } from '../src/stores/recipeStore';
-import { createVideoFrameRenderer } from '../src/engine/renderer/frameRenderer';
-import { renderTiled } from '../src/engine/renderer/tiledExport';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 import type { RenderSettings } from '../src/engine/pipeline/renderSettings';
 
@@ -312,22 +311,36 @@ describe('CP4 recipe V10 (write 10, read 1-10)', () => {
   });
 });
 
-describe('CP4 render seam stubs', () => {
-  it('exposes createVideoFrameRenderer with the CP4 signature', () => {
-    expect(() =>
-      createVideoFrameRenderer({} as HTMLCanvasElement, { adjustments: { ...DEFAULT_ADJUSTMENTS } }),
-    ).toThrow(/not implemented/);
-  });
-
-  it('exposes renderTiled with the CP4 signature', async () => {
-    await expect(
-      renderTiled({
-        image: {} as never,
-        settings: { adjustments: { ...DEFAULT_ADJUSTMENTS } },
-        maxTextureSize: 4096,
-        budgetBytes: 64 * 1024 * 1024,
-        overlap: 32,
-      }),
-    ).rejects.toThrow(/not implemented/);
+describe('CP4 lens blur plan payload', () => {
+  it('declares the frozen renderer-binding shape', () => {
+    const psf = new Float32Array(64 * 4);
+    const plan: LensBlurPlan = {
+      width: 1000,
+      height: 750,
+      outputWidth: 2000,
+      outputHeight: 1500,
+      halfRes: true,
+      focusPlane: 0.5,
+      focusRange: 0.2,
+      falloff: 0.4,
+      maxCocShortSide: 0.08 / 2.8,
+      maxCocPx: Math.round((0.08 / 2.8) * 750),
+      aperture: 2.8,
+      taps: 24,
+      tapCount: 24,
+      quality: 'preview',
+      highlightBoost: 0.4,
+      guardBand: 0.08,
+      guardStrength: 1,
+      psf,
+      depth: null,
+    };
+    expect(Object.keys(plan)).toHaveLength(19);
+    expect(plan.psf).toHaveLength(256);
+    expect(plan.psf).toBeInstanceOf(Float32Array);
+    expect(plan.depth).toBeNull();
+    expect(plan.halfRes).toBe(true);
+    expect(plan.maxCocPx).toBeGreaterThan(0);
+    expect(plan.maxCocPx).toBeLessThanOrEqual(750);
   });
 });

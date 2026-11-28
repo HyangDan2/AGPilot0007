@@ -24,12 +24,35 @@ export interface LensBlurCapability {
   supportsFloatLinear?: boolean;
 }
 
+/**
+ * Frozen renderer payload (WO_CP4_MASTER §2.2a, 2026-11-28). The planner
+ * returns this shape and the render stage binds it directly; `null` from the
+ * planner keeps the byte-equal path.
+ */
 export interface LensBlurPlan {
-  maxCocPx: number;
-  taps: number;
+  /** Gather dimensions after `halfRes`. */
+  width: number;
+  height: number;
+  outputWidth: number;
+  outputHeight: number;
   halfRes: boolean;
   focusPlane: number;
   focusRange: number;
+  falloff: number;
+  /** CoC ceiling in short-side units (`0.08 / aperture`). */
+  maxCocShortSide: number;
+  maxCocPx: number;
+  aperture: number;
+  taps: number;
+  tapCount: number;
+  quality: 'preview' | 'export';
+  highlightBoost: number;
+  guardBand: number;
+  guardStrength: number;
+  /** 64×1 RGBA32F texels (256 floats). */
+  psf: Float32Array;
+  /** Rasterized manual depth at output resolution; null = procedural depth. */
+  depth: Float32Array | null;
 }
 
 /** Q02 implements this in `src/engine/optical/lensBlur*`; null keeps the byte-equal path. */

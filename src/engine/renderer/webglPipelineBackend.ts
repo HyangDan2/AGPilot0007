@@ -1,4 +1,4 @@
-import { renderSourceStage } from '../optical/sourceStage';
+import { renderSourceStage, type Q02SourceStageSource } from '../optical/sourceStage';
 import {
   localStageCacheKey,
   planLocalStage,
@@ -46,6 +46,7 @@ export function buildRenderRequest(frame: RenderPipelineFrame): RenderRequest {
     sharpeningDraft: extras.sharpeningDraft,
     mixerReference: extras.mixerReference,
     mixerVisualize: extras.mixerVisualize ?? null,
+    ...(frame.tile ? { tile: frame.tile } : {}),
   };
 }
 
@@ -65,7 +66,8 @@ function isCanvasImageSource(value: unknown): value is CanvasImageSource {
     (typeof OffscreenCanvas !== 'undefined' && value instanceof OffscreenCanvas) ||
     (typeof ImageBitmap !== 'undefined' && value instanceof ImageBitmap) ||
     (typeof HTMLImageElement !== 'undefined' && value instanceof HTMLImageElement) ||
-    (typeof HTMLVideoElement !== 'undefined' && value instanceof HTMLVideoElement)
+    (typeof HTMLVideoElement !== 'undefined' && value instanceof HTMLVideoElement) ||
+    (typeof VideoFrame !== 'undefined' && value instanceof VideoFrame)
   );
 }
 
@@ -135,7 +137,7 @@ export function createWebGLPipelineBackend(renderer: WebGL2FilmRenderer, options
           if (isCanvasImageSource(source)) corrected = source;
         } else if (size) {
           const result = renderSourceStage({
-            source,
+            source: source as Q02SourceStageSource,
             sourceWidth: size.width,
             sourceHeight: size.height,
             output: { width: frame.width, height: frame.height },
