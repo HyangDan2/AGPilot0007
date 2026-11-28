@@ -594,7 +594,12 @@ export class WebGL2FilmRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 64, 1, 0, gl.RGBA, gl.FLOAT, plan.psf);
+      // The chunk gathers in scene space where +v points image-up, but the CPU
+      // reference applies tap dy top-down; mirror dy once per plan.
+      const psf = new Float32Array(plan.psf.length);
+      psf.set(plan.psf);
+      for (let i = 1; i < psf.length; i += 4) psf[i] = -plan.psf[i];
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 64, 1, 0, gl.RGBA, gl.FLOAT, psf);
     }
     gl.uniform1i(u.u_q02_lens_psf, 1);
 
@@ -608,7 +613,16 @@ export class WebGL2FilmRenderer {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, plan.width, plan.height, 0, gl.RED, gl.FLOAT, plan.depth);
+        // plan.depth is top-down row-major, while the wrapper samples the
+        // scene target's v=1 at image top. UNPACK_FLIP_Y_WEBGL is ignored for
+        // ArrayBufferView uploads (and other paths need it false), so flip the
+        // rows into a scratch array before upload.
+        const { width, height } = plan;
+        const flipped = new Float32Array(plan.depth.length);
+        for (let row = 0; row < height; row++) {
+          flipped.set(plan.depth.subarray(row * width, (row + 1) * width), (height - 1 - row) * width);
+        }
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, flipped);
       }
       gl.uniform1i(u.u_q02_lens_use_depth, 1);
     } else {

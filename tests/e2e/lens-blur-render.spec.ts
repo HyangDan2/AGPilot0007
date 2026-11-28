@@ -93,13 +93,15 @@ test.describe('CP4-06 lens blur render wiring', () => {
         kind: 'radial' as const, center: { x: 0.5, y: 0.45 }, radiusX: 0.8, radiusY: 0.7, rotation: 0, feather: 0.6,
       }];
 
-      const runQuality = async (quality: 'preview' | 'export', withDepth: boolean) => {
-        const state = normalizeLensBlur({
-          enabled: true, focusPlane: 0.4, focusRange: 0.12, aperture: 1.4, bladeCount: 6,
-          rotationDeg: 0, quality, highlightBoost: 0.4, depthMask: withDepth ? depthMask : null,
-        });
-        const plan = planLensBlur(state, { width: W, height: H }, { maxTextureSize: 4096 });
-        if (!plan) throw new Error('lens plan unexpectedly null');
+      // Deliberately asymmetric: a compact in-focus island near the top. A
+      // vertical mirror anywhere in the upload path swaps sharp and blurred
+      // halves, which the symmetric mask above cannot detect.
+      const asymDepthMask = [{
+        id: 'cp4-depth-asym', name: 'Depth top', enabled: true, blend: 'add' as const, opacity: 1, inverted: false,
+        kind: 'radial' as const, center: { x: 0.5, y: 0.12 }, radiusX: 0.2, radiusY: 0.14, rotation: 0, feather: 0.04,
+      }];
+
+      const comparePlan = async (plan: any) => {
         const off = await render(plan.width, plan.height);
         const src = new Float32Array(plan.width * plan.height * 4);
         for (let y = 0; y < plan.height; y++) {
@@ -122,9 +124,17 @@ test.describe('CP4-06 lens blur render wiring', () => {
         let parityCount = 0;
         let changedMax = 0;
         let changedSum = 0;
+        let gpuChange = 0;
+        let cpuChange = 0;
+        let gpuChangeSq = 0;
+        let cpuChangeSq = 0;
+        let changeProduct = 0;
+        let changeCount = 0;
         for (let y = margin; y < plan.height - margin; y++) {
           for (let x = margin; x < plan.width - margin; x++) {
             const at = (y * plan.width + x) * 4;
+            let gpuPixel = 0;
+            let cpuPixel = 0;
             for (let c = 0; c < 3; c++) {
               const diff = Math.abs(on[at + c] / 255 - cpu[at + c]);
               parityMax = Math.max(parityMax, diff);
@@ -133,18 +143,55 @@ test.describe('CP4-06 lens blur render wiring', () => {
               const changed = Math.abs(on[at + c] - off[at + c]);
               changedMax = Math.max(changedMax, changed);
               changedSum += changed;
+              gpuPixel += changed / 3;
+              cpuPixel += Math.abs(cpu[at + c] * 255 - off[at + c]) / 3;
             }
+            gpuChange += gpuPixel;
+            cpuChange += cpuPixel;
+            gpuChangeSq += gpuPixel * gpuPixel;
+            cpuChangeSq += cpuPixel * cpuPixel;
+            changeProduct += gpuPixel * cpuPixel;
+            changeCount += 1;
           }
         }
+        // Pearson correlation of the GPU and CPU change maps. A mirrored depth
+        // or PSF makes the GPU blur where the reference stays sharp (and vice
+        // versa), which drives this negative even when blur energy per half is
+        // balanced by smooth content.
+        const cov = changeProduct / changeCount - (gpuChange / changeCount) * (cpuChange / changeCount);
+        const varGpu = gpuChangeSq / changeCount - Math.pow(gpuChange / changeCount, 2);
+        const varCpu = cpuChangeSq / changeCount - Math.pow(cpuChange / changeCount, 2);
+        const correlation = varGpu > 0 && varCpu > 0 ? cov / Math.sqrt(varGpu * varCpu) : 0;
         return {
-          quality,
-          withDepth,
           planSize: { width: plan.width, height: plan.height },
           tapCount: plan.tapCount,
           hasDepth: plan.depth !== null,
           changed: { max: changedMax / 255, mean: changedSum / parityCount / 255 },
           parity: { max: parityMax, mean: paritySum / parityCount },
+          orientation: { correlation },
         };
+      };
+
+      const runQuality = async (quality: 'preview' | 'export', withDepth: boolean) => {
+        const state = normalizeLensBlur({
+          enabled: true, focusPlane: 0.4, focusRange: 0.12, aperture: 1.4, bladeCount: 6,
+          rotationDeg: 0, quality, highlightBoost: 0.4, depthMask: withDepth ? depthMask : null,
+        });
+        const plan = planLensBlur(state, { width: W, height: H }, { maxTextureSize: 4096 });
+        if (!plan) throw new Error('lens plan unexpectedly null');
+        return { quality, withDepth, ...(await comparePlan(plan)) };
+      };
+
+      // focusPlane 1 with a near-top island: the reference keeps the top sharp,
+      // so the bottom half must carry the blur energy.
+      const runAsymmetric = async (quality: 'preview' | 'export') => {
+        const state = normalizeLensBlur({
+          enabled: true, focusPlane: 1, focusRange: 0.12, aperture: 1.4, bladeCount: 6,
+          rotationDeg: 0, quality, highlightBoost: 0.2, depthMask: asymDepthMask,
+        });
+        const plan = planLensBlur(state, { width: W, height: H }, { maxTextureSize: 4096 });
+        if (!plan) throw new Error('asymmetric lens plan unexpectedly null');
+        return { quality, withDepth: true, ...(await comparePlan(plan)) };
       };
 
       return {
@@ -152,8 +199,13 @@ test.describe('CP4-06 lens blur render wiring', () => {
         previewDepth: await runQuality('preview', true),
         exportNull: await runQuality('export', false),
         exportDepth: await runQuality('export', true),
+        asymPreview: await runAsymmetric('preview'),
+        asymExport: await runAsymmetric('export'),
       };
     });
+
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ parity: result }, null, 0));
 
     // Every tier really changes pixels (the post pass ran, not a dropped stage)
     // and stays within the chunk-vs-reference envelope measured on this scene.
@@ -161,11 +213,24 @@ test.describe('CP4-06 lens blur render wiring', () => {
       expect(run.tapCount).toBeGreaterThan(1);
       expect(run.changed.mean).toBeGreaterThan(0.001);
       expect(run.changed.max).toBeGreaterThan(0.08);
-      // Depth cases guard-weight taps, so the chunk/reference gap roughly
-      // doubles there (measured: 0.0078 mean / 0.066 max at preview).
-      expect(run.parity.mean).toBeLessThan(0.01);
-      expect(run.parity.max).toBeLessThan(0.07);
+      // Measured after the CP4-08 orientation fix: max ~0.004 (<=1.5 LSB) at
+      // every tier. A reintroduced mirror lands at 0.14+, far outside this.
+      expect(run.parity.mean).toBeLessThan(0.002);
+      expect(run.parity.max).toBeLessThan(0.008);
     }
+    // Asymmetric depth: the reference keeps the top island sharp. Before the
+    // CP4-08 orientation fix this measured parity max 0.141 (preview) / 0.163
+    // (export) with change-map correlation 0.69 / 0.80; after the fix the
+    // correlation is 0.998+.
+    for (const run of [result.asymPreview, result.asymExport]) {
+      expect(run.tapCount).toBeGreaterThan(1);
+      expect(run.changed.mean).toBeGreaterThan(0.001);
+      expect(run.parity.mean).toBeLessThan(0.002);
+      expect(run.parity.max).toBeLessThan(0.008);
+      expect(run.orientation.correlation).toBeGreaterThan(0.95);
+    }
+    expect(result.asymPreview.planSize).toEqual({ width: 48, height: 32 });
+    expect(result.asymExport.planSize).toEqual({ width: 96, height: 64 });
     expect(result.preview.hasDepth).toBe(false);
     expect(result.previewDepth.hasDepth).toBe(true);
     expect(result.exportDepth.hasDepth).toBe(true);
