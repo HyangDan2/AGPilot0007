@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isNeutralLensBlur, normalizeLensBlur, type LensBlurState } from '../src/engine/contracts/lensBlur';
+import {
+  isNeutralLensBlur,
+  normalizeLensBlur,
+  type LensBlurPlan,
+  type LensBlurState,
+} from '../src/engine/contracts/lensBlur';
 import type { LinearMask, LuminanceMask } from '../src/engine/contracts/masks';
 import {
   LENS_BLUR_FRAGMENT,
@@ -16,7 +21,6 @@ import {
   rasterizeDepthMask,
   suggestTaps,
   type ApertureShape,
-  type LensBlurPlan,
 } from '../src/engine/optical/lensBlur';
 
 const CAPABILITY = { maxTextureSize: 4096 };

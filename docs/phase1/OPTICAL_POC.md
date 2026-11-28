@@ -680,18 +680,20 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 
 - **API**: `planLensBlur(state, outputSize, capability) -> LensBlurPlan | null` (Q00-frozen seam,
   WO_CP4 §2.2a). `LensBlurState` / `LensBlurCapability` / `normalizeLensBlur` / `isNeutralLensBlur` /
-  `LENS_BLUR_LIMITS` come from `contracts/lensBlur.ts` (CP4-01a, pro-engine `cac6e7e`); normalization
-  clamps `rotationDeg` rather than wrapping and nulls an empty mask stack. The local `LensBlurPlan` return
-  type stays engine-owned until Q01 lands the expanded contract plan (01b). `depthMask` is the frozen flat
+  `LENS_BLUR_LIMITS` / `LensBlurPlan` come from `contracts/lensBlur.ts` (CP4-01a/01b); normalization
+  clamps `rotationDeg` rather than wrapping and nulls an empty mask stack. `depthMask` is the frozen flat
   `MaskData[] | null`; coverage = normalized depth
   (0 near, 1 far), composed with per-mask blend/opacity/invert via `composeMaskStack`. `luminance`/`color`
   masks are rejected with an explicit error because the planner has no corrected pixels. `null` → radial
   procedural depth (short-side distance from center, farthest corner = 1).
-- **Plan**: `{ width, height, halfRes, outputWidth, outputHeight, maxCocPx, taps, tapCount, psf, depth,
-  guardBand, guardStrength, focusPlane, focusRange, falloff, aperture, quality, highlightBoost }`.
-  Preview gathers at half resolution (`halfRes`), both quality tiers clamp to `capability.maxTextureSize`
-  and `capability.maxTaps`. `suggestTaps` (PoC OPT-06) tiers 12/24, 20/40, 32/64 by CoC pixels, and
-  `null` is returned when the budget resolves below 2 taps so the renderer keeps the byte-equal path.
+- **Plan**: contract 19-field payload `{ width, height, outputWidth, outputHeight, halfRes, maxCocPx,
+  maxCocShortSide, taps, tapCount, psf, depth, guardBand, guardStrength, focusPlane, focusRange, falloff,
+  aperture, quality, highlightBoost }`; `aperture` is the f-number and `taps`/`tapCount` are counts (the
+  PSF offsets/weights live only in the packed `psf` texture; the CPU reference decodes that texture so it
+  matches the GPU upload bit-for-bit). Preview gathers at half resolution (`halfRes`), both quality tiers
+  clamp to `capability.maxTextureSize` and `capability.maxTaps`. `suggestTaps` (PoC OPT-06) tiers 12/24,
+  20/40, 32/64 by CoC pixels, and `null` is returned when the budget resolves below 2 taps so the renderer
+  keeps the byte-equal path. `depth` is rasterized at gather resolution (`width`×`height`), not output size.
 - **CoC**: `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036 short side);
   `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`.
   `focusRange = 1` makes the whole depth field sharp (plan `null`). Aperture PSF is the PoC golden-angle
@@ -709,8 +711,8 @@ renderSourceStage(input: Q02SourceStageInput): Q02SourceStageResult | null
 - **UI**: `LensBlurPanel.tsx` (enabled, focus plane/range, aperture, blades, rotation, highlight boost,
   preview/export quality, depth status + clear) and `LensBlurOverlay.tsx` (paints brush strokes into the
   flat depth stack; pointer capture, one stroke per press). Both are controlled components; Q01 mounts them.
-- **검증**: tsc 0; vitest 50 files / 433 passed (9 skipped) after merging pro-engine `c0843e4` and switching
-  to the contract types. `tests/lens-blur.test.ts` covers CoC
+- **검증**: after merging pro-engine `ff9fc47` (CP4-01b `be97411`) the engine returns the contract plan;
+  tsc 0, `tests/lens-blur.test.ts` 15/15. That suite covers CoC
   monotonicity/range/aperture, blade-polygon containment + normalized weights + determinism, PSF packing,
   neutral/identity `null`, half-res + texture/tap clamps, uniform-image energy conservation, depth-mask
   rejection rules, halo suppression across a depth step, and preview-vs-export parity after upscale

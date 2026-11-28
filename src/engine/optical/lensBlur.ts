@@ -3,6 +3,7 @@ import {
   normalizeLensBlur,
   LENS_BLUR_LIMITS,
   type LensBlurCapability,
+  type LensBlurPlan,
   type LensBlurState,
 } from '../contracts/lensBlur';
 import type { MaskData } from '../contracts/masks';
@@ -30,31 +31,6 @@ export interface ApertureShape {
 export interface PsfTap {
   offset: { x: number; y: number };
   weight: number;
-}
-
-export interface LensBlurPlan {
-  quality: LensBlurQuality;
-  outputWidth: number;
-  outputHeight: number;
-  /** Gather resolution; preview uses half resolution before the upscale pass. */
-  width: number;
-  height: number;
-  halfRes: boolean;
-  aperture: ApertureShape;
-  focusPlane: number;
-  focusRange: number;
-  falloff: number;
-  maxCocShortSide: number;
-  maxCocPx: number;
-  taps: PsfTap[];
-  tapCount: number;
-  /** 64x1 RGBA32F texels: xy offset in CoC units, z weight, w unused. */
-  psf: Float32Array;
-  /** Render-resolution normalized depth when a manual depth mask is active. */
-  depth: Float32Array | null;
-  guardBand: number;
-  guardStrength: number;
-  highlightBoost: number;
 }
 
 // f/1 defocus proxy in short-side units. CoC falls as 1/N, so wide apertures
@@ -267,13 +243,13 @@ export function planLensBlur(
     width,
     height,
     halfRes,
-    aperture,
+    aperture: normalized.aperture,
     focusPlane: normalized.focusPlane,
     focusRange: normalized.focusRange,
     falloff: focusFalloff(normalized.focusRange),
     maxCocShortSide,
     maxCocPx,
-    taps,
+    taps: taps.length,
     tapCount: taps.length,
     psf: psfTextureData(taps),
     depth: rasterizeDepthMask(normalized.depthMask, width, height),
@@ -330,6 +306,19 @@ function depthAt(
   return top * (1 - fy) + bottom * fy;
 }
 
+/** Decode the packed PSF so the CPU reference uses the exact texels the GPU uploads. */
+function tapsFromPsf(plan: LensBlurPlan): PsfTap[] {
+  const count = Math.min(plan.tapCount, plan.taps, PSF_TEXTURE_WIDTH);
+  const taps: PsfTap[] = [];
+  for (let i = 0; i < count; i++) {
+    taps.push({
+      offset: { x: plan.psf[i * 4], y: plan.psf[i * 4 + 1] },
+      weight: plan.psf[i * 4 + 2],
+    });
+  }
+  return taps;
+}
+
 /**
  * CPU reference gather. Pixels with effectively zero CoC are copied exactly so
  * the identity path is bit-stable. The depth-discontinuity guard down-weights
@@ -351,6 +340,7 @@ export function blurRgbaReference(
   const scaleV = Math.max(1, 1 / aspect);
   const guardBand = Math.max(plan.guardBand, 1e-4);
   const boost = plan.highlightBoost;
+  const taps = tapsFromPsf(plan);
   const out = new Float32Array(src.length);
   const sample = [0, 0, 0, 0];
 
@@ -376,7 +366,7 @@ export function blurRgbaReference(
       let g = 0;
       let b = 0;
       let total = 0;
-      for (const tap of plan.taps) {
+      for (const tap of taps) {
         const su = u + tap.offset.x * du;
         const sv = v + tap.offset.y * dv;
         sampleBilinear(src, width, height, su, sv, sample);
