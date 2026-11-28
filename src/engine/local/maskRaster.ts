@@ -202,6 +202,40 @@ function colorCoverage(
  * feather, and stroke distance use short-side normalized units, so preview and
  * export produce identical coverage shapes at different pixel sizes.
  */
+export function maskCoverageAt(
+  mask: MaskData,
+  nx: number,
+  ny: number,
+  width: number,
+  height: number,
+  index: number,
+  pixels?: CorrectedPixels,
+): number {
+  let value = 0;
+  switch (mask.kind) {
+    case 'brush':
+      value = brushStrokeCoverage(mask, nx, ny, width, height);
+      break;
+    case 'linear':
+      value = linearCoverage(mask, nx, ny, width, height);
+      break;
+    case 'radial':
+      value = radialCoverage(mask, nx, ny, width, height);
+      break;
+    case 'luminance':
+      if (!pixels) throw new Error('Luminance masks require corrected pixels');
+      value = luminanceCoverage(mask, pixels, index);
+      break;
+    case 'color':
+      if (!pixels) throw new Error('Color masks require corrected pixels');
+      value = colorCoverage(mask, pixels, index);
+      break;
+    default:
+      value = 0;
+  }
+  return clamp01(mask.inverted ? 1 - value : value);
+}
+
 export function rasterizeMask(
   mask: MaskData,
   width: number,
@@ -214,29 +248,7 @@ export function rasterizeMask(
     for (let x = 0; x < width; x++) {
       const nx = (x + 0.5) / width;
       const index = y * width + x;
-      let value = 0;
-      switch (mask.kind) {
-        case 'brush':
-          value = brushStrokeCoverage(mask, nx, ny, width, height);
-          break;
-        case 'linear':
-          value = linearCoverage(mask, nx, ny, width, height);
-          break;
-        case 'radial':
-          value = radialCoverage(mask, nx, ny, width, height);
-          break;
-        case 'luminance':
-          if (!pixels) throw new Error('Luminance masks require corrected pixels');
-          value = luminanceCoverage(mask, pixels, index);
-          break;
-        case 'color':
-          if (!pixels) throw new Error('Color masks require corrected pixels');
-          value = colorCoverage(mask, pixels, index);
-          break;
-        default:
-          value = 0;
-      }
-      coverage[index] = clamp01(mask.inverted ? 1 - value : value);
+      coverage[index] = maskCoverageAt(mask, nx, ny, width, height, index, pixels);
     }
   }
   return coverage;
@@ -266,6 +278,61 @@ export function composeMaskStack(
           break;
         default:
           result[index] = base + value - base * value;
+      }
+    }
+  }
+  return result;
+}
+
+/** Pixel sub-rect of the full frame, in top-down rows. */
+export interface MaskRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Same coverage as `composeMaskStack` for the matching slice of a full-frame
+ * raster, evaluated with global normalized coordinates so a region render is
+ * pixel-identical to the full-frame stack. Geometric masks only: luminance and
+ * color masks need corrected pixels for the region.
+ */
+export function composeMaskStackRegion(
+  masks: readonly MaskData[],
+  frameWidth: number,
+  frameHeight: number,
+  region: MaskRegion,
+  out?: Float32Array,
+): Float32Array {
+  const result =
+    out && out.length === region.width * region.height
+      ? (out.fill(0), out)
+      : new Float32Array(region.width * region.height);
+  for (const mask of masks) {
+    if (!mask.enabled) continue;
+    if (mask.kind === 'luminance' || mask.kind === 'color') {
+      throw new Error('Regional mask composition supports geometric masks only');
+    }
+    const opacity = clamp01(mask.opacity);
+    for (let y = 0; y < region.height; y++) {
+      const ny = (region.y + y + 0.5) / frameHeight;
+      for (let x = 0; x < region.width; x++) {
+        const nx = (region.x + x + 0.5) / frameWidth;
+        const index = y * region.width + x;
+        // Round like rasterizeMask's Float32Array store so slices match bit-exactly.
+        const value = Math.fround(maskCoverageAt(mask, nx, ny, frameWidth, frameHeight, index)) * opacity;
+        const base = result[index];
+        switch (mask.blend) {
+          case 'subtract':
+            result[index] = base * (1 - value);
+            break;
+          case 'intersect':
+            result[index] = base * value;
+            break;
+          default:
+            result[index] = base + value - base * value;
+        }
       }
     }
   }
