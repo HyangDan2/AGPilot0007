@@ -9,6 +9,7 @@ import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
 import { createQ02RenderRegistry } from '../optical/modules';
 import { geometryOutputSize } from '../optical/geometry';
 import { renderTiled } from '../renderer/tiledExport';
+import { renderLensTiled, shouldTileLensExport } from '../optical/lensTiledExport';
 import { planLensBlur } from '../optical/lensBlur';
 import { isNeutralLensBlur, type LensBlurPlan } from '../contracts/lensBlur';
 import { budgetForDevice, detectDeviceCapabilities, estimateFrameBytes } from '../contracts/resourceBudget';
@@ -131,18 +132,35 @@ export async function prepareExportImage(
     fullResRequest &&
     (Math.max(output.width, output.height) > maxSafeDim ||
       estimateFrameBytes(output.width, output.height, 'rgba8') > budget.maxGpuBytes);
+  const local = settings.localAdjustments;
+  const localActive = !!local && local.enabled && local.groups.some((group) => group.enabled);
+  const lensActive = !!settings.lensBlur && !isNeutralLensBlur(settings.lensBlur);
+  const renderLensInTiles = async () => {
+    throwIfExportAborted(control?.signal);
+    onProgress?.(30, 'Rendering lens blur in tiles...');
+    control?.onStage?.('render');
+    const tiled = await renderLensTiled({
+      image,
+      settings,
+      maxTextureSize: maxSafeDim,
+      budgetBytes: budget.maxGpuBytes,
+      signal: control?.signal,
+    });
+    throwIfExportAborted(control?.signal);
+    control?.onStage?.('encode');
+    return encodeCanvas(tiled, output.width, output.height, () => {
+      tiled.width = 1;
+      tiled.height = 1;
+    });
+  };
   if (needsTiling) {
-    const local = settings.localAdjustments;
-    const localActive = !!local && local.enabled && local.groups.some((group) => group.enabled);
     if (settings.localStage || localActive) {
       throw new Error(
         'This export needs tiled rendering, which does not support local adjustments yet. Disable local adjustments or export at a smaller size.',
       );
     }
-    if (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur)) {
-      throw new Error(
-        'This export needs tiled rendering, which does not support lens blur yet. Disable lens blur or export at a smaller size.',
-      );
+    if (lensActive) {
+      return renderLensInTiles();
     }
     throwIfExportAborted(control?.signal);
     onProgress?.(30, 'Rendering large image in tiles...');
@@ -160,6 +178,12 @@ export async function prepareExportImage(
       tiled.width = 1;
       tiled.height = 1;
     });
+  }
+
+  // Large lens exports tile even when the frame fits, staying off the
+  // full-resolution lens intermediate. Small exports keep the single pass.
+  if (fullResRequest && lensActive && !settings.localStage && !localActive && shouldTileLensExport(output, maxSafeDim)) {
+    return renderLensInTiles();
   }
 
   // If requested dimensions exceed GPU limits, safely constrain while strictly preserving aspect ratio
