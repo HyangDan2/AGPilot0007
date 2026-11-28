@@ -64,11 +64,19 @@ export interface LensBlurState {
   rotationDeg: number;
   quality: 'preview' | 'export';
   highlightBoost: number;          // 0..2
-  depthMask: MaskGroup[] | null;   // manual depth/focus mask; null = procedural depth
+  depthMask: import('./masks').MaskData[] | null; // flat stack from frozen masks.ts; null = procedural depth
 }
 export function normalizeLensBlur(s: Partial<LensBlurState>): LensBlurState;
 export function isNeutralLensBlur(s: LensBlurState): boolean;
 ```
+
+### 2.2a lensBlur seam addendum (frozen 2026-11-28, Q02 proposal accepted with one correction)
+
+- `depthMask` is `MaskData[] | null` using **frozen `contracts/masks.ts`** (flat stack, `normalizeMasks`, MAX_MASKS). There is no `MaskGroup` in the frozen contract; do not add a parallel group type. Per-mask `blend`/`opacity`/`inverted` compose the stack coverage; coverage value = normalized depth (0 near, 1 far). `luminance`/`color` kinds are rejected by the planner with an explicit error (they need corrected pixels); brush/linear/radial are accepted.
+- `LensBlurCapability = { maxTextureSize: number; maxTaps?: number; supportsFloatLinear?: boolean }`.
+- `planLensBlur(state, outputSize, capability): LensBlurPlan | null` — returns `null` when `isNeutralLensBlur` or tap budget resolves to 0 (byte-equal path). `LensBlurPlan = { maxCocPx; taps; halfRes; focusPlane; focusRange }`.
+- CoC (short-side units): `maxCoc = 0.08 / aperture` (f/1 = 0.08, f/22 ≈ 0.0036); `t = smoothstep((|depth - focusPlane| - focusRange/2) / falloff)`, `falloff = max(0.05, (1 - focusRange)/2)`; `coc = maxCoc * t`. Monotonic in `|depth - focusPlane|`.
+- `depthMask: null` → procedural depth = short-side distance from image center normalized so the farthest corner = 1 (PoC radial model).
 
 ### 2.3 `src/engine/contracts/video.ts` (Q01 stub, Q03 implements engine)
 
