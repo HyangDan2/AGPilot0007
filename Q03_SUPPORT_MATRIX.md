@@ -57,10 +57,17 @@ Notes:
 
 ## Known limitations
 
+- **Rotation is baked, not preserved as metadata**: rotation/flip is applied to the
+  encoded frames and the output dimensions follow the display orientation. The
+  produced file carries no rotation matrix (a re-read reports `rotationDeg: 0`);
+  visual orientation is correct, metadata is not round-tripped.
+- **E2E coverage is Chromium-only** this phase: `tests/e2e/video-export.spec.ts`
+  skips non-Chromium projects by design (`browserName !== 'chromium'`), so Safari
+  and WebKit rows above are probe-based expectations, not exercised exports.
 - VFR sources are re-timed to the nominal `fps` in the output metadata; frame
   timestamps come from the source samples.
 - Very large outputs (long 1080p+ exports) depend on encoder backpressure; the
-  `BufferTarget`-equivalent in-memory path is bounded by the memory budget, so
-  long exports should use the external streaming target once the UI wires it.
+  in-memory path is bounded by the memory budget, so long exports should use the
+  external streaming target once the UI wires it.
 - Hardware vs software encode selection is delegated to the browser; the probe
   accepts whatever `isConfigSupported` reports.
