@@ -180,8 +180,8 @@ export async function prepareExportImage(
     });
   }
 
-  // Large lens exports tile even when the frame fits, staying off the
-  // full-resolution lens intermediate. Small exports keep the single pass.
+  // Lens exports that exceed the GPU texture limit tile; everything else keeps
+  // the single pass, which is faster and stays off the tiled code path.
   if (fullResRequest && lensActive && !settings.localStage && !localActive && shouldTileLensExport(output, maxSafeDim)) {
     return renderLensInTiles();
   }

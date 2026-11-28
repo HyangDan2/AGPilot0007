@@ -12,7 +12,6 @@ import {
   planLensTileStage,
   planLensTiles,
   shouldTileLensExport,
-  LENS_TILE_AUTO_PIXELS,
   MIN_LENS_TILE_EDGE,
 } from '../src/engine/optical/lensTiled';
 import {
@@ -302,11 +301,12 @@ describe('composeMaskStackRegion', () => {
 });
 
 describe('shouldTileLensExport', () => {
-  it('tiles on oversized frames and on memory pressure', () => {
+  it('tiles only when an output dimension exceeds the texture limit', () => {
     expect(shouldTileLensExport({ width: 17_000, height: 1_200 }, 16_384)).toBe(true);
-    expect(shouldTileLensExport({ width: 3_000, height: 2_000 }, 16_384)).toBe(false);
-    expect(shouldTileLensExport({ width: 5_000, height: 4_000 }, 16_384)).toBe(true);
+    expect(shouldTileLensExport({ width: 16_385, height: 1_200 }, 16_384)).toBe(true);
+    expect(shouldTileLensExport({ width: 1_200, height: 17_000 }, 16_384)).toBe(true);
+    expect(shouldTileLensExport({ width: 6_000, height: 4_000 }, 16_384)).toBe(false);
+    expect(shouldTileLensExport({ width: 16_384, height: 16_384 }, 16_384)).toBe(false);
     expect(shouldTileLensExport({ width: 1_000, height: 1_000 }, 16_384)).toBe(false);
-    expect(5_000 * 4_000).toBeGreaterThan(LENS_TILE_AUTO_PIXELS);
   });
 });

@@ -19,8 +19,6 @@ import {
   type PsfTap,
 } from './lensBlur';
 
-/** Lens exports above this pixel count tile even when the frame fits the GPU. */
-export const LENS_TILE_AUTO_PIXELS = 8_000_000;
 /** Preferred lens tile core edge; halo grows the rendered crop around it. */
 export const LENS_TILE_CORE_EDGE = 4096;
 export const MIN_LENS_TILE_EDGE = 256;
@@ -202,15 +200,15 @@ export function planLensTileStage(
   };
 }
 
-/** True when a lens export should use the tiled path for memory, not just limits. */
+/**
+ * True only when a lens export cannot fit a single GPU upload. Frames inside
+ * the texture limit keep the single pass: it is faster and parity-equal.
+ */
 export function shouldTileLensExport(
   output: { width: number; height: number },
   maxTextureSize: number,
 ): boolean {
-  return (
-    Math.max(output.width, output.height) > maxTextureSize ||
-    output.width * output.height > LENS_TILE_AUTO_PIXELS
-  );
+  return Math.max(output.width, output.height) > maxTextureSize;
 }
 
 export { MAX_TAPS };

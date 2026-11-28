@@ -22,7 +22,6 @@ import { createQ02RenderRegistry } from './modules';
 import { renderSourceStage, type Q02SourceStageSource } from './sourceStage';
 
 export {
-  LENS_TILE_AUTO_PIXELS,
   LENS_TILE_CORE_EDGE,
   GPU_BYTES_PER_TILE_PIXEL,
   createLensTileTemplate,
