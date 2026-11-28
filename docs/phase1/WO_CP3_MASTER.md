@@ -268,3 +268,7 @@ Independent fresh-clone QA at final integration SHA: full unit/perf/build, singl
   - Fix (a) proven in the real UI: RAW ingest -> fixture-guarded batch export decodes **6000x4000** in all 4 projects (chromium/mobile-chromium 5,219,860 B; webkit/mobile-webkit 7,604,589 B; 5.2-11.8 s; 0 console/page errors). Fix (b): cancel/retry **12/12 saved** with 12 unique downloads and `data-ok` in all 4 projects, 58.2 s (chromium) / 43.6 s (mobile-chromium), no 91 % toBlob park.
   - Non-blocking backlog: (1) geometry/mask/optical E2E harnesses are desktop-Chromium-only by design; (2) this doc's fixture path is off by one level (actual `poc/q03-imaging/testdata/dng/`); (3) BL-CP3-01 stands — withRawDevelopGuard zeroes user exposure/WB when develop is non-identity (inert until a develop UI lands); (4) `responsive.spec.ts` rewrites tracked `docs/screenshots/*.png` on every run; (5) stale `artifacts-triage/` inside `.private/e2e-logs/q05/` from the pre-fix prepass.
   - **CP3 is closed at G3 PASS.** No `main`/`beta` merge and no deploy: those await explicit PO approval. PRs #17/#19/#20/#22/#23 stay Draft; Q01/Q04 idle, Q02 standby, Q03 standby.
+
+---
+
+**2026-11-28 — successor WO.** PO issued `WO-P1-CP4 — Advanced Imaging Engine` (G3 PASS accepted, CP3 development closed). CP4 uses a separate ledger: `docs/phase1/WO_CP4_MASTER.md`. This ledger is frozen.
