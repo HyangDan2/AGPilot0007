@@ -16,7 +16,10 @@ import { composeDevelop, rawDevelopStateFromInfo } from '../engine/contracts/dev
 import { geometryOutputSize } from '../engine/optical/geometry';
 import { GeometryOverlay } from './geometry/GeometryOverlay';
 import { MaskEditingOverlay } from './masks/MasksWorkspace';
+import { LensBlurOverlay } from './optical/LensBlurOverlay';
 import { createQ02RenderRegistry } from '../engine/optical/modules';
+import { planLensBlur } from '../engine/optical/lensBlur';
+import type { LensBlurPlan } from '../engine/contracts/lensBlur';
 import { loadCubeLut, ParsedLut3D } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { Columns, Eye, ZoomIn, ZoomOut, Maximize2, Sparkles, AlertCircle } from 'lucide-react';
@@ -71,6 +74,8 @@ export const Viewport: React.FC = () => {
     localAdjustments,
     rawDevelop,
     isCropEditing,
+    lensBlur,
+    isLensBlurDepthEditing,
     setGeometry,
     compareMode,
     setCompareMode,
@@ -135,6 +140,14 @@ export const Viewport: React.FC = () => {
   const geometryRef = useRef(frameGeometry); geometryRef.current = frameGeometry;
   const opticalRef = useRef(optical); opticalRef.current = optical;
   const localRef = useRef(localAdjustments); localRef.current = localAdjustments;
+  const lensRef = useRef(lensBlur); lensRef.current = lensBlur;
+  const lensCacheRef = useRef<{
+    state: typeof lensBlur;
+    width: number;
+    height: number;
+    maxTextureSize: number;
+    plan: LensBlurPlan | null;
+  } | null>(null);
   const histogramCanvas = useRef<HTMLCanvasElement | null>(null);
   const histogramTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [histogram, setHistogram] = useState<number[][] | null>(null);
@@ -210,6 +223,27 @@ export const Viewport: React.FC = () => {
   const fittedSizeRef = useRef(displaySize);
   fittedSizeRef.current = displaySize;
 
+  // Plans at the actual preview surface size; cached by state identity + size so
+  // slider edits replan once and untouched frames reuse the rasterized depth.
+  const resolveLensStage = useCallback((state: typeof lensBlur | undefined, width: number, height: number): LensBlurPlan | null => {
+    const renderer = rendererRef.current;
+    if (!state?.enabled || !renderer?.isReady() || width <= 0 || height <= 0) return null;
+    const maxTextureSize = renderer.getMaxTextureSize();
+    const cache = lensCacheRef.current;
+    if (
+      cache &&
+      cache.state === state &&
+      cache.width === width &&
+      cache.height === height &&
+      cache.maxTextureSize === maxTextureSize
+    ) {
+      return cache.plan;
+    }
+    const plan = planLensBlur({ ...state, quality: 'preview' }, { width, height }, { maxTextureSize });
+    lensCacheRef.current = { state, width, height, maxTextureSize, plan };
+    return plan;
+  }, []);
+
   // Coalesced render execution with requestAnimationFrame
   const rafIdRef = useRef<number | null>(null);
   const requestRender = useCallback(() => {
@@ -227,6 +261,9 @@ export const Viewport: React.FC = () => {
         const target=sharpeningPreviewSize(out.width,out.height,fittedSizeRef.current.width,fittedSizeRef.current.height,useEditorStore.getState().zoom,draft);
         if(canvas&&(canvas.width!==target.width||canvas.height!==target.height)){canvas.width=target.width;canvas.height=target.height;}
         const pipelineBackend=pipelineBackendRef.current??(pipelineBackendRef.current=createWebGLPipelineBackend(renderer));
+        const lensStage = effectiveMode === 'none'
+          ? resolveLensStage(lensRef.current, canvas?.width ?? target.width, canvas?.height ?? target.height)
+          : null;
         runRenderPipelineSync({
           target:'preview',
           width:canvas?.width??1,
@@ -236,17 +273,21 @@ export const Viewport: React.FC = () => {
           sourceWidth:current.previewWidth,
           sourceHeight:current.previewHeight,
           registry:renderRegistryRef.current,
-          settings: composeDevelop({
-            adjustments: adjustmentsRef.current,
-            camera: cameraRef.current,
-            curves: curvesRef.current,
-            colorMixer:mixerRef.current,
-            sharpening:sharpRef.current,
-            filmId: filmIdRef.current,
-            geometry: geometryRef.current,
-            optical: opticalRef.current ?? undefined,
-            localAdjustments: localRef.current,
-          }, rawDevelopStateFromInfo(rawDevelopRef.current), { developBaked: true }),
+          settings: {
+            ...composeDevelop({
+              adjustments: adjustmentsRef.current,
+              camera: cameraRef.current,
+              curves: curvesRef.current,
+              colorMixer:mixerRef.current,
+              sharpening:sharpRef.current,
+              filmId: filmIdRef.current,
+              geometry: geometryRef.current,
+              optical: opticalRef.current ?? undefined,
+              localAdjustments: localRef.current,
+              lensBlur: lensRef.current,
+            }, rawDevelopStateFromInfo(rawDevelopRef.current), { developBaked: true }),
+            ...(lensStage ? { lensStage } : {}),
+          },
           extras:{
             sharpeningDraft:draftRef.current,sharpeningMask:maskRef.current,sourceWidth:imageRef.current.originalWidth,sourceHeight:imageRef.current.originalHeight,
             mixerVisualize:visualizeRef.current,
@@ -272,7 +313,7 @@ export const Viewport: React.FC = () => {
         setRendererError('WebGL render error. Please reload.');
       }
     });
-  }, []);
+  }, [resolveLensStage]);
 
   // Stable Canvas Callback Ref: initializes WebGL2 precisely once per canvas instance
   const handleCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
@@ -376,7 +417,7 @@ export const Viewport: React.FC = () => {
   // Render on adjustments or comparison mode changes without recreating textures
   useEffect(() => {
     requestRender();
-  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, geometry, optical, localAdjustments, isCropEditing, compareMode, isPressHolding, splitPos, requestRender]);
+  }, [activeFilmId, camera, sharpening,sharpeningMask,isSharpeningDragging,colorMixer, isColorMixerOpen, mixerVisualize, mixerPointId, curves, isToneCurveOpen, adjustments, geometry, optical, localAdjustments, lensBlur, isCropEditing, compareMode, isPressHolding, splitPos, requestRender]);
 
   // Step zoom around center helper
   const zoomByStep = useCallback((factor: number) => {
@@ -655,7 +696,10 @@ export const Viewport: React.FC = () => {
       const pixels=renderer.readPixels(sx,sy,w,h);if(!pixels)return null;
       const rgb=[0,0,0];let count=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]<128)continue;for(let c=0;c<3;c++)rgb[c]+=pixels[i+c]/255;count++;}
       return count?rgb.map(v=>v/count) as HSL:null;
-    }finally{renderer.render(options);}
+    }finally{
+      const lensStage = compareModeRef.current==='none' ? resolveLensStage(lensRef.current, canvas.width, canvas.height) : null;
+      renderer.render({...options, ...(lensStage ? { lensStage } : {})});
+    }
   };
   const applyTarget=(delta:number,commit:boolean,current=false)=>{
     const gesture=mixerGesture.current;if(!gesture)return;
@@ -753,6 +797,14 @@ export const Viewport: React.FC = () => {
                     const state = useEditorStore.getState();
                     state.setLocalAdjustments(state.localAdjustments, true);
                   }}
+                />
+              )}
+              {image && isLensBlurDepthEditing && (
+                <LensBlurOverlay
+                  className="z-10"
+                  depthMask={lensBlur.depthMask}
+                  hidden={isPressHolding || compareMode === 'original'}
+                  onDepthMaskChange={(depthMask) => useEditorStore.getState().setLensBlur({ depthMask })}
                 />
               )}
 

@@ -14,7 +14,12 @@ import {
   validateLensBlur,
 } from '../src/engine/contracts/lensBlur';
 import type { LensBlurPlan } from '../src/engine/contracts/lensBlur';
-import type { VideoCapabilities, VideoExportHandle, VideoExportSettings } from '../src/engine/contracts/video';
+import type {
+  VideoCapabilities,
+  VideoExportHandle,
+  VideoExportResult,
+  VideoExportSettings,
+} from '../src/engine/contracts/video';
 import { RECIPE_SCHEMA_MAX, assertRecipePersistable, RECIPE_STORAGE_KEYS } from '../src/engine/contracts/recipeValidation';
 import { IDENTITY_GEOMETRY } from '../src/engine/contracts/geometry';
 import { validateRecipeJSON, CURRENT_SCHEMA_VERSION, shouldWriteRecipeV10 } from '../src/stores/recipeStore';
@@ -186,7 +191,7 @@ describe('CP4 lens blur contract', () => {
 });
 
 describe('CP4 video contract', () => {
-  it('composes export settings and capability shapes', () => {
+  it('composes export settings, capability shapes and the file-carrying handle', async () => {
     const settings: VideoExportSettings = {
       container: 'mp4',
       videoCodec: 'avc',
@@ -202,15 +207,28 @@ describe('CP4 video contract', () => {
       containers: { mp4: true, webm: false },
       audioPassthrough: true,
     };
+    const result: VideoExportResult = {
+      blob: new Blob(['frame'], { type: 'video/mp4' }),
+      mimeType: 'video/mp4',
+      bytes: 5,
+      width: 1920,
+      height: 1080,
+      durationSec: 7.5,
+    };
+    // Q03's richer task result must satisfy the frozen seam structurally.
+    const richerTaskResult = { ...result, frames: 225, container: 'mp4' as const, audio: 'passthrough' as const };
+    const assignable: VideoExportResult = richerTaskResult;
     const cancelled: string[] = [];
     const handle: VideoExportHandle = {
-      promise: Promise.resolve(),
+      promise: Promise.resolve(result),
       cancel: () => cancelled.push('cancel'),
       onProgress: () => () => undefined,
     };
     handle.cancel();
+    const completed = await handle.promise;
     expect(cancelled).toEqual(['cancel']);
-    expect(settings.trim.endSec - settings.trim.startSec).toBe(7.5);
+    expect(completed.blob.size).toBe(assignable.bytes);
+    expect(completed.durationSec).toBe(settings.trim.endSec - settings.trim.startSec);
     expect(capabilities.encoders.vp9).toBe(false);
   });
 });

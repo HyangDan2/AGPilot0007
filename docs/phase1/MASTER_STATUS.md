@@ -1,4 +1,4 @@
-# MASTER STATUS — Phase 1 CP4 (Film Studio 2.0)
+# MASTER STATUS — Phase 1 CP5 (Release Qualification)
 
 Last updated: 2026-11-28 KST · Owner: Q00 Supervisor
 Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-verification of completed work, backlog non-blocking defects.
@@ -10,9 +10,10 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | CP1 Closure / G1 | **PASS** | PO accepted 2026-11-27. Q05 audit green. |
 | CP2-06 / G2 | **PASS** | Q05 independent QA at `0a4d4e2`: 97 passed / 1 skipped / 0 failed, exit 0. |
 | CP3 (Professional Editing) | **CLOSED** | G3 **PASS** at `f4d900b` (E2E 358/0/102; RAW 6000×4000; cancel/retry 12/12). PO accepted 2026-11-28. Evidence: `WO_CP3_MASTER.md`. |
-| Engine Contract Freeze | **UNCHANGED** | Blobs identical at `f4d900b`: optical `539a381`, imageBuffer `f1f9330`, masks `0c6935a`, exportControl `108e708`, moduleRegistry `42ca676`, geometry `44dd349`. |
+| Engine Contract Freeze | **UNCHANGED** | Blobs identical at `47cc881`: optical `539a381`, imageBuffer `f1f9330`, masks `0c6935a`, exportControl `108e708`, moduleRegistry `42ca676`, geometry `44dd349`. |
 | Recipe v8/v9 | **READ ACTIVE** | v9 written by CP3 (optical/localAdjustments); v1–v9 readable. CP4 adds v10 (additive). |
-| CP4 (Advanced Imaging Engine) | **IN PROGRESS** | WO-P1-CP4 issued 2026-11-28; baseline `f4d900b`; see `WO_CP4_MASTER.md`. G4 pending. Q05B parked until CP4-05. |
+| CP4 (Advanced Imaging Engine) | **CLOSED** | G4 **PASS** at `47cc881` (CP4-06+07+Q02 parity ≤1.03 LSB); CP4-09 video fixes accepted and independently re-verified at `ea4974b` (reopen 3/3, boot network 0, photo path PASS). Closed by PO Closure Order 2026-11-28. Evidence: `WO_CP4_MASTER.md`. |
+| CP5 (Release Qualification) | **IN PROGRESS** | WO-P1-CP5: performance optimization, remaining must-haves, real-device compatibility, RC preparation. G5 gate: full regression + perf budgets + device matrix + RC artifacts. `WO_CP5_MASTER.md`. |
 
 ## Baseline (verified 2026-11-28 KST)
 
@@ -20,10 +21,10 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | --- | --- | --- | --- | --- |
 | `main` | `b850f82` | — | — | untouched |
 | `beta` | `d8ec276` | — | — | untouched |
-| `feature/phase1-pro-engine` (Q01) | `86352e2` (code `f4d900b`) | #17 | `beta` | Draft, G3 PASS |
-| `feature/phase1-q02-optical` (Q02) | `2e9dedf` (CP4-02 v1) | #18 merged | pro-engine | active, no PR surface |
-| `feature/phase1-q03-imaging` (Q03) | `818adb1` | #20 merged | pro-engine | active |
-| `feature/phase1-q04-application` (Q04) | `6ae218c` | #19 merged | pro-engine | active |
+| `feature/phase1-pro-engine` (Q01) | `ea4974b` | #17 | `beta` | Draft, CP4-09 integrated |
+| `feature/phase1-q02-optical` (Q02) | `cd9a7d6` | #18 merged | pro-engine | active, no PR surface |
+| `feature/phase1-q03-imaging` (Q03) | `f5ec7d4` | #20 merged | pro-engine | active |
+| `feature/phase1-q04-application` (Q04) | `43c5ef6` | #19 merged | pro-engine | active |
 | `feature/phase1-cp3-q02-local` | `a08cbd2` | merged | pro-engine | frozen |
 | `feature/phase1-cp3-q03-raw` | `b61b59e` | merged | pro-engine | frozen |
 | `feature/phase1-cp3-q04-workspace` | `95c1e3c` | merged | pro-engine | active branch name for Q04 CP4 |

@@ -1,6 +1,7 @@
 import { FILM_PROFILES } from '../../films/registry';
 import { loadCubeLut, type ParsedLut3D } from '../color/lutLoader';
 import { decideResourceAllocation, createResourceBudget } from '../contracts/resourceBudget';
+import { isNeutralLensBlur } from '../contracts/lensBlur';
 import type { DecodedImage } from '../image/decoder';
 import { resolveDecodedImageOriginal } from '../image/decoder';
 import { createQ02RenderRegistry } from '../optical/modules';
@@ -40,6 +41,8 @@ export interface TiledRenderDeps {
   createCanvas?: (width: number, height: number) => HTMLCanvasElement;
   createRenderer?: (canvas: HTMLCanvasElement) => WebGL2FilmRenderer;
   loadLut?: (settings: RenderSettings) => Promise<ParsedLut3D>;
+  /** Receives the tile geometry actually rendered (single tile when it fits). */
+  onPlan?: (plan: TilePlan) => void;
 }
 
 const MIN_TILE_EDGE = 256;
@@ -259,11 +262,27 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
 
   const lut = await loadLut(settings);
 
+  // Lens blur is a frame-global post pass; tiling it would need per-tile depth
+  // and seam-aware gathers, so the tiled engine refuses instead of dropping it.
+  if (settings.lensStage || (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur))) {
+    throw new Error('Tiled export does not support lens blur yet.');
+  }
+
   if (decision.quality !== 'tile') {
+    deps.onPlan?.({
+      columns: 1,
+      rows: 1,
+      tileWidth: output.width,
+      tileHeight: output.height,
+      overlap: 0,
+      tiles: [{ x: 0, y: 0, width: output.width, height: output.height }],
+    });
     return renderFullFrame(source, image, settings, output, lut, registry, createCanvas, createRenderer);
   }
 
-  if (settings.localAdjustments || settings.localStage) {
+  const local = settings.localAdjustments;
+  const localActive = !!local && local.enabled && local.groups.some((group) => group.enabled);
+  if (settings.localStage || localActive) {
     throw new Error('Tiled export does not support local adjustments yet.');
   }
 
@@ -280,6 +299,7 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
     );
   }
   const plan = planTiles(output.width, output.height, Math.min(decision.tile?.width ?? maxTileEdge, maxTileEdge), requestedOverlap);
+  deps.onPlan?.(plan);
   const corrected = correctedFrame(source, image, settings, output);
   const tileSettings: RenderSettings = {
     ...settings,

@@ -48,10 +48,12 @@ export function commitEditStateToEditor(next: EditState): void {
   });
 }
 
-/** Reads the clip source (primary selection, else the open photo). */
+/** Reads the clip source (primary selection, else the open photo). Videos carry no edit state. */
 export function copySelection(groups: readonly ParameterGroup[]): ParameterClip | null {
   const workspace = useWorkspaceStore.getState();
-  const source = primarySelection(workspace.selection) ?? workspace.activeId;
+  const isPhoto = (id: string | null): id is string => !!id && workspace.entries.find(entry => entry.id === id)?.kind !== 'video';
+  const primary = primarySelection(workspace.selection);
+  const source = isPhoto(primary) ? primary : isPhoto(workspace.activeId) ? workspace.activeId : null;
   if (!source || !groups.length) return null;
   clipboard = copyParameters(source, readEditState(source), groups);
   return clipboard;
@@ -72,7 +74,8 @@ export function pasteToSelection(clip: ParameterClip | null = clipboard): PasteR
   if (!clip) return { pasted: 0, active: null };
   const workspace = useWorkspaceStore.getState();
   const editor = useEditorStore.getState();
-  const ids = workspace.selection.ids.length ? workspace.selection.ids : workspace.activeId ? [workspace.activeId] : [];
+  const photoIds = new Set(workspace.entries.filter(entry => entry.kind !== 'video').map(entry => entry.id));
+  const ids = (workspace.selection.ids.length ? workspace.selection.ids : workspace.activeId ? [workspace.activeId] : []).filter(id => photoIds.has(id));
   let active: string | null = null;
   for (const id of ids) {
     if (id === workspace.activeId && editor.image?.workspaceKey === id) {

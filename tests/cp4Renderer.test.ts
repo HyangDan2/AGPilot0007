@@ -171,12 +171,13 @@ describe('CP4 renderTiled', () => {
   it('renders a frame that fits in one pass with the export request shape', async () => {
     const { image, original } = fakeImage(1000, 800);
     const { canvases, createCanvas } = canvasFactory();
+    const onPlan = vi.fn();
     const { renderers, createRenderer } = rendererFactory();
     const loadLut = vi.fn(async () => lut);
 
     const result = await renderTiled(
       { image, settings: identitySettings(), maxTextureSize: 4096, budgetBytes: 64 * 1024 * 1024, overlap: 32 },
-      { createCanvas, createRenderer, loadLut },
+      { createCanvas, createRenderer, loadLut, onPlan },
     );
 
     expect(renderers).toHaveLength(1);
@@ -192,6 +193,8 @@ describe('CP4 renderTiled', () => {
     expect(renderer.destroy).toHaveBeenCalledTimes(1);
     // The GL result is copied before the context is released.
     expect(result).toBe(canvases[1].canvas);
+    expect(onPlan).toHaveBeenCalledTimes(1);
+    expect(onPlan.mock.calls[0][0]).toMatchObject({ columns: 1, rows: 1, overlap: 0 });
     expect(canvases[1].width).toBe(1000);
     expect(canvases[1].ctx.drawImage).toHaveBeenCalledWith(canvases[0].canvas, 0, 0);
   });
@@ -201,13 +204,16 @@ describe('CP4 renderTiled', () => {
     const { canvases, createCanvas, events } = canvasFactory();
     const { renderers, createRenderer } = rendererFactory(events);
     const loadLut = vi.fn(async () => lut);
+    const onPlan = vi.fn();
 
     const result = await renderTiled(
       { image, settings: identitySettings(), maxTextureSize: 400, budgetBytes: 64 * 1024 * 1024, overlap: 20 },
-      { createCanvas, createRenderer, loadLut },
+      { createCanvas, createRenderer, loadLut, onPlan },
     );
 
     const plan = planTiles(1000, 600, 360, 20);
+    expect(onPlan).toHaveBeenCalledWith(plan);
+    expect(plan.columns).toBe(3);
     expect(renderers).toHaveLength(plan.tiles.length);
     for (const renderer of renderers) {
       expect(renderer.render).toHaveBeenCalledTimes(1);
@@ -233,14 +239,14 @@ describe('CP4 renderTiled', () => {
     expect(gradients.length).toBeGreaterThan(0);
   });
 
-  it('rejects tiled exports with local adjustments and unusable budgets', async () => {
+  it('rejects tiled exports with local adjustments, lens blur and unusable budgets', async () => {
     const { image } = fakeImage(1000, 600);
     const { createCanvas } = canvasFactory();
     const { createRenderer } = rendererFactory();
     const loadLut = vi.fn(async () => lut);
     const localSettings: RenderSettings = {
       ...identitySettings(),
-      localAdjustments: { groups: [] } as never,
+      localAdjustments: { enabled: true, groups: [{ enabled: true }] } as never,
     };
 
     await expect(
@@ -249,6 +255,17 @@ describe('CP4 renderTiled', () => {
         { createCanvas, createRenderer, loadLut },
       ),
     ).rejects.toThrow(/local adjustments/);
+
+    const lensSettings: RenderSettings = {
+      ...identitySettings(),
+      lensBlur: { enabled: true, depthMask: null } as never,
+    };
+    await expect(
+      renderTiled(
+        { image, settings: lensSettings, maxTextureSize: 400, budgetBytes: 64 * 1024 * 1024, overlap: 20 },
+        { createCanvas, createRenderer, loadLut },
+      ),
+    ).rejects.toThrow(/lens blur/);
 
     await expect(
       renderTiled(
