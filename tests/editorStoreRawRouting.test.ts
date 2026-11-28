@@ -4,7 +4,7 @@ import type { DecodedSource } from '../src/engine/contracts/imageBuffer';
 import { decodeEditorImage, useEditorStore } from '../src/stores/editorStore';
 import { decodeImageFile } from '../src/engine/image/decoder';
 import { getRawDevelopInfo, openRawForEditing } from '../src/engine/raw';
-import { withRawDevelopGuard } from '../src/engine/pipeline/renderSettings';
+import { composeDevelop, rawDevelopStateFromInfo, RAW_NEUTRAL_DEVELOP } from '../src/engine/contracts/develop';
 import { DEFAULT_ADJUSTMENTS } from '../src/types/film';
 
 vi.mock('../src/engine/image/decoder', () => ({ decodeImageFile: vi.fn() }));
@@ -135,13 +135,16 @@ describe('RAW develop state and shader guard', () => {
     expect(useEditorStore.getState().rawDevelop).toBeNull();
   });
 
-  it('neutralizes shader exposure and white balance only when the develop is non-identity', () => {
+  it('composes a baked RAW develop as a baseline without zeroing user exposure or white balance (BL-CP3-01)', () => {
     const settings = { adjustments: { ...DEFAULT_ADJUSTMENTS, exposure: 1.2, temperature: 30, tint: -12 } };
 
-    expect(withRawDevelopGuard(settings, null)).toBe(settings);
-    expect(withRawDevelopGuard(settings, { identity: true })).toBe(settings);
-    const guarded = withRawDevelopGuard(settings, { identity: false });
-    expect(guarded.adjustments).toMatchObject({ exposure: 0, temperature: 0, tint: 0 });
-    expect(guarded.adjustments.contrast).toBe(DEFAULT_ADJUSTMENTS.contrast);
+    expect(composeDevelop(settings, RAW_NEUTRAL_DEVELOP, { developBaked: true })).toBe(settings);
+    const develop = rawDevelopStateFromInfo({
+      identity: false,
+      settings: { exposureEv: 0.8, temperatureK: 5400, tint: 8, highlightRecovery: 'blend' },
+    });
+    const composed = composeDevelop(settings, develop, { developBaked: true });
+    expect(composed).toBe(settings);
+    expect(composed.adjustments).toMatchObject({ exposure: 1.2, temperature: 30, tint: -12 });
   });
 });

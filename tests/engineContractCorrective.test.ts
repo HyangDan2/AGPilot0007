@@ -578,12 +578,12 @@ describe('CORE-08 resource lifecycle', () => {
 
 describe('CORE-09 recipe version identification and storage policy', () => {
   it('separates version detection from full recipe validation', () => {
-    expect(RECIPE_SCHEMA_MAX).toBe(9);
+    expect(RECIPE_SCHEMA_MAX).toBe(10);
     expect(detectRecipeSchemaVersion({ schemaVersion: 8 })).toBe(8);
     expect(detectRecipeSchemaVersion({})).toBeNull();
     expect(detectRecipeSchemaVersion({ schemaVersion: '8' })).toBeNull();
     expect(assertRecipeVersionSupported(undefined)).toBe(RECIPE_SCHEMA_MAX);
-    expect(() => assertRecipeVersionSupported(10)).toThrow('Unsupported recipe version');
+    expect(() => assertRecipeVersionSupported(11)).toThrow('Unsupported recipe version');
     expect(() => assertRecipeVersionSupported(0)).toThrow('Unsupported recipe version');
   });
 
@@ -614,11 +614,11 @@ describe('CORE-09 recipe version identification and storage policy', () => {
     expect(validateRecipeJSON(JSON.stringify(framed)).geometry).toEqual(framed.geometry);
     expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 8 }))).toThrow(/geometry wrapper/);
     expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 8, geometry: { rotation: 90, unknown: 1 } }))).toThrow(/Unknown recipe geometry field/);
-    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 10 }))).toThrow(
+    expect(() => validateRecipeJSON(JSON.stringify({ ...raw, schemaVersion: 11 }))).toThrow(
       'Unsupported recipe version',
     );
     expect(() =>
-      assertRecipePersistable({ ...framed, schemaVersion: 10 }, RECIPE_STORAGE_KEYS.stable),
+      assertRecipePersistable({ ...framed, schemaVersion: 11 }, RECIPE_STORAGE_KEYS.stable),
     ).toThrow('Unsupported recipe version');
     expect(() => assertRecipePersistable(framed, RECIPE_STORAGE_KEYS.stable)).not.toThrow();
   });

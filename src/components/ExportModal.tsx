@@ -2,7 +2,7 @@ import { getMargarinePreset } from '../presets/margarine';
 import React, { useState, useEffect, useRef } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { prepareExportImage, triggerSafeDownload } from '../engine/export/imageExporter';
-import { withRawDevelopGuard } from '../engine/pipeline/renderSettings';
+import { composeDevelop, rawDevelopStateFromInfo } from '../engine/contracts/develop';
 import { loadCubeLut } from '../engine/color/lutLoader';
 import { FILM_PROFILES } from '../films/registry';
 import { PreparedExport, ExportFormat } from '../types/export';
@@ -128,9 +128,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       const result = await prepareExportImage(
         image,
         lut,
-        withRawDevelopGuard(
+        composeDevelop(
           { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments },
-          rawDevelop,
+          rawDevelopStateFromInfo(rawDevelop),
+          { developBaked: true },
         ),
         {
           format,

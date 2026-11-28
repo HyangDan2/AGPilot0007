@@ -2,11 +2,12 @@
  * Recipe version detection and storage isolation. Version identification is a
  * cheap, pure step; full field validation stays in recipeStore/feature
  * validators. RECIPE_SCHEMA_MAX is the highest readable version; new and
- * migrated recipes write v8 (CURRENT_SCHEMA_VERSION), or v9 only when
- * optical/local features are active. Every earlier version stays readable and
- * is migrated in memory, so upgrading never edits stored v1-v7 records.
+ * migrated recipes write v8 (default), v9 when optical/local features are
+ * active, or v10 when lens blur / RAW develop are active
+ * (CURRENT_SCHEMA_VERSION). Every earlier version stays readable and is
+ * migrated in memory, so upgrading never edits stored records.
  */
-export const RECIPE_SCHEMA_MAX = 9;
+export const RECIPE_SCHEMA_MAX = 10;
 
 export const RECIPE_STORAGE_KEYS = Object.freeze({
   stable: 'hd2lab_film_studio_recipes_v1',

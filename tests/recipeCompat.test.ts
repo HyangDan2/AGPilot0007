@@ -48,7 +48,7 @@ describe('Recipe feature registry compatibility (schemas 1-8)', () => {
   });
 
   it('rejects future schema versions', () => {
-    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 10 }))).toThrow(/Unsupported recipe version/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 11 }))).toThrow(/Unsupported recipe version/);
   });
 
   it('round-trips v8 framing through JSON without losing values', () => {
@@ -84,8 +84,8 @@ describe('Recipe feature registry compatibility (schemas 1-8)', () => {
   });
 
   it('never mutates a v7 payload or recipe while upgrading; older readers reject v8', () => {
-    // Explicit createdAt: the Date.now() default would make two parses differ by 1 ms.
-    const raw = JSON.stringify({ ...base, id: 'legacy-v7', schemaVersion: 7, createdAt: 1700000000000 });
+    // Explicit createdAt/updatedAt: the Date.now() defaults would make two parses differ by 1 ms.
+    const raw = JSON.stringify({ ...base, id: 'legacy-v7', schemaVersion: 7, createdAt: 1700000000000, updatedAt: 1700000000000 });
     const before = JSON.parse(raw);
     const first = validateRecipeJSON(raw);
     const second = validateRecipeJSON(raw);

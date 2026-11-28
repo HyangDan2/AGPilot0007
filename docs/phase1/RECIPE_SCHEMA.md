@@ -1,21 +1,23 @@
-# Phase 1 Recipe Schema (v8)
+# Phase 1 Recipe Schema (v10)
 
-상태: CP1.1 정의 · QA 승인 대기 · 2026-11-27
-현재 저장 스키마: **7** (v8은 계약 정의만 완료, 기하 구현 체크포인트에서 활성화)
+상태: CP4 계약 반영 · 2026-11-28
+읽기 범위: **1~10** (`RECIPE_SCHEMA_MAX = 10`). 쓰기: 기본 v8, 광학/로컬 활성 시 v9, 렌즈 블러/현상 활성 시 v10.
 
 ## 1. 버전 이력
 
 | 버전 | 상태 | 저장 내용 |
 | --- | --- | --- |
 | 1~6 | 읽기 지원 | 기본 보정·필름·프리셋. 누락된 기능 그룹은 마이그레이션 시 중립값으로 채움 |
-| 7 | 현재 저장 | v6 + `camera`, `curves`, `sharpening`, `colorMixer` (누락 허용) |
-| 8 | 계약 정의 | v7 + `geometry` (회전/반전/스트레이트/크롭) |
+| 7 | 읽기 지원 | v6 + `camera`, `curves`, `sharpening`, `colorMixer` (누락 허용) |
+| 8 | 기본 저장 | v7 + `geometry` (회전/반전/스트레이트/크롭) |
+| 9 | 조건부 저장 | v8 + `optical`, `localAdjustments`. 광학 또는 로컬 보정이 활성일 때만 기록 |
+| 10 | 조건부 저장 | v9 + `lensBlur`, `develop`. 둘 중 하나가 활성일 때만 기록 |
 
-- 미래 버전(현재 8 초과)은 가져오기 오류 `Unsupported recipe version`으로 거부한다.
-- 저장 상한은 `RECIPE_SCHEMA_MAX = 7`이며 `CURRENT_SCHEMA_VERSION`이 이를 참조한다. v8 활성화 시 허용 상한을 8로 올리고 1~7 마이그레이션을 유지한다.
-- v1~v7 가져오기에서 미승인 `geometry` 필드는 정규화 결과에 복사하지 않는다.
+- 상한 초과 버전(현재 11 이상)은 가져오기 오류 `Unsupported recipe version`으로 거부한다.
+- 쓰기 상한은 `RECIPE_SCHEMA_MAX = 10`, `CURRENT_SCHEMA_VERSION = 10`이다. 실제 저장 버전은 활성 기능에 따라 v8/v9/v10으로 낮춰 쓴다.
+- v10 필드(`lensBlur`/`develop`)가 v9 이하에 선언되면 `Unexpected v10 field in recipe`로 거부한다(v9 `optical`/`localAdjustments`와 동일 규칙).
+- v1~v9 레시피는 가져오기·적용 시 계속 동작하며, 저장 시점에만 상위 버전으로 재기록된다.
 - Stable/Beta는 서로 다른 IndexedDB 키(`RECIPE_STORAGE_KEYS.stable`/`.beta`)를 사용한다. Beta 경로 여부로만 선택하며 레시피를 교차 저장하지 않는다.
-- 마스크·로컬 보정은 어느 버전에도 저장하지 않는다. 기능 승인 시 v9에서 정의한다.
 - AI 메타데이터·모델 정보는 Phase 1 레시피에 넣지 않는다.
 
 ## 2. 공통 필드
@@ -62,7 +64,24 @@ interface GeometryTransform {
 - 잘못된 회전·범위 초과 스트레이트·프레임 밖 크롭은 가져오기 오류다.
 - 원본 픽셀은 저장·수정하지 않는다. 레시피는 변환 값만 보관한다.
 
-## 4. 마이그레이션 흐름
+## 4. v9/v10 추가 필드
+
+```ts
+interface RecipeV10 {
+  schemaVersion: 10;
+  geometry: GeometryTransform;            // v10에서도 필수
+  optical?: OpticalTransform;             // v9
+  localAdjustments?: LocalAdjustmentState; // v9
+  lensBlur?: LensBlurState;               // v10
+  develop?: RawDevelopState;              // v10
+}
+```
+
+- `lensBlur`: `enabled/focusPlane/focusRange/aperture/bladeCount/rotationDeg/quality/highlightBoost/depthMask`. `depthMask`는 v9 마스크 레이어 스키마(`MaskData[]`)를 그대로 재사용한다.
+- `develop`: `wb`(as-shot 또는 custom 2000~12000K·tint ±100), `exposureEV`(-5~+5), `highlightRecovery`(0~1).
+- 알 수 없는 필드는 v9 검증 `Unknown recipe v9 field`, v10 검증 `Unknown recipe v10 field`로 거부한다.
+
+## 5. 마이그레이션 흐름
 
 ```
 Import JSON
@@ -87,7 +106,7 @@ Import JSON
 - 누락된 camera는 날짜 OFF·광학 효과 0, curves는 대각선, sharpening은 neutral, Color Lab은 중립값으로 채운다.
 - presetId/presetVersion은 기존 Margarine 호환 규칙을 유지한다.
 
-## 5. 정규화/검증 API
+## 6. 정규화/검증 API
 
 | 함수 | 역할 | 오류 |
 | --- | --- | --- |
@@ -95,14 +114,20 @@ Import JSON
 | `validateRecipeV8Geometry(value)` | 가져오기용 엄격 검증 | `Invalid recipe geometry`, `Invalid geometry ...` |
 | `toRecipeV8(recipe)` | v7 → v8 순수 변환 | `Unsupported recipe version for v8 migration` |
 | `isRecipeV8(value)` | schemaVersion 8 판별 | 없음 |
+| `validateRecipeV9(value)` | v9 엄격 검증(optical/local 포함) | `Unknown recipe v9 field`, 위임 오류 |
+| `validateRecipeV10(value)` | v10 엄격 검증(lensBlur/develop 포함) | `Unknown recipe v10 field`, 위임 오류 |
+| `validateLensBlur(value)` | 렌즈 블러 범위·마스크 검증 | `Invalid lens blur ...` |
+| `validateDevelop(value)` | 현상 WB/EV/하이라이트 검증 | `Invalid develop ...` |
+| `shouldWriteRecipeV9(state)` | optical/local 활성 여부 | 없음 |
+| `shouldWriteRecipeV10(state)` | lensBlur/develop 활성 여부 | 없음 |
 | `detectRecipeSchemaVersion(value)` | 선언 버전 식별(전체 검증 아님) | 없음(null) |
 | `assertRecipeVersionSupported(value)` | 지원 상한 검사 | `Unsupported recipe version` |
 | `assertRecipePersistable(recipe, key)` | 저장 키·버전 가드 | `Unknown recipe storage key`, `Unsupported recipe version` |
 | `resolveRecipeStorageKey(baseUrl)` | Stable/Beta IDB 키 선택 | 없음 |
 
-`CURRENT_SCHEMA_VERSION`은 기하 렌더·UI가 실제로 연결되는 체크포인트에서 8로 올린다. 그 전에는 v7로 저장해 기존 앱·베타와의 호환을 유지한다.
+`CURRENT_SCHEMA_VERSION`은 `RECIPE_SCHEMA_MAX`를 참조하며, 저장 시에는 `shouldWriteRecipeV9/V10` 결과로 실제 버전을 낮춘다.
 
-## 6. v8 예시
+## 7. v8 예시
 
 ```json
 {
