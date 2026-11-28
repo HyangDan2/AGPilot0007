@@ -31,8 +31,10 @@ notes; it is not re-run in CP5-04 (docs-only).
 
 ## Related cache measurements (same harness)
 
-- Precache manifest after CP5-02: 53 entries, all unique URLs (was 73). Workbox
-  already deduplicated duplicate URLs at install (server log showed 54 unique
+- Precache manifest after CP5-02: 53 entries, all unique URLs (was 73). Final
+  raw precache size in the serial CP5 run is 12,346.27 KiB (was 24,082.93 KiB).
+  Workbox already deduplicated duplicate URLs at install (server log showed 54
+  unique
   cache writes from 73 entries), so the entry-count reduction is manifest
   clarity, while the measurable install win is the removal of
   `social-preview.png`: install transfer 4,100,872 B → 3,502,282 B (−14.6%).
