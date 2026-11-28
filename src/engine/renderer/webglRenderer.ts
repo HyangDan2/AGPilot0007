@@ -179,6 +179,7 @@ export class WebGL2FilmRenderer {
       'u_lut',
       'u_lut_size',
       'u_resolution',
+      'u_tile_mode','u_tile_origin','u_tile_size','u_frame_size',
       'u_exposure',
       'u_temperature',
       'u_tint',
@@ -252,8 +253,10 @@ export class WebGL2FilmRenderer {
     // Verify TexImageSource type to call the correct 6-argument overload
     const isDomSource =
       (typeof HTMLCanvasElement !== 'undefined' && imageSource instanceof HTMLCanvasElement) ||
+      (typeof OffscreenCanvas !== 'undefined' && imageSource instanceof OffscreenCanvas) ||
       (typeof HTMLImageElement !== 'undefined' && imageSource instanceof HTMLImageElement) ||
-      (typeof ImageBitmap !== 'undefined' && imageSource instanceof ImageBitmap);
+      (typeof ImageBitmap !== 'undefined' && imageSource instanceof ImageBitmap) ||
+      (typeof VideoFrame !== 'undefined' && imageSource instanceof VideoFrame);
 
     if (isDomSource) {
       gl.texImage2D(
@@ -281,8 +284,8 @@ export class WebGL2FilmRenderer {
     }
 
     const dom=imageSource as any;
-    this.imageWidth=isDomSource?(dom.naturalWidth||dom.width):(width||this.canvas.width);
-    this.imageHeight=isDomSource?(dom.naturalHeight||dom.height):(height||this.canvas.height);
+    this.imageWidth=isDomSource?(dom.naturalWidth||dom.displayWidth||dom.width):(width||this.canvas.width);
+    this.imageHeight=isDomSource?(dom.naturalHeight||dom.displayHeight||dom.height):(height||this.canvas.height);
     const err = gl.getError();
     if (err !== gl.NO_ERROR) {
       console.error('WebGL error during setImage (texImage2D):', err);
@@ -347,7 +350,10 @@ export class WebGL2FilmRenderer {
 
     const camera = getEffectiveCamera(options.filmId, options.camera);
     const stamp = camera.dateStamp;
-    const stampKey = JSON.stringify([this.canvas.width,this.canvas.height,stamp]);
+    // Tiled passes keep the stamp in full-frame coordinates so seams line up.
+    const stampWidth = options.tile ? options.tile.frameWidth : this.canvas.width;
+    const stampHeight = options.tile ? options.tile.frameHeight : this.canvas.height;
+    const stampKey = JSON.stringify([stampWidth, stampHeight, stamp]);
     gl.activeTexture(gl.TEXTURE2);
     if (!this.stampTexture) {
       this.stampTexture = gl.createTexture();
@@ -360,7 +366,7 @@ export class WebGL2FilmRenderer {
     }
     gl.bindTexture(gl.TEXTURE_2D,this.stampTexture);
     if (this.stampKey !== stampKey) {
-      const patch = createDateStamp(this.canvas.width,this.canvas.height,stamp);
+      const patch = createDateStamp(stampWidth,stampHeight,stamp);
       if (patch) {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);
@@ -410,6 +416,13 @@ export class WebGL2FilmRenderer {
     if (this.uniforms.u_lut_size) gl.uniform1f(this.uniforms.u_lut_size, this.currentLutSize);
     if (this.uniforms.u_resolution) {
       gl.uniform2f(this.uniforms.u_resolution, this.canvas.width, this.canvas.height);
+    }
+    const tile = options.tile;
+    gl.uniform1i(this.uniforms.u_tile_mode, tile ? 1 : 0);
+    if (tile) {
+      gl.uniform2f(this.uniforms.u_tile_origin, tile.x, tile.y);
+      gl.uniform2f(this.uniforms.u_tile_size, tile.width, tile.height);
+      gl.uniform2f(this.uniforms.u_frame_size, tile.frameWidth, tile.frameHeight);
     }
 
     const adj = options.adjustments;
