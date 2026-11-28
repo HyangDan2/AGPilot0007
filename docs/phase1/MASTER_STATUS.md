@@ -12,7 +12,7 @@ Policy: Lean Engineering v1.1 (PO directive) — reuse PASS evidence, no re-veri
 | CP3 (Professional Editing) | **CLOSED** | G3 **PASS** at `f4d900b` (E2E 358/0/102; RAW 6000×4000; cancel/retry 12/12). PO accepted 2026-11-28. Evidence: `WO_CP3_MASTER.md`. |
 | Engine Contract Freeze | **UNCHANGED** | Blobs identical at `47cc881`: optical `539a381`, imageBuffer `f1f9330`, masks `0c6935a`, exportControl `108e708`, moduleRegistry `42ca676`, geometry `44dd349`. |
 | Recipe v8/v9 | **READ ACTIVE** | v9 written by CP3 (optical/localAdjustments); v1–v9 readable. CP4 adds v10 (additive). |
-| CP4 (Advanced Imaging Engine) | **G4 PASS — code-complete** | WO-P1-CP4 baseline `f4d900b`; final SHA `47cc881`. CP4-01…CP4-08 all accepted; Q02 independent lens-blur parity PASS (≤1.03 LSB, lens-off byte-identical). Q05B targeted pass activating. Merge/deploy to `main`/`beta` locked pending PO approval. Evidence: `WO_CP4_MASTER.md`. |
+| CP4 (Advanced Imaging Engine) | **G4 PASS — QA findings, CP4-09 open** | WO-P1-CP4 baseline `f4d900b`; G4 SHA `47cc881`. CP4-01…08 accepted; Q02 parity PASS (≤1.03 LSB). Q05B targeted pass: lens blur, RAW develop, photo core PASS; video FAIL — trim state leaks on same-clip reopen (deterministic spec fail) and engine chunk loads at boot (lazy boundary defeated). CP4-09 with Q04; merge/deploy to `main`/`beta` locked pending PO approval. Evidence: `WO_CP4_MASTER.md`. |
 
 ## Baseline (verified 2026-11-28 KST)
 
