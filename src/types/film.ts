@@ -5,6 +5,8 @@ import type { CameraSettings, CameraEffect } from './camera';
 import type { GeometryTransform } from '../engine/contracts/geometry';
 import type { OpticalTransform } from '../engine/contracts/optical';
 import type { LocalAdjustmentState } from '../engine/contracts/localAdjustments';
+import type { LensBlurState } from '../engine/contracts/lensBlur';
+import type { RawDevelopState } from '../engine/contracts/develop';
 export type FilmId =
   | 'identity'
   | 'FS-001'
@@ -78,6 +80,8 @@ export interface CustomRecipe {
   geometry?: GeometryTransform;
   optical?: OpticalTransform;
   localAdjustments?: LocalAdjustmentState;
+  lensBlur?: LensBlurState;
+  develop?: RawDevelopState;
   sharpening?:SharpeningSettings;
   colorMixer?: ColorMixerSettings;
   curves?: ToneCurves;

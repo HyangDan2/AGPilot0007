@@ -48,7 +48,7 @@ describe('Recipe feature registry compatibility (schemas 1-8)', () => {
   });
 
   it('rejects future schema versions', () => {
-    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 10 }))).toThrow(/Unsupported recipe version/);
+    expect(() => validateRecipeJSON(JSON.stringify({ ...base, schemaVersion: 11 }))).toThrow(/Unsupported recipe version/);
   });
 
   it('round-trips v8 framing through JSON without losing values', () => {
