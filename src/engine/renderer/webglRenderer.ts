@@ -5,6 +5,8 @@ import { buildCurveTexture, CURVE_SAMPLES } from '../color/userCurves';
 import { getEffectiveCamera } from '../../films/cameraEffects';
 import { createDateStamp } from '../overlay/dateStamp';
 import { VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE } from './shaderManager';
+import { LENS_BLUR_FRAGMENT } from '../optical/lensBlur';
+import type { LensBlurPlan } from '../contracts/lensBlur';
 import { ParsedLut3D } from '../color/lutLoader';
 import { RenderTarget } from './renderTarget';
 import type { RenderRequest } from '../pipeline/renderSettings';
@@ -14,6 +16,42 @@ import {
   localStageTextureBudget,
   type LocalStagePlan,
 } from '../local/maskRaster';
+
+/** Post-pass vertex shader; attribute locations match the shared VAO slots. */
+const LENS_VERTEX_SHADER_SOURCE = `#version 300 es
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_uv;
+out vec2 v_uv;
+void main() {
+    v_uv = a_uv;
+    gl_Position = vec4(a_position, 0.0, 1.0);
+}
+`;
+
+/**
+ * The lens blur chunk samples a scene texture in its own UV space where v=0 is
+ * the bottom row, while the main pass writes v=0 at the top of the target, so
+ * the wrapper flips v once and gathers in scene space (mirrors gradedAt).
+ */
+const lensFragmentShaderSource = (): string => `#version 300 es
+precision highp float;
+precision highp sampler2D;
+in vec2 v_uv;
+out vec4 fragColor;
+${LENS_BLUR_FRAGMENT}
+void main() {
+    vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
+    vec4 scene = texture(u_q02_lens_scene, uv);
+    fragColor = vec4(q02_lens_blur(scene.rgb, uv), scene.a);
+}
+`;
+
+const LENS_UNIFORM_NAMES = [
+  'u_q02_lens_scene', 'u_q02_lens_psf', 'u_q02_lens_depth', 'u_q02_lens_taps',
+  'u_q02_lens_use_depth', 'u_q02_lens_aspect', 'u_q02_lens_focus_plane',
+  'u_q02_lens_focus_range', 'u_q02_lens_falloff', 'u_q02_lens_max_coc',
+  'u_q02_lens_guard', 'u_q02_lens_highlight_boost',
+];
 
 export class WebGL2FilmRenderer {
   private detailTarget: RenderTarget | null = null;
@@ -35,6 +73,14 @@ export class WebGL2FilmRenderer {
   private localPlanMasks: HTMLCanvasElement[] = [];
   private localGroupCount = 0;
   private warnedLocalBudget = false;
+  private lensSourceTarget: RenderTarget | null = null;
+  private lensProgram: WebGLProgram | null = null;
+  private lensUniforms: Record<string, WebGLUniformLocation | null> = {};
+  private lensPsfTexture: WebGLTexture | null = null;
+  private lensDepthTexture: WebGLTexture | null = null;
+  private lensFallbackDepth: WebGLTexture | null = null;
+  private lensUploadedPlan: LensBlurPlan | null = null;
+  private lensDepthLinear = false;
   private stampRect = [0,0,1,1];
   private quadBuffer: WebGLBuffer | null = null;
   private currentLutSize: number = 33;
@@ -109,6 +155,10 @@ export class WebGL2FilmRenderer {
       this.stampKey = '';
       this.curveTexture = null; this.curveKey = '';
       this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
+      this.lensSourceTarget?.dispose(); this.lensSourceTarget = null;
+      this.lensProgram = null; this.lensUniforms = {};
+      this.lensPsfTexture = null; this.lensDepthTexture = null; this.lensFallbackDepth = null;
+      this.lensUploadedPlan = null;
       this.initContext();
       this.onContextRestoredCallback?.();
     });
@@ -463,10 +513,133 @@ export class WebGL2FilmRenderer {
       gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,this.detailTarget!.colorTexture);gl.uniform1i(this.uniforms.u_graded,4);
       gl.uniform1i(this.uniforms.u_detail_stage,2);
     }else if(this.detailTarget&&!options.mixerReference&&!options.mixerVisualize&&sharpening.amount===0&&!options.sharpeningMask){this.detailTarget.dispose();this.detailTarget=null;}
+    const lens = options.lensStage && options.lensStage.tapCount >= 2 ? options.lensStage : null;
+    if (lens) {
+      this.lensSourceTarget ??= new RenderTarget(gl);
+      this.lensSourceTarget.ensure(this.canvas.width, this.canvas.height);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.lensSourceTarget.handle);
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
     // Draw
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
+    if (lens) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      this.applyLensPass(gl, lens);
+    }
+  }
+
+  private ensureLensProgram(gl: WebGL2RenderingContext): WebGLProgram {
+    if (this.lensProgram) return this.lensProgram;
+    const compile = (type: number, source: string, label: string): WebGLShader => {
+      const shader = gl.createShader(type);
+      if (!shader) throw new Error(`Lens blur ${label} shader could not be created`);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(`Lens blur ${label} shader failed to compile: ${log || 'unknown error'}`);
+      }
+      return shader;
+    };
+    const vs = compile(gl.VERTEX_SHADER, LENS_VERTEX_SHADER_SOURCE, 'vertex');
+    const fs = compile(gl.FRAGMENT_SHADER, lensFragmentShaderSource(), 'fragment');
+    const program = gl.createProgram();
+    if (!program) {
+      gl.deleteShader(vs); gl.deleteShader(fs);
+      throw new Error('Lens blur program could not be created');
+    }
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.deleteShader(vs); gl.deleteShader(fs);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(program);
+      gl.deleteProgram(program);
+      throw new Error(`Lens blur program failed to link: ${log || 'unknown error'}`);
+    }
+    this.lensUniforms = {};
+    for (const name of LENS_UNIFORM_NAMES) this.lensUniforms[name] = gl.getUniformLocation(program, name);
+    this.lensDepthLinear = !!gl.getExtension('OES_texture_float_linear');
+    this.lensProgram = program;
+    return program;
+  }
+
+  /**
+   * Runs the Q02 gather from the intermediate graded target to the canvas.
+   * Plans are uploaded once per object; repeat frames rebind the same textures.
+   */
+  private applyLensPass(gl: WebGL2RenderingContext, plan: LensBlurPlan) {
+    const scene = this.lensSourceTarget?.colorTexture;
+    if (!scene) return;
+    const program = this.ensureLensProgram(gl);
+    const u = this.lensUniforms;
+    gl.useProgram(program);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, scene);
+    gl.uniform1i(u.u_q02_lens_scene, 0);
+
+    if (!this.lensPsfTexture) {
+      this.lensPsfTexture = gl.createTexture();
+    }
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.lensPsfTexture);
+    if (this.lensUploadedPlan !== plan) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 64, 1, 0, gl.RGBA, gl.FLOAT, plan.psf);
+    }
+    gl.uniform1i(u.u_q02_lens_psf, 1);
+
+    gl.activeTexture(gl.TEXTURE2);
+    if (plan.depth) {
+      if (!this.lensDepthTexture) this.lensDepthTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this.lensDepthTexture);
+      if (this.lensUploadedPlan !== plan) {
+        const filter = this.lensDepthLinear ? gl.LINEAR : gl.NEAREST;
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, plan.width, plan.height, 0, gl.RED, gl.FLOAT, plan.depth);
+      }
+      gl.uniform1i(u.u_q02_lens_use_depth, 1);
+    } else {
+      if (!this.lensFallbackDepth) {
+        this.lensFallbackDepth = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.lensFallbackDepth);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, 1, 1, 0, gl.RED, gl.FLOAT, new Float32Array([0]));
+      } else {
+        gl.bindTexture(gl.TEXTURE_2D, this.lensFallbackDepth);
+      }
+      gl.uniform1i(u.u_q02_lens_use_depth, 0);
+    }
+    gl.uniform1i(u.u_q02_lens_depth, 2);
+
+    gl.uniform1i(u.u_q02_lens_taps, Math.min(plan.tapCount, 64));
+    gl.uniform1f(u.u_q02_lens_aspect, plan.width / plan.height);
+    gl.uniform1f(u.u_q02_lens_focus_plane, plan.focusPlane);
+    gl.uniform1f(u.u_q02_lens_focus_range, plan.focusRange);
+    gl.uniform1f(u.u_q02_lens_falloff, plan.falloff);
+    gl.uniform1f(u.u_q02_lens_max_coc, plan.maxCocShortSide);
+    gl.uniform4f(u.u_q02_lens_guard, plan.guardBand, plan.depth ? plan.guardStrength : 0, 0, 0);
+    gl.uniform1f(u.u_q02_lens_highlight_boost, plan.highlightBoost);
+
+    gl.bindVertexArray(this.vao);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.bindVertexArray(null);
+    this.lensUploadedPlan = plan;
   }
 
   /**
@@ -586,6 +759,12 @@ export class WebGL2FilmRenderer {
     if (this.curveTexture) { gl.deleteTexture(this.curveTexture); this.curveTexture = null; }
     for (const texture of this.localMaskTextures) { if (texture) gl.deleteTexture(texture); }
     this.localMaskTextures = []; this.localPlan = null; this.localPlanMasks = []; this.localGroupCount = 0;
+    if (this.lensSourceTarget) { this.lensSourceTarget.dispose(); this.lensSourceTarget = null; }
+    if (this.lensPsfTexture) { gl.deleteTexture(this.lensPsfTexture); this.lensPsfTexture = null; }
+    if (this.lensDepthTexture) { gl.deleteTexture(this.lensDepthTexture); this.lensDepthTexture = null; }
+    if (this.lensFallbackDepth) { gl.deleteTexture(this.lensFallbackDepth); this.lensFallbackDepth = null; }
+    if (this.lensProgram) { gl.deleteProgram(this.lensProgram); this.lensProgram = null; }
+    this.lensUniforms = {}; this.lensUploadedPlan = null;
     if (this.quadBuffer) { gl.deleteBuffer(this.quadBuffer); this.quadBuffer = null; }
     if (this.vao) { gl.deleteVertexArray(this.vao); this.vao = null; }
     if (this.program) {

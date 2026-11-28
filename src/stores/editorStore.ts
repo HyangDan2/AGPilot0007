@@ -10,15 +10,16 @@ import type { DecodedSource } from '../engine/contracts/imageBuffer';
 import type { RawDevelopInfo } from '../engine/raw/rawPreview';
 import { FilmId, AdjustmentSettings, DEFAULT_ADJUSTMENTS, CustomRecipe } from '../types/film';
 import { FILM_PROFILES } from '../films/registry';
-import { loadSavedRecipes, persistRecipes, validateRecipeJSON, shouldWriteRecipeV9 } from './recipeStore';
+import { loadSavedRecipes, persistRecipes, validateRecipeJSON, shouldWriteRecipeV9, shouldWriteRecipeV10 } from './recipeStore';
 import { IDENTITY_GEOMETRY, normalizeGeometry, type GeometryTransform } from '../engine/contracts/geometry';
 import { normalizeOpticalTransform } from '../engine/optical/transform';
 import type { OpticalTransform } from '../engine/contracts/optical';
 import { normalizeLocalAdjustments, type LocalAdjustmentState } from '../engine/contracts/localAdjustments';
-import { normalizeLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
-import { rawDevelopStateFromInfo, type RawDevelopState } from '../engine/contracts/develop';
+import { normalizeLensBlur, isNeutralLensBlur, type LensBlurState } from '../engine/contracts/lensBlur';
+import { normalizeDevelop, isNeutralDevelop, rawDevelopStateFromInfo, type RawDevelopState } from '../engine/contracts/develop';
 import { RECIPE_SCHEMA_V8 } from '../engine/contracts/recipeV8';
 import { RECIPE_SCHEMA_V9 } from '../engine/contracts/recipeV9';
+import { RECIPE_SCHEMA_V10 } from '../engine/contracts/recipeV10';
 import { useMaskUiStore } from './maskUiStore';
 
 import { getMargarinePreset, MARGARINE_PRESETS } from '../presets/margarine';
@@ -575,9 +576,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   saveCurrentAsRecipe: async (name: string) => {
     const state = get();
-    const writeV9 = shouldWriteRecipeV9(state);
+    const writeV10 = shouldWriteRecipeV10(state);
+    const writeV9 = writeV10 || shouldWriteRecipeV9(state);
     const optical = state.optical ? normalizeOpticalTransform(state.optical) : null;
     const localAdjustments = normalizeLocalAdjustments(state.localAdjustments);
+    const lensBlur = normalizeLensBlur(state.lensBlur);
+    const develop = state.develop ? normalizeDevelop(state.develop) : null;
     const newRecipe: CustomRecipe = {
       id: `rcp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: name.trim() || 'Untitled Recipe',
@@ -587,10 +591,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       adjustments: { ...state.adjustments },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      schemaVersion: writeV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
+      schemaVersion: writeV10 ? RECIPE_SCHEMA_V10 : writeV9 ? RECIPE_SCHEMA_V9 : RECIPE_SCHEMA_V8,
       geometry: normalizeGeometry(state.geometry),
       ...(writeV9 && optical ? { optical } : {}),
       ...(writeV9 && localAdjustments.groups.length > 0 ? { localAdjustments } : {}),
+      ...(writeV10 && !isNeutralLensBlur(lensBlur) ? { lensBlur } : {}),
+      ...(writeV10 && develop && !isNeutralDevelop(develop) ? { develop } : {}),
       sharpening:normalizeSharpening(state.sharpening),
       colorMixer:normalizeColorMixer(state.colorMixer),
       curves: normalizeCurves(state.curves),
@@ -637,6 +643,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const geometry=normalizeGeometry(recipe.geometry);
     const optical=recipe.optical?normalizeOpticalTransform(recipe.optical):null;
     const localAdjustments=normalizeLocalAdjustments(recipe.localAdjustments);
+    const lensBlur=normalizeLensBlur(recipe.lensBlur ?? {});
+    const develop=recipe.develop && state.rawDevelop ? normalizeDevelop(recipe.develop) : null;
     const snapshot = snapshotOf(state,{
       sharpening:normalizeSharpening(recipe.sharpening,recipe.adjustments.sharpness),
       colorMixer:normalizeColorMixer(recipe.colorMixer),
@@ -658,6 +666,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       geometry,
       optical,
       localAdjustments,
+      lensBlur,
+      ...(develop ? { develop } : {}),
     });
   },
 

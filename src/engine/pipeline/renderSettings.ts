@@ -7,6 +7,7 @@ import type { GeometryTransform } from '../contracts/geometry';
 import type { OpticalTransform } from '../contracts/optical';
 import type { MaskData } from '../contracts/masks';
 import type { LocalAdjustmentState } from '../contracts/localAdjustments';
+import type { LensBlurState, LensBlurPlan } from '../contracts/lensBlur';
 import type { LocalStagePlan } from './localStageSeam';
 
 export type CompareMode = 'none' | 'original' | 'split';
@@ -30,6 +31,13 @@ export interface RenderSettings {
   localAdjustments?: LocalAdjustmentState;
   /** Q02's rasterized plan; null/undefined keeps the CP2 render path untouched. */
   localStage?: LocalStagePlan | null;
+  /**
+   * Persisted lens blur state (CP4-06). Neutral/absent keeps the byte-equal
+   * path; the blur runs after the color pipeline in the WebGL backend.
+   */
+  lensBlur?: LensBlurState;
+  /** Planned lens blur for the current render size; null/undefined bypasses the pass. */
+  lensStage?: LensBlurPlan | null;
 }
 
 /**

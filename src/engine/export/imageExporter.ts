@@ -9,6 +9,8 @@ import { createWebGLPipelineBackend } from '../renderer/webglPipelineBackend';
 import { createQ02RenderRegistry } from '../optical/modules';
 import { geometryOutputSize } from '../optical/geometry';
 import { renderTiled } from '../renderer/tiledExport';
+import { planLensBlur } from '../optical/lensBlur';
+import { isNeutralLensBlur, type LensBlurPlan } from '../contracts/lensBlur';
 import { budgetForDevice, detectDeviceCapabilities, estimateFrameBytes } from '../contracts/resourceBudget';
 
 export type { ExportOptions, PreparedExport };
@@ -137,6 +139,11 @@ export async function prepareExportImage(
         'This export needs tiled rendering, which does not support local adjustments yet. Disable local adjustments or export at a smaller size.',
       );
     }
+    if (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur)) {
+      throw new Error(
+        'This export needs tiled rendering, which does not support lens blur yet. Disable lens blur or export at a smaller size.',
+      );
+    }
     throwIfExportAborted(control?.signal);
     onProgress?.(30, 'Rendering large image in tiles...');
     control?.onStage?.('render');
@@ -188,6 +195,18 @@ export async function prepareExportImage(
   renderer.setImage(source, exportWidth, exportHeight);
   renderer.setLut(lut);
 
+  // Export quality gather at the final canvas size; the plan is transient and
+  // never persisted. A null plan keeps the unmodified pipeline output.
+  let lensStage: LensBlurPlan | null = null;
+  if (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur)) {
+    lensStage = planLensBlur(
+      { ...settings.lensBlur, quality: 'export' },
+      { width: exportWidth, height: exportHeight },
+      { maxTextureSize: maxTexSize },
+    );
+  }
+  const pipelineSettings = lensStage ? { ...settings, lensStage } : settings;
+
   try {
     throwIfExportAborted(control?.signal);
     control?.onStage?.('render');
@@ -198,7 +217,7 @@ export async function prepareExportImage(
         width: exportWidth,
         height: exportHeight,
         dpr: 1,
-        settings,
+        settings: pipelineSettings,
         source,
         sourceWidth: image.originalWidth,
         sourceHeight: image.originalHeight,

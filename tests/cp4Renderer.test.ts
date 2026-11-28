@@ -239,7 +239,7 @@ describe('CP4 renderTiled', () => {
     expect(gradients.length).toBeGreaterThan(0);
   });
 
-  it('rejects tiled exports with local adjustments and unusable budgets', async () => {
+  it('rejects tiled exports with local adjustments, lens blur and unusable budgets', async () => {
     const { image } = fakeImage(1000, 600);
     const { createCanvas } = canvasFactory();
     const { createRenderer } = rendererFactory();
@@ -255,6 +255,17 @@ describe('CP4 renderTiled', () => {
         { createCanvas, createRenderer, loadLut },
       ),
     ).rejects.toThrow(/local adjustments/);
+
+    const lensSettings: RenderSettings = {
+      ...identitySettings(),
+      lensBlur: { enabled: true, depthMask: null } as never,
+    };
+    await expect(
+      renderTiled(
+        { image, settings: lensSettings, maxTextureSize: 400, budgetBytes: 64 * 1024 * 1024, overlap: 20 },
+        { createCanvas, createRenderer, loadLut },
+      ),
+    ).rejects.toThrow(/lens blur/);
 
     await expect(
       renderTiled(

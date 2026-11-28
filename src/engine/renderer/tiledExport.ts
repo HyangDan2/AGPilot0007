@@ -1,6 +1,7 @@
 import { FILM_PROFILES } from '../../films/registry';
 import { loadCubeLut, type ParsedLut3D } from '../color/lutLoader';
 import { decideResourceAllocation, createResourceBudget } from '../contracts/resourceBudget';
+import { isNeutralLensBlur } from '../contracts/lensBlur';
 import type { DecodedImage } from '../image/decoder';
 import { resolveDecodedImageOriginal } from '../image/decoder';
 import { createQ02RenderRegistry } from '../optical/modules';
@@ -260,6 +261,12 @@ export async function renderTiled(options: TiledRenderOptions, deps: TiledRender
   }
 
   const lut = await loadLut(settings);
+
+  // Lens blur is a frame-global post pass; tiling it would need per-tile depth
+  // and seam-aware gathers, so the tiled engine refuses instead of dropping it.
+  if (settings.lensStage || (settings.lensBlur && !isNeutralLensBlur(settings.lensBlur))) {
+    throw new Error('Tiled export does not support lens blur yet.');
+  }
 
   if (decision.quality !== 'tile') {
     deps.onPlan?.({

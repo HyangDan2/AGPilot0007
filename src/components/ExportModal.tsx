@@ -26,7 +26,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
-  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening, geometry, optical, localAdjustments, rawDevelop } = useEditorStore();
+  const { image, activeFilmId, activePresetId, adjustments, camera, curves, colorMixer, sharpening, geometry, optical, localAdjustments, lensBlur, rawDevelop } = useEditorStore();
 
   const [stage, setStage] = useState<'config' | 'preparing' | 'ready'>('config');
   const [format, setFormat] = useState<ExportFormat>('image/jpeg');
@@ -129,7 +129,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         image,
         lut,
         composeDevelop(
-          { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments },
+          { adjustments, camera, filmId: activeFilmId, curves, colorMixer, sharpening, geometry, optical: optical ?? undefined, localAdjustments, lensBlur },
           rawDevelopStateFromInfo(rawDevelop),
           { developBaked: true },
         ),
