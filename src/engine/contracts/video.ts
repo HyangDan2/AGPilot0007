@@ -42,9 +42,23 @@ export interface VideoExportProgress {
   framesTotal: number;
 }
 
+/**
+ * Completed video export (seam ruling 2026-11-28, WO §7): the promise must
+ * carry the finished file so the UI can save it. Q03's richer task result
+ * satisfies this shape structurally; extra fields stay Q03-owned.
+ */
+export interface VideoExportResult {
+  blob: Blob;
+  mimeType: string;
+  bytes: number;
+  width: number;
+  height: number;
+  durationSec: number;
+}
+
 /** Cancel rejects the promise with an `AbortError`, matching exportControl. */
 export interface VideoExportHandle {
-  promise: Promise<void>;
+  promise: Promise<VideoExportResult>;
   cancel(): void;
   onProgress(callback: (progress: VideoExportProgress) => void): () => void;
 }

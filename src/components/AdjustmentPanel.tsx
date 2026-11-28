@@ -4,11 +4,13 @@ import { ToneCurveButton } from './ToneCurve';
 import { CameraEffectsButton } from './CameraEffects';
 import { GeometryPanel } from './geometry/GeometryPanel';
 import { MaskControls } from './masks/MasksWorkspace';
+import { LensBlurPanel } from './optical/LensBlurPanel';
+import { DevelopPanel } from './raw/DevelopPanel';
 import { ResetValueButton, RESET_VALUE_HINT } from './ResetValueButton';
 import React from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { ADJUSTMENT_DEFINITIONS, AdjustmentCategory, CATEGORY_LABELS } from '../types/adjustments';
-import { Sun, Droplets, Sparkles, Sliders, X, ChevronDown, Crop, Layers } from 'lucide-react';
+import { Sun, Droplets, Sparkles, Sliders, X, ChevronDown, Crop, Layers, Aperture, Thermometer } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<AdjustmentCategory, React.ReactNode> = {
   film: <Sliders className="w-3.5 h-3.5" />,
@@ -33,8 +35,18 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
     setOptical,
     isCropEditing,
     setCropEditing,
+    lensBlur,
+    setLensBlur,
+    isLensBlurDepthEditing,
+    setLensBlurDepthEditing,
+    rawDevelop,
+    develop,
+    setDevelop,
   } = useEditorStore();
 
+  const asShot = rawDevelop?.report?.asShotTemperatureK != null
+    ? { temperatureK: rawDevelop.report.asShotTemperatureK, tint: 0 }
+    : null;
   const categories: AdjustmentCategory[] = ['light', 'color', 'texture'];
 
   return (
@@ -99,6 +111,40 @@ export const AdjustmentPanel: React.FC<AdjustmentPanelProps> = ({ onClose }) => 
                 state.applyParameterGroups({ geometry: state.geometry, optical: state.optical });
               }}
             />
+          </section>
+        )}
+        {image && (
+          <section className="space-y-2" data-testid="lens-blur-section">
+            <div className="flex items-center gap-1.5 border-b border-[color:var(--ui-border-1b212c)] pb-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-amber-400)]/90">
+              <Aperture className="w-3.5 h-3.5" />
+              <span className="flex-1">Lens blur</span>
+              <button
+                type="button"
+                data-testid="lens-depth-toggle"
+                aria-pressed={isLensBlurDepthEditing}
+                disabled={!lensBlur.enabled}
+                onClick={() => setLensBlurDepthEditing(!isLensBlurDepthEditing)}
+                className={`rounded border px-2 py-0.5 text-[10px] normal-case tracking-normal transition-colors disabled:opacity-40 ${isLensBlurDepthEditing ? 'border-[color:var(--ui-accent)] text-[color:var(--ui-accent)]' : 'border-[color:var(--ui-border-1e2430)] text-[color:var(--ui-text-c8cfda)] hover:border-[color:var(--ui-accent)]'}`}
+              >
+                Paint depth
+              </button>
+            </div>
+            <LensBlurPanel
+              state={lensBlur}
+              onChange={(patch) => {
+                setLensBlur(patch);
+                if (patch.enabled === false) setLensBlurDepthEditing(false);
+              }}
+            />
+          </section>
+        )}
+        {image && rawDevelop && develop && (
+          <section className="space-y-2" data-testid="develop-section">
+            <div className="flex items-center gap-1.5 border-b border-[color:var(--ui-border-1b212c)] pb-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-amber-400)]/90">
+              <Thermometer className="w-3.5 h-3.5" />
+              <span className="flex-1">RAW develop</span>
+            </div>
+            <DevelopPanel state={develop} asShot={asShot} onChange={setDevelop} />
           </section>
         )}
         {image && (

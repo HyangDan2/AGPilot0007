@@ -29,6 +29,15 @@ The table below records what was verified in this phase versus what is inferred.
 | Any browser without `VideoDecoder` | Unsupported | `canDecode: false`; open/export rejects with `decode-unavailable`. |
 
 Notes:
+- **Frame renderer**: `startVideoExport` defaults to CP4-01b's
+  `createVideoFrameRenderer` (graded pipeline, LUT resident, one texture upload per
+  frame, `RenderSettings`-driven). `result.rendererPath` reports `graded`,
+  `fallback` (plain 2D adapter, only when the WebGL2 renderer constructor throws —
+  `result.gradingWarning` explains why) or `injected` (caller-supplied renderer).
+  Neutral/identity grading is the default; per-export grading arrives via
+  `VideoExportOptions.grading`.
+- **Grading needs WebGL2**: on browsers without a WebGL2 context the export still
+  succeeds via the fallback adapter, but frames are ungraded and the result says so.
 - **Containers are tied to codecs**: AVC → MP4, VP9 → WebM. Mismatches fail fast
   (`unsupported-container`) before any output byte is written.
 - **Audio is never silently dropped**: passthrough requires the source codec to be

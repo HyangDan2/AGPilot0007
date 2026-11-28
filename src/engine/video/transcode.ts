@@ -23,16 +23,22 @@ import { abortError, VideoCapabilityError } from './errors';
 import { createCanvasFrameRenderer, type CanvasFrameRenderer } from './frameRenderer';
 import { fitResolution } from './profiles';
 import { resolveTrim } from './trim';
+import { createVideoFrameRenderer } from '../renderer/frameRenderer';
+import { DEFAULT_ADJUSTMENTS } from '../../types/film';
+import type { RenderSettings } from '../pipeline/renderSettings';
 import type {
   VideoAudioReport,
   VideoExportOptions,
   VideoExportProgress,
   VideoExportResult,
   VideoExportTask,
+  VideoFrameRenderer,
+  VideoRendererPath,
 } from './types';
 
 const AUDIO_HASH_LIMIT_BYTES = 8 * 1024 * 1024;
 const AAC_BITRATE = 128_000;
+const DEFAULT_GRADING: RenderSettings = { adjustments: DEFAULT_ADJUSTMENTS };
 
 async function sha256Hex(parts: Uint8Array[]): Promise<string> {
   const total = parts.reduce((n, p) => n + p.byteLength, 0);
@@ -107,7 +113,7 @@ async function runExport(
   let output: Output | null = null;
   let videoSource: CanvasSource | null = null;
   let audioSource: EncodedAudioPacketSource | AudioSampleSource | null = null;
-  let renderer: CanvasFrameRenderer | null = null;
+  let ownedRenderer: VideoFrameRenderer | null = null;
   let orientationCanvas: HTMLCanvasElement | null = null;
   const external = options.target ? externalSink(options.target) : null;
   try {
@@ -143,9 +149,28 @@ async function runExport(
       { chunked: true, chunkSize: 1 << 20 },
     );
     output = new Output({ format: settings.container === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat(), target });
-    renderer = options.renderer ? null : createCanvasFrameRenderer(out.width, out.height);
-    const render = options.renderer ?? renderer!;
-    const canvas = options.canvas ?? render.canvas;
+    let render: VideoFrameRenderer;
+    let rendererPath: VideoRendererPath;
+    let gradingWarning: string | undefined;
+    let gradedCanvas: HTMLCanvasElement | null = null;
+    if (options.renderer) {
+      render = options.renderer;
+      rendererPath = 'injected';
+    } else {
+      const canvasTarget = options.canvas ?? document.createElement('canvas');
+      try {
+        render = createVideoFrameRenderer(canvasTarget, options.grading ?? DEFAULT_GRADING);
+        gradedCanvas = canvasTarget;
+        rendererPath = 'graded';
+      } catch (error) {
+        const adapter: CanvasFrameRenderer = createCanvasFrameRenderer(out.width, out.height);
+        render = adapter;
+        rendererPath = 'fallback';
+        gradingWarning = `Graded frame renderer unavailable (${error instanceof Error ? error.message : String(error)}); exported frames are ungraded.`;
+      }
+      ownedRenderer = render;
+    }
+    const canvas = gradedCanvas ?? options.canvas ?? render.canvas;
     if (!canvas) throw new Error('Video frame renderer must expose a canvas (or pass VideoExportOptions.canvas)');
     render.resize(out.width, out.height);
     videoSource = new CanvasSource(canvas, {
@@ -252,6 +277,8 @@ async function runExport(
       height: out.height,
       durationSec: Number((frames / settings.fps).toFixed(3)),
       audio: audioReport,
+      rendererPath,
+      ...(gradingWarning ? { gradingWarning } : {}),
     };
   } catch (error) {
     try {
@@ -271,7 +298,7 @@ async function runExport(
     } catch {
       // source already closed by a failed finalize
     }
-    if (renderer) renderer.dispose();
+    if (ownedRenderer) ownedRenderer.dispose();
     if (orientationCanvas) {
       orientationCanvas.width = 0;
       orientationCanvas.height = 0;

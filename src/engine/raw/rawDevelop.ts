@@ -17,8 +17,10 @@ import { apply3x3, invert3x3, inspectCameraColor, type CameraColorReport } from 
  *   as-shot neutral (DNG AsShotNeutral, else inverse as-shot multipliers)
  *   → target white XYZ (CIE daylight/Planckian approximations, D50-adapted with Bradford)
  *   → camera neutral via the forward matrix → multipliers normalised to G = 1.
- * When the forward matrix is absent the as-shot multipliers are returned and the
- * report says so (documented fallback, no silent assumption).
+ * When the ForwardMatrix tag is absent, the camera→XYZ matrix is derived from
+ * the DNG ColorMatrix (inverse + Bradford adaptation to D50) and the report
+ * marks it as derived; only when no ColorMatrix exists either are the as-shot
+ * multipliers returned unchanged (documented fallback, no silent assumption).
  */
 
 export type RawWhiteBalanceStatus =
@@ -36,6 +38,8 @@ export interface RawWhiteBalanceInfo {
   asShotNeutral: [number, number, number] | null;
   appliedByCamera: boolean;
   forwardMatrix: number[] | null;
+  /** True when `forwardMatrix` was derived from the DNG ColorMatrix (no ForwardMatrix tag). */
+  forwardDerived?: boolean;
   /** Best-effort as-shot CCT (McCamy approximation) or null. */
   asShotTemperatureK: number | null;
   color: CameraColorReport;
@@ -122,6 +126,77 @@ function targetWhiteXyz(kelvin: number, tint: number): [number, number, number] 
   return xyzFromXy(cctToXy(kelvin, tint));
 }
 
+/** Bradford cone-response matrix and its inverse (linear sRGB working space). */
+const BRADFORD = [0.8951, 0.2664, -0.1614, -0.7502, 1.7135, 0.0367, 0.0389, -0.0685, 1.0296];
+const BRADFORD_INV = [
+  0.9869929, -0.1470543, 0.1599627,
+  0.4323053, 0.5183603, 0.0492912,
+  -0.0085287, 0.0400428, 0.9684867,
+];
+
+const ILLUMINANT_WHITE_XY: Readonly<Record<number, readonly [number, number]>> = Object.freeze({
+  17: [0.44757, 0.40745], // Standard A
+  19: [0.29902, 0.31485], // Illuminant C-like
+  20: [0.34842, 0.35161], // D55
+  21: [0.31271, 0.32902], // D65
+  23: [0.34567, 0.3585], // D50
+});
+
+const D50_XY: readonly [number, number] = [0.34567, 0.3585];
+
+function multiply3x3(a: readonly number[], b: readonly number[]): number[] {
+  const out = new Array<number>(9).fill(0);
+  for (let row = 0; row < 3; row += 1) {
+    for (let column = 0; column < 3; column += 1) {
+      out[row * 3 + column] = a[row * 3] * b[column]
+        + a[row * 3 + 1] * b[3 + column]
+        + a[row * 3 + 2] * b[6 + column];
+    }
+  }
+  return out;
+}
+
+function bradfordAdaptation(sourceXy: readonly [number, number]): number[] | null {
+  const source = xyzFromXy(sourceXy);
+  const target = xyzFromXy(D50_XY);
+  if (!source || !target) return null;
+  const sourceLms = apply3x3(BRADFORD, source);
+  const targetLms = apply3x3(BRADFORD, target);
+  if (!sourceLms.every((value) => Math.abs(value) > 1e-9)) return null;
+  const scale = [
+    targetLms[0] / sourceLms[0], 0, 0,
+    0, targetLms[1] / sourceLms[1], 0,
+    0, 0, targetLms[2] / sourceLms[2],
+  ];
+  return multiply3x3(BRADFORD_INV, multiply3x3(scale, BRADFORD));
+}
+
+/**
+ * Camera→XYZ(D50) from a DNG ColorMatrix when no ForwardMatrix tag exists:
+ * invert the XYZ→camera matrix at its illuminant, then Bradford-adapt that
+ * white to D50. Standard DNG approximation; the report marks it as derived.
+ */
+export function deriveForwardMatrixFromColorMatrices(
+  matrices: readonly { illuminant: number; temperature: number | null; rows: number; values: number[] }[] | null | undefined,
+): { matrix: number[]; sourceTemperatureK: number | null } | null {
+  if (!matrices || matrices.length === 0) return null;
+  const usable = matrices.filter((matrix) => matrix.rows === 3 && matrix.values.length === 9 && matrix.values.every((value) => Number.isFinite(value)));
+  const pick = usable.find((matrix) => matrix.illuminant === 21)
+    ?? usable.find((matrix) => typeof matrix.temperature === 'number' && Number.isFinite(matrix.temperature))
+    ?? usable[0];
+  if (!pick) return null;
+  const sourceXy = ILLUMINANT_WHITE_XY[pick.illuminant]
+    ?? (typeof pick.temperature === 'number' ? cctToXy(pick.temperature, 0) : null);
+  if (!sourceXy) return null;
+  const cameraToXyz = invert3x3(pick.values);
+  if (!cameraToXyz) return null;
+  const adaptation = bradfordAdaptation(sourceXy);
+  if (!adaptation) return null;
+  const forward = multiply3x3(adaptation, cameraToXyz);
+  if (!forward.every((value) => Number.isFinite(value))) return null;
+  return { matrix: forward, sourceTemperatureK: typeof pick.temperature === 'number' ? pick.temperature : null };
+}
+
 export function readWhiteBalanceInfo(metadata: RawMetadata): RawWhiteBalanceInfo {
   const color = inspectCameraColor(metadata);
   const wb = metadata.whiteBalance;
@@ -139,13 +214,23 @@ export function readWhiteBalanceInfo(metadata: RawMetadata): RawWhiteBalanceInfo
     asShotNeutral = [1, 1, 1];
   }
 
+  let forwardMatrix = color.forward;
+  let forwardDerived = false;
+  if (!forwardMatrix) {
+    const derived = deriveForwardMatrixFromColorMatrices(metadata.colorMatrices?.color);
+    if (derived) {
+      forwardMatrix = derived.matrix;
+      forwardDerived = true;
+    }
+  }
+
   let asShotTemperatureK: number | null = null;
   const asShotXy = metadata.dng?.asShotWhiteXY;
   if (Array.isArray(asShotXy) && asShotXy.length === 2 && asShotXy.every((value) => Number.isFinite(value))) {
     asShotTemperatureK = cctFromXy([asShotXy[0], asShotXy[1]]);
   }
-  if (asShotTemperatureK === null && color.forward && asShotNeutral) {
-    const xyz = apply3x3(color.forward, asShotNeutral);
+  if (asShotTemperatureK === null && forwardMatrix && asShotNeutral) {
+    const xyz = apply3x3(forwardMatrix, asShotNeutral);
     const sum = xyz[0] + xyz[1] + xyz[2];
     if (sum > 1e-9) asShotTemperatureK = cctFromXy([xyz[0] / sum, xyz[1] / sum]);
   }
@@ -154,7 +239,8 @@ export function readWhiteBalanceInfo(metadata: RawMetadata): RawWhiteBalanceInfo
     asShotMultipliers,
     asShotNeutral,
     appliedByCamera: metadata.whiteBalanceApplied,
-    forwardMatrix: color.forward,
+    forwardMatrix,
+    forwardDerived,
     asShotTemperatureK,
     color,
   };
@@ -218,6 +304,9 @@ export function rawWhiteBalanceMultipliers(
   ];
   if (multipliers.some((value, index) => value !== raw[index])) {
     warnings.push('White-balance multipliers were clamped to a safe range.');
+  }
+  if (info.forwardDerived) {
+    warnings.push('Camera→XYZ forward matrix missing; derived from the file colour matrix with Bradford adaptation.');
   }
   return { multipliers, status: 'adapted', warnings };
 }

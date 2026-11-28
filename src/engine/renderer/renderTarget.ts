@@ -46,6 +46,9 @@ export class RenderTarget {
       throw new Error('Sharpening buffer could not be allocated');
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // Leaving the attachment bound to an active unit while rendering into this
+    // target is a feedback loop (INVALID_OPERATION, black draw).
+    gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.texture = texture;
     this.framebuffer = framebuffer;

@@ -16,8 +16,13 @@ export {
   getRawDevelopInfo,
   hasRawAsset,
   accountRawOpenMemory,
+  decodeRawRedevelop,
+  applyRawRedevelop,
+  redevelopRawPreview,
+  createRawRedeveloper,
   RAW_DEVELOP_DECODER_ID,
   RAW_PREVIEW_MAX_EDGE,
+  RAW_REDEVELOP_DEBOUNCE_MS,
   RAW_OPEN_MEMORY_LIMIT_BYTES,
   type DevelopedRawSource,
   type OpenRawResult,
@@ -25,7 +30,19 @@ export {
   type RawDevelopMode,
   type RawDevelopOptions,
   type RawMemoryAccount,
+  type RawRedevelopDecoded,
+  type RawRedevelopOptions,
+  type RawRedeveloper,
+  type RawRedeveloperOptions,
 } from './rawPreview';
+
+export {
+  rawDevelopSettingsFromState,
+  rawDevelopSettingsEqual,
+  highlightRecoveryFromStrength,
+  createLatestTaskRunner,
+  type LatestTaskRunner,
+} from './rawRedevelop';
 
 export {
   createRawDevelopReport,
@@ -33,6 +50,7 @@ export {
   rawWhiteBalanceMultipliers,
   readWhiteBalanceInfo,
   resolveRawDevelopSettings,
+  deriveForwardMatrixFromColorMatrices,
   RAW_DEVELOP_SHADER_UNIFORMS,
   type RawDevelopDecodeOptions,
   type RawDevelopReport,
