@@ -1,11 +1,5 @@
 import { normalizeMasks, validateMasks, type MaskData } from './masks';
 
-/**
- * A depth/focus mask stack. Reuses the CP3 mask layer schema so strokes, blend
- * modes and opacity stay one contract across local adjustments and lens blur.
- */
-export type MaskGroup = MaskData;
-
 export interface LensBlurState {
   enabled: boolean;
   /** Normalized manual depth, 0..1. */
@@ -20,9 +14,30 @@ export interface LensBlurState {
   quality: 'preview' | 'export';
   /** Highlight bokeh boost, 0..2. */
   highlightBoost: number;
-  /** Manual depth/focus mask; null = procedural depth. */
-  depthMask: MaskGroup[] | null;
+  /** Flat mask stack from the frozen masks.ts contract; null = procedural depth. */
+  depthMask: MaskData[] | null;
 }
+
+export interface LensBlurCapability {
+  maxTextureSize: number;
+  maxTaps?: number;
+  supportsFloatLinear?: boolean;
+}
+
+export interface LensBlurPlan {
+  maxCocPx: number;
+  taps: number;
+  halfRes: boolean;
+  focusPlane: number;
+  focusRange: number;
+}
+
+/** Q02 implements this in `src/engine/optical/lensBlur*`; null keeps the byte-equal path. */
+export type LensBlurPlanner = (
+  state: LensBlurState,
+  outputSize: { width: number; height: number },
+  capability: LensBlurCapability,
+) => LensBlurPlan | null;
 
 export const LENS_BLUR_LIMITS = Object.freeze({
   focusPlane: Object.freeze({ min: 0, max: 1 }),
